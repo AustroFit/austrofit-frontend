@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+@import "./styles/tokens.css";
+@import "./styles/utilities.css";
+@import "./styles/component.css";
+
+/* Montserrat Font Faces - TTF Version */
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  /* Set Montserrat as default font */
+  --default-font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+
+  --color-light-white: #FFFFFF;
+  --color-light-beige: #F8F6F2;
+  --color-light-blue-1: #D9E4E8;
+  --color-light-blue-2: #B3C8D0;
+  --color-light-purple-1: #DABAF4;
+  --color-light-green-1: #E8F8C7;
+  --color-light-green-2: #D7F49B;
+  --color-light-green-3: #C6F16D;
+  --color-light-green-4: #B2EB3B;
+  --color-light-pink-1: #FFAFD1;
+  --color-light-pink-2: #F68DAF;
+  --color-light-orange-1: #FFE6A6;
+  --color-light-orange-2: #FFDA7F;
+  --color-light-orange-3: #FFCE51;
+  --color-light-orange-4: #FAC337;
+  
+  --color-dark-kvb-blue: #004961;
+  --color-dark-blue-1: #80A4B0;
+  --color-dark-blue-2: #004961;
+  --color-dark-purple-1: #B98FDB;
+  --color-dark-purple-2: #A670D1;
+  --color-dark-purple-3: #A155DD;
+  --color-dark-pink-1: #FA5289;
+  --color-dark-pink-2: #F43070;
+  
+  
+  /* Design tokens */
+  --max-width-standard: 1140px;
+  --max-width-wide: 1440px;
+  --max-width-narrow: 800px;
+  
+  /* Spacing scale */
+  --spacing-s: 1rem;        /* 16px */
+  --spacing-m: 1.5rem;      /* 24px */
+  --spacing-l: 2rem;        /* 32px */
+  
+  /* Container padding */
+  --spacing-container-x: 1rem;
+  --spacing-container-x-lg: 2rem;
+  
+  /* Typography scale */
+  --font-size-xs: 0.75rem;
+  --font-size-s: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+  
+  /* Border radius */
+  --radius-s: 0.25rem;
+  --radius-m: 0.5rem;
+  --radius-l: 1rem;
+  
+  /* Shadows */
+  --shadow-s: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-m: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-l: 0 10px 25px rgba(0,0,0,0.1);
+}
