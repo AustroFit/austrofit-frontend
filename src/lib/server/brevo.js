@@ -1,4 +1,4 @@
-// src/lib/server/brevo.js
+/* // src/lib/server/brevo.js
 import { BREVO_API_KEY } from '$env/static/private';
 
 export class BrevoService {
@@ -141,4 +141,4 @@ export class BrevoService {
       throw error;
     }
   }
-}
+} */

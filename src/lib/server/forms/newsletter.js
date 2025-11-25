@@ -1,6 +1,5 @@
 import { getDirectusWriteInstance } from "$lib/directus";
 import { createItem } from "@directus/sdk";
-import { BrevoService } from "../brevo";
 import { fail } from '@sveltejs/kit';
 
 export async function handleNewsletterSignup(formData, fetch, form, formId) {
