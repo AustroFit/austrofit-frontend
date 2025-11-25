@@ -1,24 +1,28 @@
 <script>
   import { enhance } from '$app/forms';
   import FormFieldRenderer from "./FormFieldRenderer.svelte";
-  
-  const { formData, formResponse } = $props();
+  import { getFormClasses } from '$lib/design-system/classes';
+
+  const { formData, buttonStyle, formResponse } = $props();
+  const theme = formData?.theme || 'light';
+  const alignment = formData?.alignment || 'left';
+  const styles = getFormClasses(alignment, theme);
 
   const hasError = formResponse?.error && formResponse?.formId === formData.id;
   const hasSuccess = formResponse?.success && formResponse?.formId === formData.id;
 </script>
 
-<div class="form">
+<div class={styles.wrapper}>
   <!-- Only show form if not successfully submitted -->
   {#if !hasSuccess}
-    <form method="POST" action="?/submit" class="flex flex-col gap-4">
+    <form method="POST" action="?/submit" class={styles.form}>
       <input type="hidden" name="formId" value={formData.id} />
       
       {#each formData.fields as field}
-        <FormFieldRenderer {field} formResponse={formResponse} />
+        <FormFieldRenderer {field} {styles} formResponse={formResponse} />
       {/each}
       
-      <button type="submit" class="btn-primary rounded-2xl py-2 mt-4">
+      <button type="submit" class="{buttonStyle} {styles.button}">
         {formData.submit_label ?? "Absenden"}
       </button>
     </form>

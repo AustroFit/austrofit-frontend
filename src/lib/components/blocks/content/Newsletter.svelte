@@ -1,25 +1,38 @@
+<!-- src/lib/components/blocks/Newsletter.svelte -->
 <script>
   import Form from "$lib/components/Form.svelte";
-  const { blockData, formResponse } = $props();
-  const formData = blockData?.form
-  //console.log("blockData:", blockData);
-  //console.log("formResponse:", formResponse)
+  import { designClasses, getBaseBlockClasses, getButtonClasses } from "$lib/design-system/classes";
 
+  const { block, formResponse } = $props();
+  const blockData = block.item;
+  const formData = blockData?.form;
+
+  const buttonStyle = getButtonClasses(blockData.button_style, 'md');
+
+  // Design-System: zentriert, helles Theme
+  const styles = $derived(getBaseBlockClasses('center', 'light'));
 </script>
 
 {#if formData && formData?.is_active}
-  <section>
-    <div class="bg-white p-4 rounded-2xl shadow-2xl">
-        {#if blockData?.tagline}
-      <p class="uppercase font-bold text-teal-600">{blockData.tagline}</p>  
+  <!-- kein eigenes <section> – BlockWrapper liefert section/container -->
+  <div class="mx-auto max-w-3xl w-full text-center">
+    <div class="p-8 md:p-10 {designClasses.spacing.normal}">
+      {#if blockData?.tagline}
+        <p class={`${styles.tagline}`}>{blockData.tagline}</p>
       {/if}
+
       {#if blockData?.headline}
-        <h2 class="text-4xl">{blockData.headline}</h2>  
+        <h2 class={`${styles.headline}`}>{blockData.headline}</h2>
       {/if}
 
-      <Form {formData} {formResponse}/>  
+      {#if blockData?.description}
+        <p class={`${designClasses.typography.bodyLarge} ${designClasses.textColors.light.body}`}>
+          {blockData.description}
+        </p>
+      {/if}
 
+      <!-- Form stellt Feld, Button, Checkbox etc. -->
+      <Form {formData} {formResponse} {buttonStyle}/>
     </div>
-
-  </section>
+  </div>
 {/if}

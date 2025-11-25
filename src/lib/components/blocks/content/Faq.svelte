@@ -1,15 +1,35 @@
 <script>
+  import { getFaqClasses } from "$lib/design-system/classes";
   import FaqItem from "./FaqItem.svelte";
-  const { blockData } = $props();
+  
+  const { block } = $props();
+  const blockData = block.item;
+  const theme = block.background || 'light';
+  
+  const styles = getFaqClasses(theme);
 </script>
 
-<div class="faq">
-  {#each blockData.faq_items as item}
-    <FaqItem {item} />  
-  {/each}
+<div class={styles.container}>
+  {#if blockData.tagline}
+    <div class={styles.tagline}>
+      {blockData.tagline}
+    </div>
+  {/if}
+  {#if blockData.headline}
+    <h2 class={styles.headline}>
+      {blockData.headline}
+    </h2>
+  {/if}
+
+  {#if blockData.description}
+    <div class={styles.description}>
+      {blockData.description}
+    </div>
+  {/if}
+  <div class={styles.faqContainer}>
+    {#each blockData.faq_items as item}
+      <FaqItem {item} {styles} />
+    {/each}
+  </div>
+  
 </div>
-
-
-
-
-

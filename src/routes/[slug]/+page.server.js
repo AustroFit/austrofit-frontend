@@ -8,7 +8,6 @@ export async function load({ fetch, params }) {
     throw redirect(301, "/");
   }
   const page = await loadPageBySlug(params.slug, fetch);
-  console.log("page:", page);
   return { page };
 }
 

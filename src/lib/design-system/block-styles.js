@@ -1,8 +1,9 @@
 // src/lib/design-system/block-styles.js
 export function getBlockStyles(block) {
-  const sectionClasses = [];
+
+    const sectionClasses = [];
   
-  // Background color (unchanged)
+  // Background color
   const activeColor = block.background === 'light'
     ? block.background_color_light?.slug
     : block.background_color_dark?.slug;
@@ -10,26 +11,35 @@ export function getBlockStyles(block) {
   if (activeColor) {
     sectionClasses.push(`bg-${activeColor}`);
   } else {
-    sectionClasses.push('bg-light-white');
+    sectionClasses.push('bg-light-grey');
   }
   
-  // Text color (unchanged)
+  // Text color
   const textColor = block.background === 'dark' 
     ? 'text-white' 
-    : 'text-slate-900';
+    : 'text-dark-kvb-blue';
   sectionClasses.push(textColor);
   
-  /* // Spacing - only if advanced styling enabled
+  // Padding - only if advanced styling enabled 
   if (block.advanced_styling) {
-    const spacingMap = {
-      small: 'py-8',
-      medium: 'py-12',
-      large: 'py-20'
+    const paddingTopMap = {
+      none: 'pt-0',
+      small: 'pt-14',
+      standard: 'pt-28',
+      large: 'pt-42'
     };
-    sectionClasses.push(spacingMap[block.spacing] || spacingMap.medium);
+    const paddingBottomMap = {
+      none: 'pb-0',
+      small: 'pb-14',
+      standard: 'pb-28',
+      large: 'pb-42'
+    };
+    
+    sectionClasses.push(paddingTopMap[block.padding_top] || paddingTopMap.standard);
+    sectionClasses.push(paddingBottomMap[block.padding_bottom] || paddingBottomMap.standard);
   } else {
-    sectionClasses.push('py-12'); // Default medium spacing
-  } */
+    sectionClasses.push('py-28'); // Default standard padding
+  }
   
   // Container width - only if advanced styling enabled
   let containerClass;

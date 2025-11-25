@@ -1,7 +1,52 @@
-/* // src/lib/server/brevo.js
+// src/lib/server/brevo.js
 import { BREVO_API_KEY } from '$env/static/private';
+import { 
+  PUBLIC_BREVO_NEWSLETTER_LIST, 
+  PUBLIC_BREVO_ONBOARDING_LIST 
+} from '$env/static/public';
 
 export class BrevoService {
+  // Helper to get the right list ID
+  static getListId(type) {
+    const listIds = {
+      newsletter: parseInt(PUBLIC_BREVO_NEWSLETTER_LIST),
+      onboarding: parseInt(PUBLIC_BREVO_ONBOARDING_LIST)
+    };
+    return listIds[type];
+  }
+
+  static async addToNewsletter(email, attributes = {}) {
+    return this.addContact(
+      email, 
+      {
+        NEWSLETTER_SOURCE: attributes.SOURCE || 'Website',
+        SIGNUP_DATE: new Date().toISOString(),
+        ...attributes
+      },
+      [this.getListId('newsletter')]
+    );
+  }
+
+  static async addToOnboarding(email, attributes = {}) {
+    return this.addContact(
+      email,
+      {
+        ONBOARDING_STATUS: 'Pending',
+        SIGNUP_DATE: new Date().toISOString(),
+        ...attributes
+      },
+      [this.getListId('onboarding')]
+    );
+  }
+
+  static async removeFromNewsletter(email) {
+    return this.removeFromList(email, [this.getListId('newsletter')]);
+  }
+
+  static async removeFromOnboarding(email) {
+    return this.removeFromList(email, [this.getListId('onboarding')]);
+  }
+
   static async addContact(email, attributes = {}, listIds = []) {
     try {
       const response = await fetch('https://api.brevo.com/v3/contacts', {
@@ -19,7 +64,6 @@ export class BrevoService {
         })
       });
 
-      // Get response text first, then try to parse as JSON
       const responseText = await response.text();
       
       console.log('Brevo response status:', response.status);
@@ -28,7 +72,6 @@ export class BrevoService {
       if (!response.ok) {
         let errorData = {};
         
-        // Only try to parse JSON if there's content
         if (responseText.trim()) {
           try {
             errorData = JSON.parse(responseText);
@@ -38,7 +81,6 @@ export class BrevoService {
           }
         }
         
-        // Handle specific error cases
         if (response.status === 400 && errorData.code === 'duplicate_parameter') {
           return { success: true, id: null, message: 'Contact already exists' };
         }
@@ -54,7 +96,6 @@ export class BrevoService {
         throw new Error(errorData.message || `HTTP ${response.status}: ${responseText || 'No response body'}`);
       }
 
-      // Parse successful response
       let result = {};
       if (responseText.trim()) {
         try {
@@ -141,4 +182,4 @@ export class BrevoService {
       throw error;
     }
   }
-} */
+}

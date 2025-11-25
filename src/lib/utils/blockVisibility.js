@@ -14,7 +14,6 @@ export function getBlockVisibility(block) {
     case 'block_form':
       return block.item?.form?.is_active === true;
     
-    
     default:
       return true;
   }

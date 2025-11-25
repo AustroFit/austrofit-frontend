@@ -1,66 +1,116 @@
+<!-- src/lib/components/blocks/hero/Hero.svelte -->
 <script>
-  const { blockData } = $props();
+  import { getHeroClasses } from "$lib/design-system/classes";
   
-  // Layout classes
-  const layoutClasses = {
-    'image_left': 'lg:flex-row-reverse',
-    'image_center': 'lg:flex-col-reverse', 
-    'image_right': 'lg:flex-row'
-  };
+  const { block } = $props();
+  const blockData = block.item;
+  const theme = block.background || 'light';
+  const layout = blockData.layout || 'image_right';
+  const isFullscreen = layout === 'image_full';
   
-  const layoutClass = $derived(layoutClasses[blockData.layout] || 'lg:flex-row');
-  const isCentered = $derived(blockData.layout === 'image_center');
+  const styles = getHeroClasses(layout, theme);
+  
+  const imageUrl = blockData.image 
+    ? `https://cms.zukunftsallianz.at/assets/${blockData.image}` 
+    : null;
 </script>
 
-<section class="hero-block">
-  <div class="container mx-auto px-4 py-16">
-    <div class="flex flex-col {layoutClass} items-center gap-12">
-      
-      <!-- Content Section -->
-      <div class="flex-1 {isCentered ? 'text-center' : ''}">
-        {#if blockData.tagline}
-          <div class="tagline text-sm font-medium uppercase tracking-wide opacity-75 mb-4">
-            {blockData.tagline}
-          </div>
-        {/if}
-        
-        {#if blockData.headline}
-          <h1 class="headline text-4xl lg:text-6xl font-bold leading-tight mb-6">
-            {blockData.headline}
-          </h1>
-        {/if}
-        
-        {#if blockData.description}
-          <div class="description text-lg lg:text-xl leading-relaxed mb-8 max-w-2xl {isCentered ? 'mx-auto' : ''}">
-            {@html blockData.description}
-          </div>
-        {/if}
-        
-        <!-- Note: button_group is a UUID string, not an array -->
-        <!-- {#if blockData.button_group}
-          <div class="button-group flex flex-wrap gap-4 {isCentered ? 'justify-center' : ''}">
-            <a 
-              href="#" 
-              class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors no-underline"
-            >
-              Button Text
-            </a>
-          </div>
-        {/if} -->
+{#if isFullscreen}
+  <!-- Fullscreen hero -->
+  <div class={styles.container}>
+    {#if imageUrl}
+      <img 
+        src={imageUrl} 
+        alt={blockData.headline || 'Hero image'}
+        class={styles.image}
+      />
+      <div class={styles.overlay}></div>
+    {/if}
+    
+    <div class={styles.contentWrapper}>
+      <div class={styles.contentContainer}>
+        <div class={styles.textWrapper}>
+          {#if blockData.tagline}
+            <div>
+              <span class={styles.tagline}>
+                {blockData.tagline}
+              </span>
+            </div>
+          {/if}
+          
+          {#if blockData.headline}
+            <h1 class={styles.headline}>
+              <span class={styles.headlineSpan}>
+                {blockData.headline}
+              </span>
+            </h1>
+          {/if}
+          
+          {#if blockData.description}
+            <p class={styles.description}>
+              <span class={styles.descriptionSpan}>
+                {blockData.description}
+              </span>
+            </p>
+          {/if}
+          
+          {#if blockData.button_group}
+            <div class={styles.buttonWrapper}>
+              <a href="#" class={styles.button}>
+                Learn More
+              </a>
+            </div>
+          {/if}
+        </div>
       </div>
-      
-      <!-- Image Section -->
-      {#if blockData.image}
-        <div class="flex-1 w-full max-w-md lg:max-w-lg">
-          <img 
-            src="https://cms.austrofit.at/assets/{blockData.image}"
-            alt={blockData.headline || 'Hero image'}
-            class="w-full h-auto rounded-lg shadow-lg"
-            loading="lazy"
-          />
+    </div>
+  </div>
+
+{:else}
+  <!-- Regular hero layouts -->
+  <div class={styles.layout}>
+    {#if imageUrl && layout !== 'image_top'}
+      <div class={styles.imageWrapper}>
+        <img 
+          src={imageUrl} 
+          alt={blockData.headline || 'Hero image'}
+          class={styles.image}
+        />
+      </div>
+    {/if}
+    
+    <div class={styles.content}>
+      {#if blockData.tagline}
+        <div class={styles.tagline}>
+          {blockData.tagline}
         </div>
       {/if}
       
+      {#if blockData.headline}
+        <h1 class={styles.headline}>
+          {blockData.headline}
+        </h1>
+      {/if}
+      
+      {#if blockData.description}
+        <p class={styles.description}>
+          {blockData.description}
+        </p>
+      {/if}
+      
+      {#if blockData.button_group}
+        <!-- TODO: Add button group component -->
+      {/if}
     </div>
+    
+    {#if imageUrl && layout === 'image_top'}
+      <div class={styles.imageWrapper}>
+        <img 
+          src={imageUrl} 
+          alt={blockData.headline || 'Hero image'}
+          class={styles.image}
+        />
+      </div>
+    {/if}
   </div>
-</section>
+{/if}

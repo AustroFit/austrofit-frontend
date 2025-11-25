@@ -1,0 +1,31 @@
+export const articlesCollection = {
+  name: 'articles',
+  
+  fields: [
+    "id", "slug", "title", "description", "image", "release_date"
+  ],
+  
+  defaultSort: 'release_date',
+  
+  filterBuilders: {
+    time: {
+      all: null,
+      
+      upcoming: {
+        release_date: { _gte: '$NOW' }
+      },
+      
+      past: {
+        release_date: { _lt: '$NOW' }
+      },
+      
+    },
+
+    featured: (blockData) => 
+      blockData.featured ? { featured: { _eq: true } } : null
+  },
+
+  
+
+
+};

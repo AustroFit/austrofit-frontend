@@ -1,6 +1,9 @@
 <script>
   import { PUBLIC_CMSURL } from "$env/static/public";
-  const { blockData } = $props();
+  const { block } = $props();
+  const blockData = block.item;
+  const theme = block.background || 'light';
+
 </script>
 
 <section class="text-center">
