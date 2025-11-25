@@ -2,7 +2,7 @@
   import { getSinglePageClasses } from "$lib/design-system/classes";
   const { item, collection, config} = $props();
 
-  const imageUrl = item.image ? `https://cms.zukunftsallianz.at/assets/${item.image}` : null;
+  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
   
   const styles = getSinglePageClasses();
   console.log(item);

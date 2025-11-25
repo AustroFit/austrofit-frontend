@@ -11,7 +11,7 @@
   const styles = getHeroClasses(layout, theme);
   
   const imageUrl = blockData.image 
-    ? `https://cms.zukunftsallianz.at/assets/${blockData.image}` 
+    ? `https://cms.austrofit.at/assets/${blockData.image}` 
     : null;
 </script>
 
@@ -40,7 +40,7 @@
           
           {#if blockData.headline}
             <h1 class={styles.headline}>
-              <span class={styles.headlineSpan}>
+              <span class="{styles.headlineSpan} text-blue-500">
                 {blockData.headline}
               </span>
             </h1>
@@ -87,7 +87,7 @@
       {/if}
       
       {#if blockData.headline}
-        <h1 class={styles.headline}>
+        <h1 class="{styles.headline} text-blue-500">
           {blockData.headline}
         </h1>
       {/if}
