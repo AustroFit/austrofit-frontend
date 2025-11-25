@@ -20,7 +20,6 @@ export async function loadPageBySlug(slug, fetch) {
         "blocks.background_color_light.slug",
         "blocks.background_color_dark.slug",
         "blocks.advanced_styling",
-        "blocks.spacing",
         "blocks.content_width",      
         // block type
         "blocks.collection", 
@@ -38,8 +37,8 @@ export async function loadPageBySlug(slug, fetch) {
       ],
     })
   );
-  
 
+  
   if (!pages.length) {
     throw error(404, `Page '${slug}' not found`);    
   }

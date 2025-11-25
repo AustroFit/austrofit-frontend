@@ -14,9 +14,9 @@ export const designClasses = {
   textColors: {
     // For light backgrounds
     light: {
-      heading: 'text-dark-kvb-blue',
-      tagline: 'text-dark-kvb-blue',
-      body: 'text-dark-kvb-blue'
+      heading: 'text-body',
+      tagline: 'text-heading',
+      body: 'text-tagline'
     },
     // For dark backgrounds  
     dark: {
@@ -95,7 +95,7 @@ export const designClasses = {
 
   buttons: {
     base: 'inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-colors',
-    primary: 'bg-dark-kvb-blue text-white hover:bg-dark-kvb-blue/90'
+    primary: 'bg-primary text-white hover:bg-primary/90'
   },
 };
 

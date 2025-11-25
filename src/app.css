@@ -3,83 +3,50 @@
 @import "./styles/utilities.css";
 @import "./styles/component.css";
 
-/* Montserrat Font Faces - TTF Version */
 @font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Light.ttf') format('truetype');
-  font-weight: 300;
+  font-family: 'Inter';
+  src: url('/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
 }
 
 @font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
-  font-weight: 400;
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+}
+
+/* Jost - Headings */
+@font-face {
+  font-family: 'Jost';
+  src: url('/fonts/Jost-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
   font-style: normal;
-  font-display: swap;
 }
 
 @font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-ExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
+  font-family: 'Jost';
+  src: url('/fonts/Jost-Italic-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
 }
 
 @theme {
-  /* Set Montserrat as default font */
-  --default-font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  --font-family-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-family-heading: 'Jost', ui-sans-serif, system-ui, sans-serif;
+  --default-font-family: var(--font-family-sans);
 
-  --color-light-white: #FFFFFF;
-  --color-light-beige: #F8F6F2;
-  --color-light-blue-1: #D9E4E8;
-  --color-light-blue-2: #B3C8D0;
-  --color-light-purple-1: #DABAF4;
-  --color-light-green-1: #E8F8C7;
-  --color-light-green-2: #D7F49B;
-  --color-light-green-3: #C6F16D;
-  --color-light-green-4: #B2EB3B;
-  --color-light-pink-1: #FFAFD1;
-  --color-light-pink-2: #F68DAF;
-  --color-light-orange-1: #FFE6A6;
-  --color-light-orange-2: #FFDA7F;
-  --color-light-orange-3: #FFCE51;
-  --color-light-orange-4: #FAC337;
-  
-  --color-dark-kvb-blue: #004961;
-  --color-dark-blue-1: #80A4B0;
-  --color-dark-blue-2: #004961;
-  --color-dark-purple-1: #B98FDB;
-  --color-dark-purple-2: #A670D1;
-  --color-dark-purple-3: #A155DD;
-  --color-dark-pink-1: #FA5289;
-  --color-dark-pink-2: #F43070;
+  --color-primary: #5EA500;
+  --color-secondary: #FFD847;
+  --color-heading: #101828;
+  --color-body: #4A5565;
+  --color-tagline: #101828;
+
+  --color-light-white: #FFFFFF;  
+
+  --color-dark-black: #000000;
+
   
   
   /* Design tokens */
@@ -116,4 +83,12 @@
   --shadow-s: 0 1px 3px rgba(0,0,0,0.1);
   --shadow-m: 0 4px 6px rgba(0,0,0,0.1);
   --shadow-l: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+body {
+  font-family: var(--font-family-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
 }

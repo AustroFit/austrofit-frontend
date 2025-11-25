@@ -1,7 +1,7 @@
 <script>
   import { getContentClasses } from "$lib/design-system/classes";
   const { blockData, theme } = $props();
-  console.log(blockData, theme)
+  //console.log(blockData, theme)
   let alignment = blockData.alignment || "left";
   let styles = getContentClasses(alignment, theme);
 

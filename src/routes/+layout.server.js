@@ -4,6 +4,7 @@ import { buildNavigationTree } from '$lib/navigation';
 
 /** @type {import('./$types').LayoutServerLoad} */
 export async function load({ fetch }) {
+
   const directus = getDirectusReadInstance(fetch);
 
   const globals = await directus.request(readSingleton("globals"));

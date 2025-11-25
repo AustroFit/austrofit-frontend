@@ -19,7 +19,7 @@ export function getBlockStyles(block) {
     : 'text-slate-900';
   sectionClasses.push(textColor);
   
-  // Spacing - only if advanced styling enabled
+  /* // Spacing - only if advanced styling enabled
   if (block.advanced_styling) {
     const spacingMap = {
       small: 'py-8',
@@ -29,7 +29,7 @@ export function getBlockStyles(block) {
     sectionClasses.push(spacingMap[block.spacing] || spacingMap.medium);
   } else {
     sectionClasses.push('py-12'); // Default medium spacing
-  }
+  } */
   
   // Container width - only if advanced styling enabled
   let containerClass;

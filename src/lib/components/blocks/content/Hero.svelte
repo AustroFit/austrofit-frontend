@@ -53,7 +53,7 @@
       {#if blockData.image}
         <div class="flex-1 w-full max-w-md lg:max-w-lg">
           <img 
-            src="https://cms-dev.zukunftsallianz.at/assets/{blockData.image}"
+            src="https://cms.austrofit.at/assets/{blockData.image}"
             alt={blockData.headline || 'Hero image'}
             class="w-full h-auto rounded-lg shadow-lg"
             loading="lazy"
