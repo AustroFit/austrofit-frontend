@@ -13,11 +13,6 @@
       {item.description}
     </div>   
   {/if}
-  {#if item.content}
-    <div class={styles.content}>
-      {item.content}
-    </div>   
-  {/if}
 
     {#if item.content}
     <p class={styles.content}>{@html item.content}</p>
