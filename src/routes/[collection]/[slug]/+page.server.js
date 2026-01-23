@@ -40,8 +40,8 @@ export async function load({ params, fetch }) {
       readItems(collection, {
         filter: { slug: { _eq: slug } },
         fields: [
-          ...config.fields,
-    
+          //...config.fields,
+          '*',
           // Learning Module Relation laden
           {
             learning_module: [
