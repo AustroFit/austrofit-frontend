@@ -11,10 +11,14 @@
   {#if item.description}
     <div class={styles.description}>
       {item.description}
-    </div>
-    
+    </div>   
   {/if}
-  
+  {#if item.content}
+    <div class={styles.content}>
+      {item.content}
+    </div>   
+  {/if}
+
     {#if item.content}
     <p class={styles.content}>{@html item.content}</p>
     {/if}
