@@ -25,7 +25,6 @@
 
   <!-- Main Content -->
   <Content {item} {collection} config={pageConfig} />
-
   <!-- Related Items -->
   {#if pageConfig.showRelated && relatedItems?.length > 0}
     <RelatedItems items={relatedItems} {collection} title={pageConfig.relatedTitle} />

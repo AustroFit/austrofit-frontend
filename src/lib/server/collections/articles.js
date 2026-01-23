@@ -2,7 +2,7 @@ export const articlesCollection = {
   name: 'articles',
   
   fields: [
-    "id", "slug", "title", "description", "image", "release_date"
+    "id", "slug", "title", "description", "content", "image", "release_date"
   ],
   
   defaultSort: 'release_date',

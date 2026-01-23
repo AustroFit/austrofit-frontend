@@ -7,6 +7,7 @@
   const styles = getSinglePageClasses();
   console.log(item);
 </script>
+
 <div class={styles.containerContent}>
   {#if item.description}
     <div class={styles.description}>
