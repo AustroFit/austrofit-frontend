@@ -13,8 +13,17 @@
       {item.description}
     </div>   
   {/if}
+  
+  {#if item.content}
+    <div class={styles.content}>
+      {@html item.content}
+    </div>
+  {/if}
+  
+  <!-- Learning Module Article -->
+  {#if item.learning_module?.article_markdown}
+    <div class={styles.content}>
+      {@html item.learning_module.article_markdown}
+    </div>
+  {/if}
 
-    {#if item.content}
-    <p class={styles.content}>{@html item.content}</p>
-    {/if}
-  </div>
