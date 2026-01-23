@@ -64,6 +64,9 @@ export async function load({ params, fetch }) {
     }
     
     const item = items[0];
+    console.log("ITEM KEYS:", Object.keys(item));
+    console.log("CONTENT TYPE:", typeof item.content, item.content?.slice?.(0, 200));
+    console.log("LM PRESENT:", !!item.learning_module);
     
     // Optionally fetch related items (e.g., "more events")
     let relatedItems = [];
