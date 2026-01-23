@@ -39,7 +39,22 @@ export async function load({ params, fetch }) {
     const items = await directus.request(
       readItems(collection, {
         filter: { slug: { _eq: slug } },
-        fields: config.fields, // Use fields from collection config
+        fields: [
+          ...config.fields,
+    
+          // Learning Module Relation laden
+          {
+            learning_module: [
+              'id',
+              'module_id',
+              'article_markdown',
+              'quiz',
+              'citations',
+              'images',
+              'seo'
+            ]
+          }
+        ],
         limit: 1
       })
     );
