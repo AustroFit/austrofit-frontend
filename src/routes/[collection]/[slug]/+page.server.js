@@ -41,7 +41,7 @@ export async function load({ params, fetch }) {
         filter: { slug: { _eq: slug } },
         fields: [
           ...config.fields,
-          
+          "content",
           // Learning Module Relation laden
           {
             learning_module: [
