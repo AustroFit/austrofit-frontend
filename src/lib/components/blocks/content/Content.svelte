@@ -11,7 +11,7 @@
   const styles = getContentBlockClasses(alignment, theme, imagePosition, imageSize);
   // Image URL
   const imageUrl = blockData.image 
-    ? `https://cms.zukunftsallianz.at/assets/${blockData.image}` 
+    ? `https://cms.austrofit.at/assets/${blockData.image}` 
     : null;
   
   // Button classes

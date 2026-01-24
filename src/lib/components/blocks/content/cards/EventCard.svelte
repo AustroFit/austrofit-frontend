@@ -2,7 +2,7 @@
   import { getEventCardClasses } from "$lib/design-system/classes";
   import { getStateNames } from "$lib/utils/states";
   const { item, cardAlignment, cardStyle, buttonStyle, columns = 3} = $props();
-  const imageUrl = item.image ? `https://cms.zukunftsallianz.at/assets/${item.image}` : null;
+  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
   const styles = getEventCardClasses(cardStyle, cardAlignment, columns);
   //console.log(styles);
 

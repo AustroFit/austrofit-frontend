@@ -3,7 +3,7 @@
   
   const { item, cardStyle = 'lightgrey', cardAlignment = 'left' } = $props();
   const styles = getTeamCardClasses(cardStyle, cardAlignment);
-  const imageUrl = item.image ? `https://cms.zukunftsallianz.at/assets/${item.image}` : null;
+  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
 
 </script>
 
