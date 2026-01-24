@@ -7,7 +7,7 @@
   import { getSinglePageClasses } from '$lib/design-system/classes.js';
   const { data } = $props();
   const { item, collection, relatedItems } = data;
-  
+  console.log(item);
   // Get display configuration for this collection
   const pageConfig = getSinglePageConfig(collection);
   const styles = getSinglePageClasses();

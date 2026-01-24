@@ -354,7 +354,7 @@ export const designClasses = {
   },
 
   footer: {
-    section: 'bg-dark-blue-2 text-white relative overflow-hidden',
+    section: 'relative overflow-hidden',
     container: 'container mx-auto px-4 pt-16 pb-4 max-w-[1140px]',
     grid: 'grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16', // ← Changed to 12-column grid
     
@@ -367,20 +367,20 @@ export const designClasses = {
     description: 'text-base leading-relaxed',
     
     nav: 'space-y-3',
-    navLink: 'block text-white hover:text-light-green-1 transition-colors',
+    navLink: 'block  hover:text-light-green-1 transition-colors',
     
     contactSection: 'space-y-3',
     contactTitle: 'font-medium',
-    contactLink: 'block text-white hover:text-light-green-1 transition-colors underline',
+    contactLink: 'block hover:text-light-green-1 transition-colors underline',
     
     // Legal nav - horizontal strip
     legalNavStrip: 'border-t border-white/20 pt-8 mt-12',
     legalNav: 'flex flex-wrap gap-6 justify-center',
-    legalLink: 'text-sm text-white/80 hover:text-white transition-colors',
+    legalLink: 'text-sm hover: transition-colors',
     
     // Copyright strip
     copyrightStrip: 'border-t border-white/20 pt-4 mt-8',
-    copyright: 'text-sm text-white/60 text-center'
+    copyright: 'text-sm text-center'
   }
 };
 
@@ -779,10 +779,9 @@ export function getSinglePageClasses(theme = 'light', alignmen = 'left') {
     heading: `${designClasses.typography.h2} ${textColors.heading}`,
 
 
+
     containerMeta: `p-4 border-1 rounded-md`,
     metaText: `${designClasses.typography.bodyLarge} ${textColors.bodyLarge}`,
-
-
 
     containerContent: `flex flex-col gap-6 mb-8`,
     description: `${designClasses.typography.bodyDescription} ${textColors.bodyDescription}`,

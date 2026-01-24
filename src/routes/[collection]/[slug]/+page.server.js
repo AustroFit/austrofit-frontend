@@ -8,9 +8,8 @@ import { getCollectionConfig } from '$lib/server/collections/index.js';
 const COLLECTION_MAP = {
   'events': 'events',
   'artikel': 'articles',
-  'pressemitteilungen': 'press_releases',
   'team': 'team',
-  'testimonials': 'testimonials'
+  'testimonials': 'testimonials',
 };
 
 /** @type {import('./$types').PageServerLoad} */
@@ -41,19 +40,6 @@ export async function load({ params, fetch }) {
         filter: { slug: { _eq: slug } },
         fields: [
           ...config.fields,
-          "content",
-          // Learning Module Relation laden
-          {
-            learning_module: [
-              'id',
-              'module_id',
-              'article_markdown',
-              'quiz',
-              'citations',
-              'images',
-              'seo'
-            ]
-          }
         ],
         limit: 1
       })

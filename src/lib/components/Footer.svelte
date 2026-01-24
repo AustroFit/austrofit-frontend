@@ -8,16 +8,11 @@
   // TODO: This will be fetched from CMS later
   const footerNav = [
     { label: 'Vision', href: '/vision' },
-    { label: 'Mitmachen', href: '/mitmachen' },
-    { label: 'Projekte', href: '/projekte' },
-    { label: 'Über Uns', href: '/ueber-uns' },
-    { label: 'Presse', href: '/presse' }
   ];
   
   const legalLinks = [
     { label: 'Datenschutz', href: '/datenschutz' },
     { label: 'Impressum', href: '/impressum' },
-    { label: 'FAQ – Zukunftsallianz', href: '/faq' }
   ];
 </script>
 
@@ -33,13 +28,8 @@
       <div class="{styles.column1}">
         <div class={styles.columnContent}>
           <p class={styles.description}>
-            Die Zukunftsallianz arbeitet an den Zielen vom Klimavolksbegehren – 
-            gemeinsam Brücken bauen für die Klimaneutralität 2040, für eine mutige 
-            und soziale Klimapolitik und für eine lebenswerte Zukunft für alle.
+            tbd
           </p>
-          <a href="/spenden" class={buttonStyle}>
-            Spenden
-          </a>
         </div>
       </div>
 
@@ -64,10 +54,10 @@
               Fragen und Anregungen:
             </p>
             <a 
-              href="mailto:kontakt@klimavolksbegehren.at" 
+              href="mailto:kontakt@austrofit.at" 
               class={styles.contactLink}
             >
-              kontakt@klimavolksbegehren.at
+              kontakt@austrofit.at
             </a>
           </div>
 
@@ -98,7 +88,7 @@
     <!-- Copyright Strip -->
     <div class={styles.copyrightStrip}>
       <p class={styles.copyright}>
-        © 2025 Verein Klimavolksbegehren
+        © 2025 Austrofit
       </p>
     </div>
 
