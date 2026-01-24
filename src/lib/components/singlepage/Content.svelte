@@ -27,4 +27,4 @@
       {@html item.learning_module.article_markdown}
     </div>
   {/if}
-
+</div>
