@@ -4,8 +4,7 @@ import { fail } from '@sveltejs/kit';
 
 // Import all form handlers
 import { handleRegularForm } from './regular-form';
-import { handleNewsletterSignup } from './newsletter';
-import { handleOnboardingSignup } from './onboarding';
+//import { handleNewsletterSignup } from './newsletter';
 
 export async function handleFormSubmit(request, fetch) {
   let formId;

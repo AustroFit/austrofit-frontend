@@ -1,4 +1,4 @@
-import { BrevoService } from "../brevo";
+/* import { BrevoService } from "../brevo";
 import { fail } from '@sveltejs/kit';
 
 export async function handleNewsletterSignup(formData, fetch, form, formId) {
@@ -34,4 +34,4 @@ export async function handleNewsletterSignup(formData, fetch, form, formId) {
       formId
     });
   }
-}
+} */
