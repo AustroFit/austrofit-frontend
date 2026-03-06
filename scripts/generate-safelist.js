@@ -6,11 +6,16 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-const directus = createDirectus(process.env.PUBLIC_CMSURL)
-  .with(rest())
-  .with(staticToken(process.env.DIRECTUS_READ_TOKEN));
-
 async function generateSafelist() {
+  if (!process.env.PUBLIC_CMSURL || !process.env.DIRECTUS_READ_TOKEN) {
+    console.log('⚠️  PUBLIC_CMSURL or DIRECTUS_READ_TOKEN not set – skipping safelist generation');
+    return;
+  }
+
+  const directus = createDirectus(process.env.PUBLIC_CMSURL)
+    .with(rest())
+    .with(staticToken(process.env.DIRECTUS_READ_TOKEN));
+
   try {
     console.log('🔍 Fetching colors from Directus...');
     
@@ -51,9 +56,7 @@ async function generateSafelist() {
     console.log(`📦 Included ${bgClasses.length} background classes`);
     
   } catch (error) {
-    console.error('❌ Error generating safelist:', error);
-    console.log('🔍 Error details:', error.message);
-    process.exit(1);
+    console.warn('⚠️  Safelist generation failed – continuing build without it:', error.message);
   }
 }
 
