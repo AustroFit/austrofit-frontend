@@ -1,0 +1,8 @@
+"id","title","description","points_cost","partner_name","partner_url","coupon_code","active","image","valid_until"
+1,"10% Rabatt auf alle Kurse",,150,"FitCity Wien",,"FITCITY10",true,,
+2,"Gratis Protein-Shake",,80,"FitCity Wien",,"SHAKE2024",true,,
+3,"15% auf Bio-Lebensmittel",,200,"BioMarkt Österreich",,"BIO15PCT",true,,
+4,"Gratis Beratungsgespräch",,20,"BioMarkt Österreich",,"BIOBERATUNG",true,,
+5,"1 Stunde Massage gratis",,30,"Wellness Oase Baden	",,"MASSAGE60",true,,
+6,"Sauna-Tageskarte",,10,"Wellness Oase Baden",,"SAUNATAG",true,,
+7,"5€ Rabatt auf Apotheken-Produkte",,40,"Gesundheits-Apotheke Linz",,"APO5EUR",true,,

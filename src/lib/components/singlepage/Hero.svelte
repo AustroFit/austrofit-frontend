@@ -1,13 +1,17 @@
 <script>
   import { getSinglePageClasses } from "$lib/design-system/classes";
+  import { cmsAssetUrl } from "$lib/cms/image";
+  import { PUBLIC_CMSURL } from "$env/static/public";
+
   const { item, collection, config} = $props();
 
-  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
-  
-  const styles = getSinglePageClasses();
+  const imageUrl = item.image
+    ? cmsAssetUrl(PUBLIC_CMSURL, item.image, { width: 1600, quality: 80, format: "webp" })
+    : null;
 
-  //console.log(item, collection, config);
+  const styles = getSinglePageClasses();
 </script>
+
 <div class={styles.containerHero}>
   {#if imageUrl}
       <img 

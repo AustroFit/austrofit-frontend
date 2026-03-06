@@ -56,7 +56,7 @@
           
           {#if blockData.button_group}
             <div class={styles.buttonWrapper}>
-              <a href="#" class={styles.button}>
+              <a href="/" class={styles.button}>
                 Learn More
               </a>
             </div>

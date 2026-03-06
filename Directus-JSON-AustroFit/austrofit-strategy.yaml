@@ -1,0 +1,625 @@
+# ============================================================
+# AustroFit – Technische Strategie & Systemlogik
+# Version: 1.2
+# Zweck: Maschinenlesbarer Kontext für Claude Code / VS Code
+# Stand: März 2026
+# Änderungen v1.2: Aktualisiert auf Basis des tatsächlich
+#   implementierten Codes (SvelteKit + Directus 11.7.2)
+# ============================================================
+
+meta:
+  project: AustroFit
+  tagline: "Prävention, die doppelt belohnt – Heute und in der Zukunft"
+  tech_stack:
+    backend: "Directus CMS v11.7.2"
+    frontend: "SvelteKit (Svelte 5 Runes: $state, $derived, $props, $effect)"
+    css: "Tailwind CSS v4 via @tailwindcss/vite (config in src/app.css @theme)"
+    analytics: "PostHog EU Cloud (eu.i.posthog.com, DSGVO-konform Frankfurt)"
+    native_wrapper: "Capacitor (vorbereitet, stubs aktiv – native Plugins noch nicht installiert)"
+    movement_api_android: "Google Health Connect (via @capacitor/health-connect – noch nicht im native Build)"
+    movement_api_ios: "Apple HealthKit (via @capacitor-community/health-kit – spätere Phase)"
+    affiliate_network: "AWIN (Phase 2 – noch nicht implementiert)"
+    payments: "Stripe oder lexoffice (geplant ab Direktpartnerschaften)"
+  status:
+    bildungsmodul: "FERTIG – Artikel, Quizze, Quiz-Attempts, anonym+authentifiziert"
+    punktesystem: "FERTIG – points_ledger, Streak, Level (5 Stufen), Badges (5), Claim-Flow"
+    bewegungstracking: "TEILWEISE – Capacitor Health Connect vorbereitet (stubs), Manual Entry fertig, native Plugins noch nicht installiert"
+    rewards_direktpartner: "FERTIG – Direktpartner-Flow: redeem, QR-Code Gutscheine, 90-Tage-Verfall, /partner Marketplace"
+    rewards_awin: "OFFEN – Webhook-Infrastruktur, Deeplink-Generation, AWIN-Integration: Phase 2"
+    user_management: "FERTIG – Directus Auth, Login, Registrierung, Profil-Einstellungen, Account-Löschung (DSGVO)"
+    community: "OFFEN"
+    partner_dashboard_b2b: "OFFEN – User-seitige Marketplace-Seite fertig; B2B-Dashboard für Partner-Firmen: Phase 2"
+    analytics: "FERTIG – PostHog EU, 7 Core-Events, DSGVO-konform"
+    pwa: "FERTIG – Service Worker, Install-Banner, Background Sync (Schritt-Sync-Flag)"
+
+# ============================================================
+# WERT-EXCHANGE GRUNDLOGIK
+# ============================================================
+
+wert_exchange:
+  regel: "100 Punkte = 1 € Gegenwert"
+  gilt_fuer: "alle Partner-Typen (Direktpartner implementiert, Affiliate Phase 2)"
+  kommunikation:
+    prinzip: "Dual – Punktestand + Aktivitäts-Sprache"
+    beispiele:
+      - kontext: "Dashboard-Header"
+        anzeige: "1.240 Pt gesammelt"
+      - kontext: "Aktivitäts-Feed"
+        anzeige: "7.000 Schritte heute – +40 Pt verdient"
+      - kontext: "Quiz-Abschluss"
+        anzeige: "Quiz abgeschlossen – +40 Pt für deine Gesundheit"
+      - kontext: "Rewards-Page (Direktpartner)"
+        anzeige: "500 Pt = 5 € bei FitnessCenter Wien"
+      - kontext: "Streak-Notification"
+        anzeige: "7 Tage in Folge aktiv – +60 Bonus-Pt"
+  hinweis: >
+    Euro-Äquivalent nur bei Direktpartnern explizit kommunizieren,
+    wo ein echter Rabatt verhandelt wurde. Bei AWIN-Partnern (Phase 2) in
+    Punkten und Aktivitäts-Sprache bleiben.
+
+# ============================================================
+# PUNKTEFORMEL (Ist-Stand Implementierung)
+# ============================================================
+
+punkteformel:
+  version: "1.0-MVP-implementiert"
+  hinweis: >
+    Vereinfachte MVP-Formel. Die gleitende Skala 4001–6999 (ursprünglich geplant)
+    ist in der aktuellen Implementierung als Flat-Rate 10P vereinfacht.
+    Geplante Erweiterung auf vollständige gleitende Skala in Phase 2.
+    Änderungen niemals retroaktiv – nur für neue Einträge.
+  implementierungsdatei: "src/lib/server/stepsService.ts + src/lib/utils/streak.ts"
+
+  schritte:
+    einheit: "täglich"
+    implementiert: true
+    regeln:
+      - von: 0
+        bis: 3999
+        punkte: 0
+        grund: "Unterhalb nachgewiesenem Mortalitäts-Schwellwert"
+      - von: 4000
+        bis: 6999
+        punkte: 10
+        implementierung: "Flat-Rate (MVP)"
+        geplant_phase2: "Gleitende Skala: 10 + floor((schritte - 4001) / 500) * 5"
+        grund: "Erste messbare Mortalitätsreduktion"
+      - von: 7000
+        bis: 7000
+        punkte: 40
+        label: "Volle Tagespunkte"
+        grund: "7.000 Schritte senken Sterberisiko um ~50–70%"
+      - von: 7001
+        bis: null  # kein Deckel
+        formel: "40 + floor((schritte - 7000) / 500) * 5"
+        beispiele:
+          - schritte: 10000
+            punkte: 70
+          - schritte: 20000
+            punkte: 170
+        fraud_check: true
+        fraud_cap: 20000  # Tagesschritte > 20.000 werden geloggt und geprüft
+        grund: "Je mehr desto besser – aber Fraud-Checks aktiv"
+
+  bewegung:
+    einheit: "wöchentlich (Laufen + Radfahren in Minuten)"
+    implementiert: false
+    geplant: "Phase 2 – nach Capacitor native Build"
+    regeln:
+      - von: 0
+        bis: 49
+        punkte: 0
+      - von: 50
+        bis: 50
+        punkte: 50
+      - von: 51
+        bis: 150
+        formel: "50 + ceil((minuten - 50) / 10) * 15"
+      - von: 150
+        bis: 150
+        punkte: 200
+        label: "Volle Wochenpunkte"
+      - von: 151
+        bis: null
+        formel: "200 + ceil((minuten - 150) / 10) * 15"
+        fraud_check: true
+
+  bildung:
+    implementiert: true
+    implementierungsdatei: "src/routes/api/quiz-attempts/+server.js"
+    regeln:
+      - ereignis: "quiz_abschluss"
+        bedingung: "score === totalQuestions (100% – jede Frage richtig)"
+        punkte: 40
+        cooldown_tage: "cooldown_days aus quizzes Collection (default 90)"
+        anonym: true  # auch ohne Login verdienbar, dann Claim nach Registrierung
+      - ereignis: "refresh_quiz"
+        bedingung: "cooldown_days nach letztem Abschluss erneut 100%"
+        punkte: 40
+
+  streak_boni:
+    implementiert: "Teilweise – nur Schritt-Streak (täglicher Bonus geplant, wöchentlicher Milestone implementiert)"
+    implementierungsdatei: "src/lib/utils/streak.ts + src/lib/server/stepsService.ts"
+    regeln:
+      - modul: "schritte"
+        typ: "streak_woche_milestone"
+        bedingung: "streak_days % 7 === 0 (d.h. Tag 7, 14, 21, …)"
+        punkte: 60
+        implementiert: true
+        beispiel: "7-Tage-Streak = +60 P, 14-Tage-Streak = +60 P, ..."
+      - modul: "schritte"
+        typ: "streak_tag_bonus"
+        bedingung: "Min. 7.000 Schritte an aufeinanderfolgenden Tagen"
+        punkte: 20  # ½ × 40
+        implementiert: false
+        geplant: "Phase 2"
+      - modul: "bewegung"
+        typ: "streak_woche"
+        bedingung: "Zweite (+ jede folgende) Woche in Serie ≥ 150 min"
+        punkte: 100
+        implementiert: false
+        geplant: "Phase 2"
+      - modul: "bewegung"
+        typ: "streak_monat"
+        bedingung: "4 aufeinanderfolgende Ziel-Wochen"
+        punkte: 300
+        badge: "Move-Champion"
+        implementiert: false
+        geplant: "Phase 2"
+      - modul: "bildung"
+        typ: "wissens_combo"
+        bedingung: "3 perfekte Quizze innerhalb von 7 Tagen"
+        punkte: 40
+        implementiert: false
+        geplant: "Phase 2"
+
+# ============================================================
+# LEVEL-SYSTEM
+# ============================================================
+
+level_system:
+  implementiert: true
+  implementierungsdatei: "src/lib/utils/level.ts"
+  wichtige_regel: >
+    Level basiert IMMER auf earnedPoints (nur positive Ledger-Einträge summiert),
+    NICHT auf dem Netto-Kontostand (totalPoints). Einlösungen reduzieren NICHT das Level.
+  levels:
+    - stufe: 1
+      name: "Einsteiger"
+      min_punkte: 0
+      max_punkte: 199
+    - stufe: 2
+      name: "Aktiver"
+      min_punkte: 200
+      max_punkte: 499
+    - stufe: 3
+      name: "Gesundheitsprofi"
+      min_punkte: 500
+      max_punkte: 999
+    - stufe: 4
+      name: "Vitalexperte"
+      min_punkte: 1000
+      max_punkte: 2499
+    - stufe: 5
+      name: "AustroFit Champion"
+      min_punkte: 2500
+      max_punkte: null
+
+# ============================================================
+# BADGES
+# ============================================================
+
+badges:
+  implementiert: true
+  implementierungsdatei: "src/lib/utils/badges.ts"
+  liste:
+    - id: "erster_schritt"
+      name: "Erster Schritt"
+      bedingung: "Step-Tracking gestartet"
+    - id: "quiz_meister"
+      name: "Quiz-Meister"
+      bedingung: "5 Quizze abgeschlossen"
+    - id: "wochenheld"
+      name: "Wochenheld"
+      bedingung: "7-Tage-Streak erreicht"
+    - id: "gesundheitsprofi"
+      name: "Gesundheitsprofi"
+      bedingung: "Level 3 erreicht (500P)"
+    - id: "gutschein_einloeser"
+      name: "Gutschein-Einlöser"
+      bedingung: "Ersten Gutschein eingelöst"
+
+# ============================================================
+# PARTNER-TYPEN
+# ============================================================
+
+partner_typen:
+
+  direktpartner:
+    label: "Typ B – Direktpartner"
+    phase: 1
+    status: "IMPLEMENTIERT"
+    implementierungsdateien:
+      - "src/routes/api/partner/+server.js"
+      - "src/routes/api/redeem/+server.js"
+      - "src/routes/api/gutscheine/+server.js"
+      - "src/routes/partner/+page.svelte"
+      - "src/routes/profil/gutscheine/+page.svelte"
+    beispiele:
+      - "Lokale Fitnessstudios"
+      - "Thermen & Wellness"
+      - "Regionale BIO-Läden"
+      - "Private Krankenversicherungen"
+    provisionsmodell:
+      inhaber: "AustroFit (direkt verhandelt)"
+      staffel:
+        - monatsumsatz_bis: 5000
+          provision_prozent: 6
+        - monatsumsatz_von: 5000
+          monatsumsatz_bis: 25000
+          provision_prozent: 5
+        - monatsumsatz_von: 25000
+          provision_prozent: 4
+      prinzip: "Pay-per-Redemption – Provision nur bei erfolgreicher Einlösung"
+      abrechnung: "monatlich oder quartalsweise, 14 Tage netto"
+    reward_fuer_user:
+      mechanik: "Punkte → Gutschein-Code (8-stellig, eindeutig, AF-prefix) mit QR-Code"
+      code_format: "AF-{random_8_char_hex} (z.B. AF-3F8A1B2C)"
+      punkte_abzug_zeitpunkt: "sofort bei Einlösung (negative points_ledger Buchung)"
+      gutschein_gueltig: "90 Tage ab Einlösung"
+      status_lifecycle: "aktiv → verwendet (eingeloest_am gesetzt) | abgelaufen (> 90 Tage)"
+    directus_felder_tatsaechlich:
+      collection: "rewards"  # ACHTUNG: nicht 'partner_offers' wie in v1.1 beschrieben
+      felder:
+        id: uuid
+        titel: string
+        beschreibung: text
+        punkte_kosten: integer
+        gutschein_code: string  # Voucher-Code für den Partner-Scan
+        gueltig_bis: datetime
+        aktiv: boolean
+        partner_id: m2o → partner
+
+  affiliate_awin:
+    label: "Typ A – Affiliate-Netzwerk"
+    phase: 2
+    status: "OFFEN – noch nicht implementiert"
+    netzwerk: "AWIN (primär), Tradedoubler (optional)"
+    geplant_nach: "App-Launch + ausreichende User-Zahlen für AWIN-Aufnahme"
+    prioritaets_advertiser_at:
+      - name: "shop-apotheke.at"
+        kategorie: "apotheke"
+        awin_id: "14339"
+      - name: "Intersport AT"
+        kategorie: "sport"
+      - name: "Myprotein"
+        kategorie: "ernaehrung"
+    technische_integration_geplant:
+      deeplink_format: "https://www.awin1.com/cread.php?awinmid={advertiser_id}&awinaffid={publisher_id}&clickref={austrofit_user_id}&ued={ziel_url}"
+      webhook_endpoint: "/api/awin/webhook"
+      webhook_methode: "POST"
+
+# ============================================================
+# DIRECTUS COLLECTIONS (Ist-Stand – tatsächliche Namen)
+# ============================================================
+# WICHTIG: Die Collection-Namen in v1.1 wichen vom Code ab.
+# Diese Version dokumentiert die real existierenden Collections.
+
+directus_collections:
+
+  rewards:
+    beschreibung: "Angebote von Direktpartnern (Phase 1). Kein AWIN in dieser Collection."
+    hinweis: "In v1.1 als 'partner_offers' beschrieben – tatsächlicher Name: 'rewards'"
+    felder:
+      id:               { typ: uuid, auto: true }
+      titel:            { typ: string, required: true }
+      beschreibung:     { typ: text }
+      punkte_kosten:    { typ: integer, required: true }
+      gutschein_code:   { typ: string, beschreibung: "Partner-Code für Scan/Vorlage" }
+      gueltig_bis:      { typ: datetime }
+      aktiv:            { typ: boolean, default: true }
+      partner_id:       { typ: m2o, referenz: partner }
+
+  reward_redemptions:
+    beschreibung: "Jede Gutschein-Einlösung eines Users"
+    hinweis: "In v1.1 als 'redemptions' beschrieben – tatsächlicher Name: 'reward_redemptions'"
+    felder:
+      id:               { typ: uuid, auto: true }
+      user_id:          { typ: m2o, referenz: directus_users, required: true }
+      reward_id:        { typ: m2o, referenz: rewards, required: true }
+      code:             { typ: string, beschreibung: "Eindeutiger 8-stelliger Gutschein-Code (AF-xxxxx)" }
+      erstellt_am:      { typ: datetime, auto: true }
+      ablaeuft_am:      { typ: datetime, beschreibung: "90 Tage nach erstellt_am" }
+      eingeloest_am:    { typ: datetime, nullable: true, beschreibung: "Null = aktiv, gesetzt = verwendet" }
+
+  points_ledger:
+    beschreibung: "Audit-Log jeder Punktebewegung – nie löschen, nur ergänzen"
+    hinweis: "In v1.1 als 'points_log' beschrieben – tatsächlicher Name: 'points_ledger'"
+    implementierungsdatei: "Alle /api/* Server-Routen schreiben hierher"
+    felder:
+      id:           { typ: uuid, auto: true }
+      user:         { typ: m2o, referenz: directus_users, required: true }
+      points_delta: { typ: integer, beschreibung: "Positiv = Gutschrift, Negativ = Abzug" }
+      source_type:  { typ: string, optionen: [quiz, schritte, bewegung, streak, redemption, manual, bonus, claim] }
+      source_ref:   { typ: string, beschreibung: "Referenz-ID (Quiz-ID, Datum bei Schritten, Redemption-ID, etc.)" }
+      occurred_at:  { typ: datetime, auto: true }
+    api_routes:
+      gesamt_positiv: "GET /api/ledger-total?user=userId&positive_only=true  → earnedPoints (für Level)"
+      gesamt_netto:   "GET /api/ledger-total?user=userId                     → totalPoints (für Einkauf)"
+      eintraege:      "GET /api/ledger-entries?user=userId&limit=20&offset=0&source_type=..."
+
+  partner:
+    beschreibung: "Direktpartner-Firmen (Fitness, Ernaehrung, Apotheke, Wellness)"
+    felder:
+      id:             { typ: uuid, auto: true }
+      name:           { typ: string, required: true }
+      kategorie:      { typ: string, optionen: [fitness, ernaehrung, apotheke, wellness] }
+      region:         { typ: string, beschreibung: "Bundesland oder 'österreichweit'" }
+      adresse:        { typ: string }
+      esg_zertifiziert: { typ: boolean, default: false }
+      logo_url:       { typ: string }
+
+  gutscheine:
+    beschreibung: "Alias/View auf reward_redemptions – User-seitige Gutschein-Übersicht"
+    hinweis: "Wird via /api/gutscheine mit 90-Tage Ablauf-Logik berechnet"
+    status_berechnung:
+      aktiv: "eingeloest_am IS NULL AND ablaeuft_am > NOW()"
+      verwendet: "eingeloest_am IS NOT NULL"
+      abgelaufen: "eingeloest_am IS NULL AND ablaeuft_am <= NOW()"
+
+  quiz_attempts:
+    beschreibung: "Quiz-Versuche (anonym + authentifiziert)"
+    felder:
+      id:                   { typ: uuid, auto: true }
+      anonymous_id:         { typ: string, beschreibung: "localStorage austrofit_anonymous_id" }
+      quiz:                 { typ: m2o, referenz: quizzes }
+      score:                { typ: integer }
+      max_score:            { typ: integer }
+      passed:               { typ: boolean }
+      eligible_points:      { typ: integer, beschreibung: "40 bei 100% – wird bei Claim auf User gebucht" }
+      points_claimed_at:    { typ: datetime, nullable: true }
+      user_id:              { typ: m2o, referenz: directus_users, nullable: true, beschreibung: "Nach Claim gesetzt" }
+
+  quizzes:
+    beschreibung: "Quiz-Definitionen, verknüpft mit Artikeln"
+    felder:
+      id:           { typ: uuid, auto: true }
+      article_id:   { typ: m2o, referenz: articles }
+      quiz_json:    { typ: json, beschreibung: "Fragen + Antworten" }
+      version:      { typ: integer }
+      status:       { typ: string, optionen: [published, draft] }
+      cooldown_days: { typ: integer, default: 90 }
+
+  articles:
+    beschreibung: "Gesundheits-Artikel mit eingebetteten Quizzen"
+    felder:
+      id:                 { typ: uuid, auto: true }
+      slug:               { typ: string, unique: true }
+      title:              { typ: string }
+      description:        { typ: text }
+      content:            { typ: richtext }
+      image:              { typ: image }
+      status:             { typ: string, optionen: [published, draft] }
+      learning_module_id: { typ: m2o, referenz: learning_modules }
+
+  directus_users_custom_felder:
+    beschreibung: "Zusatzfelder auf directus_users – manuell hinzufügen falls nicht vorhanden"
+    felder:
+      streak_days:           { typ: integer, default: 0 }
+      longest_streak:        { typ: integer, default: 0 }
+      health_connected:      { typ: boolean, default: false }
+      onboarding_completed:  { typ: boolean, default: false }
+
+# ============================================================
+# API-ROUTES ÜBERSICHT (Ist-Stand)
+# ============================================================
+
+api_routes:
+
+  auth:
+    - methode: POST
+      pfad: /api/auth/login
+      beschreibung: "E-Mail + Passwort Login → JWT Token"
+    - methode: POST
+      pfad: /api/auth/register
+      beschreibung: "E-Mail + Passwort Registrierung"
+    - methode: POST
+      pfad: /api/auth/magic-link
+      beschreibung: "Magic-Link Generierung (Infrastruktur vorhanden, nicht im aktiven Flow)"
+    - methode: GET
+      pfad: /api/me
+      beschreibung: "Aktuelles User-Profil via Bearer Token"
+
+  profil:
+    - methode: GET
+      pfad: /api/profile
+      beschreibung: "Erweitertes Profil (streak_days, longest_streak, health_connected)"
+    - methode: PATCH
+      pfad: /api/profile
+      beschreibung: "Profil-Update"
+    - methode: DELETE
+      pfad: /api/profile/delete
+      beschreibung: "Account-Löschung + Cascade (DSGVO)"
+
+  punkte:
+    - methode: GET
+      pfad: /api/ledger-total
+      parameter: "user=userId, optional: positive_only=true"
+      beschreibung: "Punkte-Summe – netto oder nur Gutschriften (earnedPoints für Level)"
+    - methode: GET
+      pfad: /api/ledger-entries
+      parameter: "user=userId, limit=20, offset=0, source_type=..."
+      beschreibung: "Paginierte Ledger-Historie"
+
+  schritte:
+    - methode: POST
+      pfad: /api/steps/manual
+      body: "{ date: YYYY-MM-DD, steps: integer }"
+      beschreibung: "Manuelle Schritt-Eingabe (Test-Modus) – dedupliziert via source_ref=date"
+    - methode: POST
+      pfad: /api/steps/sync
+      body: "{ date: YYYY-MM-DD, steps: integer, mode: 'health_connect'|'test' }"
+      beschreibung: "Batch-Sync aus Capacitor Health; SCHRITTE_FLOW_ID triggert Directus Flow wenn gesetzt"
+
+  quiz:
+    - methode: GET
+      pfad: /api/quizzes
+      beschreibung: "Alle aktiven Quizze"
+    - methode: POST
+      pfad: /api/quiz-attempts
+      beschreibung: "Quiz-Versuch speichern (anonym oder User)"
+    - methode: GET
+      pfad: /api/quiz-status
+      parameter: "quizId=..."
+      beschreibung: "Hat User das Quiz bereits bestanden (inkl. Cooldown-Check)?"
+    - methode: POST
+      pfad: /api/claim
+      beschreibung: "Anonyme Quiz-Punkte nach Login/Registrierung claimen"
+
+  partner_rewards:
+    - methode: GET
+      pfad: /api/partner
+      parameter: "kategorie=..., region=..., esg=true"
+      beschreibung: "Direktpartner mit Angeboten"
+    - methode: POST
+      pfad: /api/redeem
+      body: "{ reward_id: uuid }"
+      beschreibung: "Reward einlösen → erstellt reward_redemption + negative Ledger-Buchung"
+    - methode: GET
+      pfad: /api/gutscheine
+      beschreibung: "User-Gutscheine (aktiv/verwendet/abgelaufen)"
+
+# ============================================================
+# ROUTEN-ÜBERSICHT (Ist-Stand)
+# ============================================================
+
+sveltekit_routes:
+
+  oeffentlich:
+    - pfad: /
+      beschreibung: "Homepage (via CMS pages)"
+    - pfad: /artikel
+      beschreibung: "Artikel-Liste mit Kategoriefilter, Suche, Pagination"
+    - pfad: /gesundheitswegweiser
+      beschreibung: "Gesundheitswegweiser (gefilterte Artikel-Ansicht)"
+    - pfad: /[collection]/[slug]
+      beschreibung: "Dynamische Artikel-Detailseite mit eingebettetem Quiz"
+    - pfad: /login
+      beschreibung: "E-Mail + Passwort Login"
+    - pfad: /registrierung
+      beschreibung: "Registrierung (Benutzername + E-Mail + Passwort)"
+    - pfad: /partner-werden
+      beschreibung: "Direktpartner-Anmeldung (Landing Page)"
+    - pfad: /datenschutz
+      beschreibung: "Datenschutzerklärung"
+    - pfad: /impressum
+      beschreibung: "Impressum"
+
+  geschuetzt:
+    - pfad: /dashboard
+      beschreibung: "User-Dashboard: Punkte, Level, Streak, Badges, Schritte, Quizze, Challenges, Partner-Angebot"
+    - pfad: /profil
+      beschreibung: "Profil-Einstellungen: Persönliche Daten, Health-Verbindung, Datenschutz & Account"
+    - pfad: /profil/punkte
+      beschreibung: "Vollständige Ledger-Historie + Badge-Grid + Level-Roadmap"
+    - pfad: /profil/gutscheine
+      beschreibung: "Gutschein-Übersicht: Aktiv / Verwendet / Abgelaufen"
+    - pfad: /partner
+      beschreibung: "Partner-Marketplace: Rewards einlösen, Filter nach Kategorie/Region/ESG"
+
+# ============================================================
+# FRAUD-DETECTION (Ist-Stand Phase 1)
+# ============================================================
+
+fraud_detection:
+
+  implementiert:
+    - id: "schritt_cap"
+      beschreibung: "Tagesschritte > 20.000 werden geloggt – über 20.000 werden auf 20.000 gekappt"
+      schwellwert: 20000
+      implementiert: true
+    - id: "balance_check"
+      beschreibung: "Einlösung blockiert wenn Punktestand nach Abzug < 0"
+      implementiert: true
+    - id: "deduplizierung"
+      beschreibung: "Pro User + Datum nur ein Schritt-Eintrag (source_type='schritte', source_ref=datum)"
+      implementiert: true
+
+  geplant_phase2:
+    - id: "device_check"
+      beschreibung: "Kein doppeltes Einlösen desselben Codes pro Gerät"
+    - id: "einloese_frequenz"
+      beschreibung: "Max. 3 Einlösungen beim selben Partner innerhalb 7 Tagen"
+      max_pro_woche: 3
+    - id: "warn_sperr_logik"
+      beschreibung: "Stufenweise Warnung → Einschränkung → Sperre"
+
+# ============================================================
+# ANALYTICS (Ist-Stand)
+# ============================================================
+
+analytics:
+  implementiert: true
+  backend: "PostHog EU Cloud (eu.i.posthog.com)"
+  datenschutz: "DSGVO-konform, Frankfurt (EU-Region)"
+  implementierungsdatei: "src/lib/utils/mixpanel.ts"
+  hinweis: "Dateiname mixpanel.ts (historisch) – nutzt intern PostHog"
+  env_var: "PUBLIC_POSTHOG_TOKEN"
+  events:
+    - name: "user_registered"
+    - name: "user_logged_in"
+    - name: "dashboard_viewed"
+      props: "first_visit: boolean"
+    - name: "health_permission_result"
+      props: "result: granted|denied|later"
+    - name: "quiz_completed"
+      props: "quiz_id, passed, score"
+    - name: "steps_synced"
+      props: "days_synced, total_steps"
+    - name: "voucher_redeemed"
+      props: "reward_id, points_spent"
+
+# ============================================================
+# ENV-VARIABLEN
+# ============================================================
+
+env_variablen:
+  public:
+    - name: "PUBLIC_CMSURL"
+      beschreibung: "Directus Base-URL (öffentlich)"
+    - name: "PUBLIC_POSTHOG_TOKEN"
+      beschreibung: "PostHog EU Token (phc_xxx)"
+  private:
+    - name: "DIRECTUS_READ_TOKEN"
+      beschreibung: "Read-only statischer Token"
+    - name: "DIRECTUS_WRITE_TOKEN"
+      beschreibung: "Write statischer Token"
+    - name: "PRIVATE_CMS_STATIC_TOKEN"
+      beschreibung: "Admin-Token für Claim & Ledger"
+    - name: "SCHRITTE_FLOW_ID"
+      beschreibung: "Optional: Directus Flow ID für Schritt-Verarbeitung; ohne → direkter stepsService"
+
+# ============================================================
+# PHASE 2 ROADMAP
+# ============================================================
+
+phase_2_roadmap:
+  - feature: "AWIN Affiliate Integration"
+    beschreibung: "Webhook /api/awin/webhook, Deeplink-Generation, clickRef=user_id"
+    voraussetzung: "AWIN Publisher-Account + Österreich-Advertiser genehmigt"
+  - feature: "Gleitende Schritt-Skala 4001–6999"
+    beschreibung: "Ersetze Flat-Rate 10P durch 10 + floor((schritte-4001)/500)*5"
+    hinweis: "Nur für neue Einträge – niemals retroaktiv"
+  - feature: "Täglicher Streak-Bonus (+20P/Tag)"
+    beschreibung: "Zusätzlich zum wöchentlichen Milestone-Bonus"
+  - feature: "Bewegungs-Tracking (Laufen + Radfahren)"
+    beschreibung: "Wöchentliche Aggregation, WHO-Ziel 150 min/Woche"
+    voraussetzung: "Native Capacitor Build mit @capacitor/health-connect"
+  - feature: "B2B Partner-Dashboard"
+    beschreibung: "Self-Service für Direktpartner: Angebots-Upload, Statistiken"
+  - feature: "Erweiterte Fraud-Detection"
+    beschreibung: "Device-Check, Frequenz-Limit, Warn/Sperr-Logik"
+  - feature: "Community-Features"
+    beschreibung: "Leaderboard, Social Sharing, etc."
+  - feature: "iOS Background Sync Fallback"
+    beschreibung: "Periodic Background Sync nicht auf iOS verfügbar – Polling-Fallback nötig"

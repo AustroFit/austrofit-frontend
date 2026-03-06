@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AustroFit – Service Blueprint B2C</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E8272A;
+    --red-light: #FF4547;
+    --red-faint: rgba(232,39,42,0.08);
+    --black: #0F0F0F;
+    --dark: #1A1A1A;
+    --mid: #2E2E2E;
+    --border: rgba(255,255,255,0.08);
+    --text: #F0EDE8;
+    --text-muted: rgba(240,237,232,0.5);
+    --text-dim: rgba(240,237,232,0.25);
+
+    --layer-evidence: #2A2020;
+    --layer-evidence-border: rgba(232,39,42,0.3);
+    --layer-action: #1E2A1E;
+    --layer-action-border: rgba(60,180,90,0.35);
+    --layer-frontstage: #1C1E2A;
+    --layer-frontstage-border: rgba(80,130,255,0.35);
+    --layer-backstage: #221E2A;
+    --layer-backstage-border: rgba(160,90,255,0.35);
+    --layer-support: #2A2218;
+    --layer-support-border: rgba(255,180,50,0.35);
+
+    --col-gap: 1px;
+    --row-h: auto;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 40px 48px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+    background: linear-gradient(160deg, #1a0a0a 0%, var(--black) 60%);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { flex: 1; }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .logo-bar {
+    width: 28px; height: 3px;
+    background: var(--red);
+    display: inline-block;
+    position: relative;
+    top: -1px;
+  }
+  .doc-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+  }
+  .doc-subtitle {
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+  .header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .badge-scope { background: var(--red-faint); color: var(--red-light); border: 1px solid rgba(232,39,42,0.25); }
+  .badge-audience { background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--border); }
+  .badge-version { background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid var(--border); }
+
+  /* ── LEGEND ── */
+  .legend {
+    padding: 16px 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    background: rgba(255,255,255,0.015);
+  }
+  .legend-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-right: 4px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .legend-item:hover { background: rgba(255,255,255,0.04); }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .dot-evidence { background: rgba(232,39,42,0.6); }
+  .dot-action { background: rgba(60,180,90,0.6); }
+  .dot-frontstage { background: rgba(80,130,255,0.6); }
+  .dot-backstage { background: rgba(160,90,255,0.6); }
+  .dot-support { background: rgba(255,180,50,0.6); }
+
+  /* ── LINE DIVIDERS ── */
+  .line-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0 3px;
+  }
+  .line-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+  }
+  .line-label.evidence::after { background: var(--layer-evidence-border); }
+  .line-label.action::after { background: var(--layer-action-border); }
+  .line-label.frontstage::after { background: var(--layer-frontstage-border); }
+  .line-label.backstage::after { background: var(--layer-backstage-border); }
+  .line-label.support::after { background: var(--layer-support-border); }
+
+  /* ── BLUEPRINT GRID CONTAINER ── */
+  .blueprint-wrapper {
+    padding: 0 48px 64px;
+    overflow-x: auto;
+  }
+
+  .blueprint {
+    display: grid;
+    grid-template-columns: 140px repeat(8, minmax(175px, 1fr));
+    gap: var(--col-gap);
+    min-width: 1440px;
+    margin-top: 32px;
+    position: relative;
+  }
+
+  /* ── PHASE HEADERS ── */
+  .phase-header-row {
+    display: contents;
+  }
+  .phase-label-spacer {
+    display: block;
+  }
+  .phase-header {
+    padding: 12px 14px 10px;
+    background: var(--dark);
+    border-bottom: 2px solid var(--red);
+    position: relative;
+  }
+  .phase-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--red);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .phase-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .phase-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-weight: 300;
+  }
+
+  /* ── LAYER ROWS ── */
+  .layer-row {
+    display: contents;
+  }
+
+  .layer-row-label {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 14px 10px 14px 0;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .layer-row-label-inner {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .layer-row-label-inner .dot {
+    width: 6px; height: 6px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  /* ── CELLS ── */
+  .cell {
+    padding: 14px;
+    border: 1px solid transparent;
+    border-radius: 0;
+    position: relative;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    min-height: 90px;
+  }
+  .cell:hover {
+    z-index: 10;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .cell.evidence {
+    background: var(--layer-evidence);
+    border-color: var(--layer-evidence-border);
+  }
+  .cell.evidence:hover { border-color: rgba(232,39,42,0.6); }
+
+  .cell.action {
+    background: var(--layer-action);
+    border-color: var(--layer-action-border);
+  }
+  .cell.action:hover { border-color: rgba(60,180,90,0.6); }
+
+  .cell.frontstage {
+    background: var(--layer-frontstage);
+    border-color: var(--layer-frontstage-border);
+  }
+  .cell.frontstage:hover { border-color: rgba(80,130,255,0.6); }
+
+  .cell.backstage {
+    background: var(--layer-backstage);
+    border-color: var(--layer-backstage-border);
+  }
+  .cell.backstage:hover { border-color: rgba(160,90,255,0.6); }
+
+  .cell.support {
+    background: var(--layer-support);
+    border-color: var(--layer-support-border);
+  }
+  .cell.support:hover { border-color: rgba(255,180,50,0.6); }
+
+  .cell.empty {
+    background: transparent;
+    border-color: transparent;
+    cursor: default;
+    min-height: 0;
+  }
+  .cell.empty:hover { transform: none; box-shadow: none; }
+
+  /* ── CELL CONTENT ── */
+  .cell-icon {
+    font-size: 16px;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .cell-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 5px;
+  }
+  .cell-body {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+  .cell-tag {
+    display: inline-block;
+    margin-top: 7px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .tag-open { background: rgba(255,180,50,0.15); color: rgba(255,180,50,0.9); }
+  .tag-mvp { background: rgba(80,130,255,0.15); color: rgba(80,130,255,0.9); }
+  .tag-auto { background: rgba(60,180,90,0.15); color: rgba(60,180,90,0.9); }
+  .tag-risk { background: rgba(232,39,42,0.15); color: rgba(232,39,42,0.9); }
+  .tag-future { background: rgba(160,90,255,0.15); color: rgba(160,90,255,0.9); }
+
+  /* ── DIVIDER LINES between layer groups ── */
+  .divider-row {
+    display: contents;
+  }
+  .divider-cell {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+  }
+  .divider-cell.label-cell {
+    padding-right: 10px;
+  }
+
+  /* ── FLOW ARROWS ── */
+  .flow-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    gap: 0;
+    position: relative;
+  }
+  .flow-spacer { width: 140px; flex-shrink: 0; }
+  .flow-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(232,39,42,0.3) 20%, rgba(232,39,42,0.3) 80%, transparent);
+    position: relative;
+  }
+  .flow-arrow {
+    width: 6px; height: 6px;
+    border-top: 1.5px solid rgba(232,39,42,0.5);
+    border-right: 1.5px solid rgba(232,39,42,0.5);
+    transform: rotate(45deg);
+    margin-left: -5px;
+    flex-shrink: 0;
+  }
+  .flow-dots {
+    display: flex;
+    justify-content: space-around;
+    position: absolute;
+    width: 100%;
+    top: -4px;
+  }
+  .flow-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(232,39,42,0.5);
+    border: 1px solid var(--red);
+  }
+
+  /* ── TOOLTIP / EXPANDED DETAIL ── */
+  .tooltip {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    width: 280px;
+    background: var(--dark);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    pointer-events: none;
+  }
+  .tooltip.active { display: block; }
+  .tooltip-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .tooltip-body {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .tooltip-tech {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .tooltip-tech span { color: rgba(255,180,50,0.8); }
+
+  /* ── NOTES PANEL ── */
+  .notes-panel {
+    margin: 0 48px 0;
+    padding: 24px 32px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--red);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .note-block h4 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .note-block h4::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    background: var(--red);
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .note-block ul {
+    list-style: none;
+  }
+  .note-block ul li {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 3px 0;
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .note-block ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--text-dim);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding: 20px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 48px;
+  }
+  .footer-left {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+  }
+  .footer-right {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── SECTION SEPARATOR ── */
+  .section-sep {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+  .section-sep.evidence { background: var(--layer-evidence-border); }
+  .section-sep.action { background: var(--layer-action-border); }
+  .section-sep.frontstage { background: var(--layer-frontstage-border); }
+  .section-sep.backstage { background: var(--layer-backstage-border); }
+  .section-sep.support { background: var(--layer-support-border); }
+
+  /* ── INTERACTION LINE INDICATOR ── */
+  .interaction-line-label {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 3px 0;
+  }
+  .iline-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .iline-line {
+    flex: 1;
+    border-top: 1px dashed;
+  }
+  .iline-interaction { border-color: rgba(60,180,90,0.4); }
+  .iline-visibility { border-color: rgba(80,130,255,0.4); }
+  .iline-internal { border-color: rgba(160,90,255,0.4); }
+  .iline-implementation { border-color: rgba(255,180,50,0.4); }
+
+  /* Scroll hint */
+  .scroll-hint {
+    display: none;
+    padding: 8px 48px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.06em;
+  }
+  @media (max-width: 1500px) { .scroll-hint { display: block; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">
+      <span>Austro<span class="logo-bar"></span>Fit</span>
+    </div>
+    <div class="doc-title">Service Blueprint</div>
+    <div class="doc-subtitle">B2C Nutzer*innen-Journey &nbsp;·&nbsp; Onboarding → Aktivität → Punkte → Gutschein-Einlösung</div>
+  </div>
+  <div class="header-meta">
+    <div class="badge badge-scope">Scope: B2C MVP</div>
+    <div class="badge badge-audience">Zielgruppe: Internes Team / CTO</div>
+    <div class="badge badge-version">v1.1 · März 2026</div>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <span class="legend-label">Ebenen</span>
+  <div class="legend-item"><span class="legend-dot dot-evidence"></span>Physical Evidence</div>
+  <div class="legend-item"><span class="legend-dot dot-action"></span>Nutzer*in-Aktion</div>
+  <div class="legend-item"><span class="legend-dot dot-frontstage"></span>Frontstage (System sichtbar)</div>
+  <div class="legend-item"><span class="legend-dot dot-backstage"></span>Backstage (unsichtbar)</div>
+  <div class="legend-item"><span class="legend-dot dot-support"></span>Support Processes</div>
+  <span style="margin-left:16px; color: var(--text-dim); font-size:11px; font-family:'DM Mono',monospace;">Hover → Details</span>
+</div>
+
+<div class="scroll-hint">← Horizontal scrollen für alle Phasen →</div>
+
+<!-- BLUEPRINT -->
+<div class="blueprint-wrapper">
+<div class="blueprint">
+
+  <!-- ═══════════════════ PHASE HEADERS ═══════════════════ -->
+  <div class="phase-label-spacer"></div>
+
+  <div class="phase-header">
+    <div class="phase-number">Phase 01</div>
+    <div class="phase-name">Awareness</div>
+    <div class="phase-sub">Erstberührung</div>
+  </div>
+  <div class="phase-header">
+    <div class="phase-number">Phase 02</div>
+    <div class="phase-name">Acquisition</div>
+    <div class="phase-sub">Download & Registrierung</div>
+  </div>
+  <div class="phase-header">
+    <div class="phase-number">Phase 03</div>
+    <div class="phase-name">Onboarding</div>
+    <div class="phase-sub">Einrichtung & Permissions</div>
+  </div>
+  <div class="phase-header">
+    <div class="phase-number">Phase 04</div>
+    <div class="phase-name">Aktivität</div>
+    <div class="phase-sub">Bewegung & Bildung</div>
+  </div>
+  <div class="phase-header">
+    <div class="phase-number">Phase 05</div>
+    <div class="phase-name">Punkte</div>
+    <div class="phase-sub">Vergabe & Dashboard</div>
+  </div>
+  <div class="phase-header">
+    <div class="phase-number">Phase 06</div>
+    <div class="phase-name">Belohnung</div>
+    <div class="phase-sub">Partner-Auswahl</div>
+  </div>
+  <div class="phase-header">
+    <div class="phase-number">Phase 07</div>
+    <div class="phase-name">Einlösung</div>
+    <div class="phase-sub">Gutschein & QR</div>
+  </div>
+  <div class="phase-header">
+    <div class="phase-number">Phase 08</div>
+    <div class="phase-name">Retention</div>
+    <div class="phase-sub">Streak & Community</div>
+  </div>
+
+  <!-- ═══════════════════ INTERACTION LINE ═══════════════════ -->
+  <div class="interaction-line-label">
+    <span class="iline-text">Line of Interaction</span>
+    <span class="iline-line iline-interaction"></span>
+  </div>
+
+  <!-- ═══════════════════ ROW 1: PHYSICAL EVIDENCE ═══════════════════ -->
+  <div class="layer-row-label">
+    <div class="layer-row-label-inner" style="color: rgba(232,39,42,0.7);">
+      <span class="dot" style="background: rgba(232,39,42,0.6);"></span>
+      Physical Evidence
+    </div>
+  </div>
+
+  <div class="cell evidence"
+    data-title="Gesundheitswegweiser & Social Media"
+    data-body="Nutzer*in entdeckt AustroFit über den Gesundheitswegweiser (SEO-Artikel bei Google-Suche), Instagram/TikTok via Gesundheits-Influencer oder Empfehlung durch Freund*innen. Jeder SEO-Artikel enthält ein Quiz, das auch unregistrierte Nutzer*innen absolvieren können."
+    data-tech="Kanal: SvelteKit Gesundheitswegweiser · Google · Instagram · TikTok · Quiz-Modul für nicht-registrierte User">
+    <span class="cell-icon">🌐</span>
+    <div class="cell-title">Gesundheitswegweiser, Social Media, Referral</div>
+    <div class="cell-body">SEO-Artikel + Quiz (unregistriert) · Instagram · TikTok · Referral</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell evidence"
+    data-title="PWA – Direktzugang via Browser"
+    data-body="Kein App-Store-Download in Phase 1. Nutzer*in öffnet die AustroFit-URL im Browser und kann die PWA direkt auf den Homescreen hinzufügen (Add to Home Screen). Ermöglicht schnelles Testen ohne Store-Review-Prozess."
+    data-tech="Platform: SvelteKit PWA · Web App Manifest · Service Worker · HTTPS · Kein App Store erforderlich">
+    <span class="cell-icon">🌍</span>
+    <div class="cell-title">PWA – Direktzugang im Browser</div>
+    <div class="cell-body">URL aufrufen · Add to Home Screen · kein App-Store</div>
+    <span class="cell-tag tag-mvp">MVP (Phase 1)</span>
+  </div>
+
+  <div class="cell evidence"
+    data-title="PWA Onboarding-Screens"
+    data-body="Nach Registrierung direkt ins Dashboard – kein Setup-Wizard. 20P Willkommensbonus sofort sichtbar (wird via /api/auth/register in points_ledger gebucht). Contextual Health-Permission beim ersten Tracking-Versuch (HealthPermissionPrompt.svelte). PWA Install-Banner nach erstem Dashboard-Besuch (überspringbar). Kein dedizierter Onboarding-Wizard – bewusste Entscheidung."
+    data-tech="Stack: SvelteKit PWA · HealthPermissionPrompt.svelte · PWAInstallBanner.svelte · 20P Buchung via /api/auth/register · source_type: onboarding">
+    <span class="cell-icon">✨</span>
+    <div class="cell-title">PWA Onboarding-Screens</div>
+    <div class="cell-body">Dashboard-Direktstart · 20P Bonus gebucht · Health-Permission contextual · PWA-Banner</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell evidence"
+    data-title="Dashboard & Schritt-Tracker"
+    data-body="Haupt-Dashboard zeigt aktuelle Punkte, Tagesziele, Streak-Counter und nächste Challenge. Kernstück der täglichen Nutzungsmotivation."
+    data-tech="Stack: SvelteKit · Direktus API · Health Connect API · HealthKit API">
+    <span class="cell-icon">🏃</span>
+    <div class="cell-title">Dashboard, Schritt-Tracker</div>
+    <div class="cell-body">Aktuelle Punkte, Tagesziele, Streak</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell evidence"
+    data-title="Punkte-Dashboard"
+    data-body="Punkte-Anzeige, Fortschrittsbalken, Earned Badges, Level-Indikator und Audit-Log der letzten Buchungen. Wichtig für Transparenz und Vertrauen."
+    data-tech="Backend: Direktus CMS · Punkte-Engine (custom) · Audit-Log via DB">
+    <span class="cell-icon">⭐</span>
+    <div class="cell-title">Punkte-Übersicht & Badges</div>
+    <div class="cell-body">Punktestand, Verlauf, Badges, Level</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell evidence"
+    data-title="Partner-Marketplace"
+    data-body="Gefilterte Liste gesundheitsfördernder Partnerangebote (Fitnessstudios, Bio-Läden, Apotheken). PartnerFilter.svelte eingebunden: Kategorie-Chips (Fitness / Ernährung &amp; Bio / Apotheke / Wellness / Alle), Regions-Dropdown (Wien / NÖ), ESG-Toggle. Client-side Filterung via $derived. Filter erscheint automatisch sobald Direktus partner_id-Relation befüllt ist."
+    data-tech="Stack: SvelteKit · PartnerFilter.svelte · /api/partner (partner_id.kategorie, .region, .esg_zertifiziert) · Client-side $derived-Filterung">
+    <span class="cell-icon">🏪</span>
+    <div class="cell-title">Partner-Marketplace</div>
+    <div class="cell-body">Kategorie · Region · ESG-Filter · client-side · auto-aktiv bei Direktus-Daten</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell evidence"
+    data-title="Gutschein / QR-Code"
+    data-body="Digitaler Gutschein mit QR-Code oder Deep-Link. Wird im Partnerbetrieb vorgezeigt oder online eingelöst. Bestätigungs-Screen nach Einlösung."
+    data-tech="Stack: QR-Fallback · AWIN API Redemption · Direktus Coupon-Modul">
+    <span class="cell-icon">🎟️</span>
+    <div class="cell-title">Gutschein-Screen & QR-Code</div>
+    <div class="cell-body">Digitaler Gutschein, QR, Bestätigung</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell evidence"
+    data-title="Push Notifications & Community"
+    data-body="Streak-Reminder, Challenge-Einladungen, Community-Events und Gewinnspiel-Benachrichtigungen halten Nutzer*innen aktiv und motiviert."
+    data-tech="Stack: Web Push · In-App Notifications · Direktus Notification-Modul">
+    <span class="cell-icon">🔔</span>
+    <div class="cell-title">Push Notifications, Bestenliste</div>
+    <div class="cell-body">Reminder, Challenges, Events, Rangliste</div>
+    <span class="cell-tag tag-future">Phase 2</span>
+  </div>
+
+  <!-- ═══════════════════ INTERACTION LINE ═══════════════════ -->
+  <div class="interaction-line-label">
+    <span class="iline-text">Line of Interaction (Nutzer*in ↔ System)</span>
+    <span class="iline-line iline-interaction"></span>
+  </div>
+
+  <!-- ═══════════════════ ROW 2: NUTZER*INNEN-AKTIONEN ═══════════════════ -->
+  <div class="layer-row-label">
+    <div class="layer-row-label-inner" style="color: rgba(60,180,90,0.7);">
+      <span class="dot" style="background: rgba(60,180,90,0.6);"></span>
+      Nutzer*innen-Aktion
+    </div>
+  </div>
+
+  <div class="cell action"
+    data-title="Entdeckung & Quiz im Gesundheitswegweiser"
+    data-body="Nutzer*in stößt auf AustroFit durch Google (SEO-Artikel im Gesundheitswegweiser), Instagram oder Empfehlung. Liest Artikel und absolviert das eingebettete Quiz – ohne Registrierung. Nach dem Quiz erscheint der Hinweis: 'Du hättest X Punkte verdient – jetzt registrieren.' Dieser Moment ist der primäre Conversion-Trigger."
+    data-tech="KPI: Cost-per-Signup ≤ 2,50 € · Quiz-to-Signup Conversion Rate">
+    <span class="cell-icon">👀</span>
+    <div class="cell-title">Liest Artikel & löst Quiz (unregistriert)</div>
+    <div class="cell-body">Gesundheitswegweiser · Quiz absolvieren · Punkte-Hinweis → CTA Registrierung</div>
+    <span class="cell-tag tag-mvp">Conversion-Trigger</span>
+  </div>
+
+  <div class="cell action"
+    data-title="Registrierung via E-Mail + Passwort"
+    data-body="Nutzer*in gibt Benutzername, E-Mail und Passwort ein. Direktus Magic Link war in der verfügbaren Konfiguration nicht nutzbar – bewusste Entscheidung für klassische Registrierung. Kein App-Store-Download erforderlich: PWA direkt im Browser nutzbar, optional auf Homescreen hinzufügbar. Login-Seite verlinkt korrekt auf /registrierung."
+    data-tech="KPI: Conversion Rate CTA → Registrierung abgeschlossen · /registrierung + /login fertig implementiert">
+    <span class="cell-icon">✉️</span>
+    <div class="cell-title">Registriert sich via E-Mail + Passwort</div>
+    <div class="cell-body">Benutzername + E-Mail + Passwort · kein App-Store · direkt ins Dashboard</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell action"
+    data-title="Erster Dashboard-Besuch & Onboarding-Bonus"
+    data-body="Nach dem Magic-Link-Login landet die Nutzer*in direkt auf dem Dashboard. Sie sieht sofort 20 Punkte (Onboarding-Bonus), ihr Tagesziel (z.B. 7.000 Schritte), eine empfohlene Challenge für heute und eine Partnerangebot-Vorschau ('So kannst du Punkte einlösen'). Kein Quiz, kein Setup-Wizard."
+    data-tech="KPI: Day-1 Activation Rate ≥ 30%">
+    <span class="cell-icon">🎁</span>
+    <div class="cell-title">Sieht Dashboard & Onboarding-Bonus</div>
+    <div class="cell-body">20P Onboarding-Bonus · Tagesziel · 1 Challenge · Partnerangebot-Vorschau</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell action"
+    data-title="Health-Permission & erste Aktivität"
+    data-body="Beim ersten Versuch Schritte zu tracken erscheint der contextual Permission-Request: 'Um deine Schritte zu zählen, brauchen wir kurz Zugriff auf deine Gesundheitsdaten.' Nutzer*in erteilt Zugriff (oder wählt 'Später') – kein Flow-Abbruch bei Ablehnung. Danach: geht spazieren, läuft, fährt Rad. Liest Gesundheitsartikel im Gesundheitswegweiser und beantwortet Quiz."
+    data-tech="KPI: Health-Permission-Grant-Rate (Ziel ≥ 70%) · ≥3 Challenges in 14 Tagen">
+    <span class="cell-icon">🚴</span>
+    <div class="cell-title">Erteilt Health-Permission & bewegt sich</div>
+    <div class="cell-body">Contextual Permission-Request · Schritte / Laufen / Radfahren · Artikel + Quiz</div>
+    <span class="cell-tag tag-risk">Grant-Rate kritisch</span>
+  </div>
+
+  <div class="cell action"
+    data-title="Punkte verfolgen"
+    data-body="Nutzer*in öffnet App, sieht Punktestand, prüft wie viele Punkte sie heute schon gesammelt hat. Sieht Fortschritt zum nächsten Badge oder Level. Bekommt Streak-Bonus."
+    data-tech="KPI: Week-4 Retention ≥ 10%">
+    <span class="cell-icon">📊</span>
+    <div class="cell-title">Verfolgt Punktestand</div>
+    <div class="cell-body">Dashboard öffnen · Badge prüfen · Streak sehen</div>
+  </div>
+
+  <div class="cell action"
+    data-title="Partner durchsuchen"
+    data-body="Nutzer*in browst den Partner-Marketplace. Filtert nach Kategorie (Fitness, Bio, Wellness) oder Region. Wählt ein Angebot, das sie interessiert."
+    data-tech="KPI: Klickrate auf Partnerangebote · Browse-to-Redeem-Rate">
+    <span class="cell-icon">🔍</span>
+    <div class="cell-title">Durchsucht Partnerangebote</div>
+    <div class="cell-body">Filtert nach Kategorie / Region · wählt Angebot</div>
+  </div>
+
+  <div class="cell action"
+    data-title="Gutschein einlösen"
+    data-body="Nutzer*in wählt Angebot, prüft Punkt-Kosten, bestätigt Einlösung. Erhält QR-Code oder Rabattcode. Zeigt diesen im Partnerunternehmen vor oder gibt ihn online ein."
+    data-tech="KPI: ≥30% aktiver Nutzer lösen ≥1 Gutschein/Monat (Belohnungs-Hypothese)">
+    <span class="cell-icon">✅</span>
+    <div class="cell-title">Löst Gutschein ein</div>
+    <div class="cell-body">Punkte bestätigen · QR zeigen / Code eingeben</div>
+    <span class="cell-tag tag-risk">Kritischer Moment</span>
+  </div>
+
+  <div class="cell action"
+    data-title="Wiederkehren & teilen"
+    data-body="Nutzer*in kehrt täglich zurück (Streak), nimmt an Community-Challenges teil, empfiehlt AustroFit an Freund*innen ('Lade eine Person ein und erhalte 50 Punkte')."
+    data-tech="KPI: Viral K-Factor ≥ 0,2 · ARPU ≥ 0,41€/Monat">
+    <span class="cell-icon">🔄</span>
+    <div class="cell-title">Kehrt täglich zurück & empfiehlt</div>
+    <div class="cell-body">Streak · Challenge · Invite-a-Friend</div>
+    <span class="cell-tag tag-future">Phase 2</span>
+  </div>
+
+  <!-- VISIBILITY LINE -->
+  <div class="interaction-line-label">
+    <span class="iline-text">Line of Visibility</span>
+    <span class="iline-line iline-visibility"></span>
+  </div>
+
+  <!-- ═══════════════════ ROW 3: FRONTSTAGE ═══════════════════ -->
+  <div class="layer-row-label">
+    <div class="layer-row-label-inner" style="color: rgba(80,130,255,0.7);">
+      <span class="dot" style="background: rgba(80,130,255,0.6);"></span>
+      Frontstage
+    </div>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="Gesundheitswegweiser & Quiz (SvelteKit)"
+    data-body="SEO-optimierte Artikel im AustroFit Gesundheitswegweiser. Jeder Artikel enthält ein eingebettetes Quiz, das ohne Registrierung absolviert werden kann. Nach Abschluss: Hinweis 'Du hättest X Punkte verdient – jetzt registrieren' mit direktem CTA zur Registrierung. Zentraler Conversion-Trigger."
+    data-tech="Stack: SvelteKit · Direktus CMS (Headless) · Quiz-Komponente (unauth) · Punktesimulation ohne Backend-Buchung">
+    <span class="cell-icon">📝</span>
+    <div class="cell-title">Gesundheitswegweiser + Quiz (unregistriert)</div>
+    <div class="cell-body">SEO-Artikel · Unauth-Quiz · Punkte-Hinweis → Registrierungs-CTA</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="E-Mail + Passwort Registrierung & PWA-Direktlink"
+    data-body="Registrierungsformular mit Benutzername, E-Mail und Passwort (/registrierung). Kein App-Store – Nutzer*in gelangt direkt über URL in die PWA. Login-Seite verlinkt auf /registrierung (statt alter /register-Route). Nach Login Redirect zu /dashboard. Social Ads und Influencer-Links verweisen direkt auf die PWA oder einen Gesundheitswegweiser-Artikel."
+    data-tech="Stack: Direktus Auth (E-Mail + Passwort) · SvelteKit /registrierung + /login · PWA Direktlink · Meta/TikTok Ads · Entscheidung: Magic Link in Direktus nicht verfügbar">
+    <span class="cell-icon">✉️</span>
+    <div class="cell-title">E-Mail + Passwort Registrierung</div>
+    <div class="cell-body">3 Felder · kein App-Store · Login → /dashboard · /login → /registrierung</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="Dashboard-Erstansicht & PWA Install-Prompt"
+    data-body="Nach Magic-Link-Login landet Nutzer*in direkt auf dem Dashboard – kein Setup-Wizard, kein Quiz. Sofort sichtbar: 20P Onboarding-Bonus, Tagesziel, 1 empfohlene Challenge, 1 Partnerangebot-Vorschau. Nach dem ersten Dashboard-Besuch: sanfter PWA Install-Banner ('Auf Homescreen hinzufügen'), überspringbar ohne Konsequenz."
+    data-tech="Stack: SvelteKit PWA · Web App Manifest · BeforeInstallPromptEvent · Direktus Onboarding-Bonus Flow">
+    <span class="cell-icon">🏠</span>
+    <div class="cell-title">Dashboard-Erstansicht + PWA Install-Prompt</div>
+    <div class="cell-body">20P Onboarding-Bonus · Tagesziel · Challenge · Install-Banner</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="Contextual Health-Permission & Tracking UI"
+    data-body="Beim ersten Versuch Schritte zu tracken erscheint der Capacitor Permission-Dialog – kontextuell eingebettet ('Um deine Schritte zu zählen...'). Bei Ablehnung: Fallback-Anzeige 'Manuelle Eingabe' oder 'Später verbinden' – kein Abbruch. Danach: Echtzeit-Schrittzähler, Fortschrittsbalken (Tagesziel), Quiz-Modul im Gesundheitswegweiser."
+    data-tech="Stack: SvelteKit PWA · Capacitor Health-Plugin · Health Connect API · HealthKit · Fallback: manuelle Eingabe">
+    <span class="cell-icon">📱</span>
+    <div class="cell-title">Contextual Permission + Tracking UI</div>
+    <div class="cell-body">Permission-Dialog (Capacitor) · Fallback 'Später' · Schritte · Quiz</div>
+    <span class="cell-tag tag-risk">Grant-Rate kritisch</span>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="Punkte-Interface & Badges"
+    data-body="Animierte Punkte-Vergabe ('Du hast 40 Punkte verdient!'), Badge-Unlock-Animation, Level-Up-Screen. Punkte-Audit-Log für Transparenz (was, wann, wie viele Punkte)."
+    data-tech="Stack: SvelteKit · Direktus Punkte-API · CSS Animations · Audit-Log Tabelle">
+    <span class="cell-icon">🏆</span>
+    <div class="cell-title">Punkte-Interface & Badge-System</div>
+    <div class="cell-body">Animierte Vergabe · Badge-Unlock · Audit-Log</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="Partner-Marketplace UI"
+    data-body="Filterbare Übersicht aller Partnerangebote. PartnerFilter.svelte: Kategorie-Chips, Regions-Dropdown, ESG-Toggle – client-side, keine Re-Fetch nötig. Angebotskarte zeigt Punkte-Kosten, Verfügbarkeit, Partner-Name. 'Filter zurücksetzen' bei 0 Treffern. Punktestand eingeloggter User im Header sichtbar."
+    data-tech="Stack: SvelteKit · PartnerFilter.svelte · AngebotKarte.svelte · EinloesungsModal.svelte · GutscheinScreen.svelte (QR via qrcode lib)">
+    <span class="cell-icon">🗺️</span>
+    <div class="cell-title">Partner-Marketplace UI</div>
+    <div class="cell-body">Kategorie / Region / ESG-Filter · Angebotskarten · Einlöse-CTA · QR-Screen</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="Gutschein & QR-Code Screen"
+    data-body="Bestätigungs-Modal mit Punkt-Abzug, generierter QR-Code oder Rabattcode, Einlöse-Anleitung und Ablaufdatum. Bestätigungs-Screen nach erfolgreicher Einlösung."
+    data-tech="Stack: SvelteKit · QR-Code Library · Direktus Coupon API · AWIN Redemption Webhook">
+    <span class="cell-icon">📲</span>
+    <div class="cell-title">Gutschein-Screen & QR-Code</div>
+    <div class="cell-body">Bestätigung · QR-Code · Einlöse-Anleitung</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell frontstage"
+    data-title="Streak & Community Feed"
+    data-body="Streak-Anzeige, Bestenliste (Leaderboard), Community-Event-Übersicht, Push-Notification-Preview. Challenge-Einladungen und Gewinnspiel-Teilnahme."
+    data-tech="Stack: SvelteKit · Direktus Relations · Web Push API · Mixpanel Events">
+    <span class="cell-icon">🏅</span>
+    <div class="cell-title">Streak, Leaderboard & Events</div>
+    <div class="cell-body">Streak-Anzeige · Bestenliste · Community-Events</div>
+    <span class="cell-tag tag-future">Phase 2</span>
+  </div>
+
+  <!-- INTERNAL LINE -->
+  <div class="interaction-line-label">
+    <span class="iline-text">Line of Internal Interaction</span>
+    <span class="iline-line iline-internal"></span>
+  </div>
+
+  <!-- ═══════════════════ ROW 4: BACKSTAGE ═══════════════════ -->
+  <div class="layer-row-label">
+    <div class="layer-row-label-inner" style="color: rgba(160,90,255,0.7);">
+      <span class="dot" style="background: rgba(160,90,255,0.6);"></span>
+      Backstage
+    </div>
+  </div>
+
+  <div class="cell backstage"
+    data-title="Gesundheitswegweiser CMS & Unauth-Quiz"
+    data-body="Gründer pflegt Artikel und Quiz-Fragen im Direktus CMS (v11.7.2). Direktus stellt Inhalte per REST/GraphQL API für das SvelteKit-Frontend bereit. Das Quiz ist für nicht-registrierte Nutzer*innen verfügbar – die Punkte werden nicht gebucht, sondern nur simuliert ('Du hättest X Punkte verdient'). Kein Auth-Token erforderlich für Quiz-Anzeige."
+    data-tech="Stack: Direktus 11.7.2 · SvelteKit SSR/SSG · PostgreSQL · Quiz ohne Auth (read-only) · Punktesimulation clientseitig">
+    <span class="cell-icon">⚙️</span>
+    <div class="cell-title">Gesundheitswegweiser CMS & Unauth-Quiz</div>
+    <div class="cell-body">Direktus CMS · Quiz ohne Auth · Punktesimulation · SEO-Ausgabe</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell backstage"
+    data-title="E-Mail + Passwort Auth (Direktus)"
+    data-body="Nutzer-Registrierung via Direktus /users/register (E-Mail + Passwort). Login via /auth/login → JWT Access Token wird clientseitig in localStorage gespeichert (kein httpOnly Cookie). Direktus Magic Link war in der verfügbaren Konfiguration nicht nutzbar – bewusste Entscheidung dokumentiert. DSGVO-konformes User-Profil angelegt bei Registrierung."
+    data-tech="Stack: Direktus Auth (E-Mail + Passwort) · JWT in localStorage · /api/auth/register + /api/auth/login · DSGVO Consent via Datenschutzlink">
+    <span class="cell-icon">🔐</span>
+    <div class="cell-title">E-Mail + Passwort Auth (Direktus)</div>
+    <div class="cell-body">Direktus /users/register · JWT localStorage · kein Magic Link</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell backstage"
+    data-title="Onboarding-Bonus Buchung (Register API)"
+    data-body="Nach erfolgreicher Direktus-Registrierung bucht /api/auth/register automatisch 20 Punkte: 1) User-ID via Admin-Token aus Direktus holen (filter[email]), 2) Idempotenz-Check (kein Doppeleintrag bei Retry), 3) POST /items/points_ledger mit source_type='onboarding', points_delta=20, rule_version='v1'. Fehler im Bonus-Schritt blockieren die Registrierung nicht (try/catch)."
+    data-tech="Stack: /api/auth/register/+server.ts · PRIVATE_CMS_STATIC_TOKEN · points_ledger (source_type: onboarding) · Idempotenz via filter[source_type][_eq]">
+    <span class="cell-icon">🎁</span>
+    <div class="cell-title">Onboarding-Bonus (Register API, 20P)</div>
+    <div class="cell-body">Register API bucht 20P · Idempotenz-Check · Audit-Log · kein Direktus Flow nötig</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell backstage"
+    data-title="Health Data Integration via Capacitor"
+    data-body="Die App ist eine PWA (SvelteKit). Da PWAs keinen direkten Zugriff auf Health Connect (Android) und HealthKit (iOS) haben, wird Capacitor ausschließlich für diesen Zweck als Bridge eingesetzt. Alle anderen Funktionen laufen als reine PWA. Rohdaten (Schritte, Aktivitäten, Minuten) werden pseudonymisiert an das Direktus-Backend übergeben. Bei abgelehnter Permission: Fallback auf manuelle Eingabe oder spätere Verknüpfung."
+    data-tech="Stack: Capacitor · @capacitor-community/health-connect · HealthKit Plugin · PWA (alle anderen Features) · Fallback: manuelle Eingabe">
+    <span class="cell-icon">💓</span>
+    <div class="cell-title">Health Data via Capacitor (Bridge)</div>
+    <div class="cell-body">PWA + Capacitor nur für Health APIs · Pseudonymisierung · Fallback</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell backstage"
+    data-title="Punkte-Engine (Direktus Flow)"
+    data-body="Die Punkte-Engine läuft als Direktus Flow. Bei jedem Health-Daten-Push wird ein Flow getriggert, der die Punkte-Formel ausführt (Schritte, Bewegungsminuten, Quiz-Abschlüsse) und die Buchung mit Zeitstempel und Quelle ins Audit-Log schreibt. Einfach erweiterbar zu einer Custom Extension wenn der Flow an Performance-Grenzen stößt."
+    data-tech="Stack: Direktus Flow (Trigger: Webhook/Event) · PostgreSQL punkte_buchungen · Fraud-Filter Phase 1 als Flow-Bedingung · →Custom Extension bei Scale">
+    <span class="cell-icon">🧮</span>
+    <div class="cell-title">Punkte-Engine (Direktus Flow)</div>
+    <div class="cell-body">Direktus Flow · Formel-Berechnung · Audit-Log · Fraud Phase 1</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell backstage"
+    data-title="Partner-Datenverwaltung"
+    data-body="Gründer pflegt Partnerangebote im Direktus CMS. AWIN Affiliate-Angebote werden via API importiert und als Direktus-Items gespeichert. ESG-Prüfung (KYC-Light) wird manuell protokolliert."
+    data-tech="Stack: Direktus Collections (partner, angebote) · AWIN API · Manueller KYC-Prozess">
+    <span class="cell-icon">🤝</span>
+    <div class="cell-title">Partner-Datenverwaltung & KYC</div>
+    <div class="cell-body">Direktus Partner-Collection · AWIN API-Import · KYC-Log</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell backstage"
+    data-title="Gutschein-Generierung & Fraud-Detection"
+    data-body="Gutschein-Code wird bei Einlösung generiert (unique, time-bound). Punkte werden atomar vom User-Konto abgezogen. Fraud-Check Phase 1: Einlöse-Limit pro User/Partner/Zeitraum."
+    data-tech="Stack: Direktus Flow · Crypto.randomUUID · Direktus Webhook zu AWIN · Device-ID Check">
+    <span class="cell-icon">🛡️</span>
+    <div class="cell-title">Gutschein-Generierung & Fraud Phase 1</div>
+    <div class="cell-body">Unique Codes · Punkte-Abzug · Limit-Checks</div>
+    <span class="cell-tag tag-risk">Kritisch</span>
+  </div>
+
+  <div class="cell backstage"
+    data-title="Streak-Logik & Notification-Engine"
+    data-body="Täglich um Mitternacht prüft ein Direktus-Flow, ob Nutzer*in ihr Tagesziel erreicht hat. Streak wird gesetzt oder resettet. Notification-Queue für Push-Reminders und Challenge-Einladungen."
+    data-tech="Stack: Direktus Scheduled Flows · Web Push (VAPID) · Notification Queue in DB">
+    <span class="cell-icon">⏰</span>
+    <div class="cell-title">Streak-Logik & Notification-Engine</div>
+    <div class="cell-body">Nightly Streak-Check · Push-Notification Queue</div>
+    <span class="cell-tag tag-future">Phase 2</span>
+  </div>
+
+  <!-- IMPLEMENTATION LINE -->
+  <div class="interaction-line-label">
+    <span class="iline-text">Line of Implementation</span>
+    <span class="iline-line iline-implementation"></span>
+  </div>
+
+  <!-- ═══════════════════ ROW 5: SUPPORT PROCESSES ═══════════════════ -->
+  <div class="layer-row-label">
+    <div class="layer-row-label-inner" style="color: rgba(255,180,50,0.7);">
+      <span class="dot" style="background: rgba(255,180,50,0.6);"></span>
+      Support Processes
+    </div>
+  </div>
+
+  <div class="cell support"
+    data-title="Infrastruktur: Hosting & CMS"
+    data-body="Direktus 11.7.2 selbst-hosted auf VPS (z.B. Hetzner mit Ökostrom, entspricht ESG-Prinzip). PostgreSQL Datenbank. SvelteKit-Frontend als SSR/SSG deploy auf Vercel oder eigenem Server."
+    data-tech="Infra: Hetzner VPS (Ökostrom) · Docker · PostgreSQL · Vercel/Netlify für Frontend">
+    <span class="cell-icon">🖥️</span>
+    <div class="cell-title">Hosting: Direktus VPS + SvelteKit</div>
+    <div class="cell-body">Hetzner VPS · Docker · PostgreSQL · Vercel</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell support"
+    data-title="Auth-Infrastruktur & Analytics"
+    data-body="Kein App-Store in Phase 1. E-Mail + Passwort Auth via Direktus – kein SMTP für Magic Link erforderlich. Transaktionaler E-Mail-Dienst (Resend/Postmark) optional für zukünftige Benachrichtigungen. UTM-Tracking in allen Kampagnen-Links. Mixpanel trackt Sign-up Event."
+    data-tech="Tools: Direktus Auth (E-Mail + Passwort) · Resend/Postmark optional · Mixpanel Sign-up Event · UTM Parameter · Vercel/Netlify Deployment">
+    <span class="cell-icon">📧</span>
+    <div class="cell-title">Auth-Infrastruktur & Analytics</div>
+    <div class="cell-body">Direktus Auth · Mixpanel Events · UTM Attribution</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell support"
+    data-title="DSGVO & Datenschutz"
+    data-body="Privacy-by-Design: Pseudonymisierte Gesundheitsdaten in PostgreSQL. Einwilligungsverwaltung im Direktus-Profil. Keine Datenweitergabe an Dritte ohne Einwilligung. Datenschutzerklärung, AGB."
+    data-tech="Compliance: DSGVO · Direktus Role-based Access · Pseudonymisierung · Opt-In Consent-Log">
+    <span class="cell-icon">🔒</span>
+    <div class="cell-title">DSGVO: Direktus Privacy-by-Design</div>
+    <div class="cell-body">Pseudonymisierung · Consent-Log · Kein Datenverkauf</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell support"
+    data-title="Capacitor als Health-Bridge (gezielter Einsatz)"
+    data-body="Die App ist primär eine PWA (SvelteKit). Capacitor wird gezielt nur als Bridge für Health Connect (Android) und HealthKit (iOS) eingesetzt – da PWAs keinen nativen API-Zugriff auf diese Datenquellen haben. Alle anderen Features (Punkte, Marketplace, Bildung) laufen als reine PWA ohne Capacitor."
+    data-tech="Stack: Capacitor · @capacitor-community/health-connect (Android) · @capacitor/ios-healthkit (iOS) · Kein nativer Build für andere Features">
+    <span class="cell-icon">🔌</span>
+    <div class="cell-title">Capacitor – nur als Health-Bridge</div>
+    <div class="cell-body">PWA + Capacitor selektiv · Health Connect · HealthKit</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell support"
+    data-title="Punkte-Engine Backend (Direktus Flow)"
+    data-body="Punkte-Engine vorerst als Direktus Flow implementiert: Trigger bei Health-Daten-Push → Punkte-Formel ausführen → Buchung in punkte_buchungen schreiben. Fraud-Detection Phase 1 als Flow-Bedingung (Schritt-Limit, Device-Check). Wenn Flow-Limits bei Scale erreicht werden: Migration zu Custom Extension (Node.js) geplant."
+    data-tech="Stack: Direktus Flow · PostgreSQL (punkte_buchungen) · Flow-Bedingungen als Fraud-Filter · Skalierungs-Option: Custom Extension">
+    <span class="cell-icon">⚡</span>
+    <div class="cell-title">Punkte-Engine: Direktus Flow</div>
+    <div class="cell-body">Direktus Flow · PostgreSQL · Fraud-Filter · →Extension bei Scale</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell support"
+    data-title="AWIN Affiliate Integration"
+    data-body="AWIN API-Anbindung für Phase 1: Affiliate-Angebote werden importiert und in Direktus gespeichert. Bei Einlösung wird AWIN Tracking-Link aufgerufen. Provision-Tracking via AWIN Dashboard."
+    data-tech="Stack: AWIN Publisher API · Direktus Webhook · Cron-Job für Angebots-Sync">
+    <span class="cell-icon">🔗</span>
+    <div class="cell-title">AWIN Affiliate API</div>
+    <div class="cell-body">Angebots-Import · Redemption-Tracking · Provision</div>
+    <span class="cell-tag tag-mvp">MVP</span>
+  </div>
+
+  <div class="cell support"
+    data-title="Payment & Abrechnung"
+    data-body="Phase 1 (MVP): Nur Affiliate-Provisionen via AWIN (kein direktes Payment). Phase 2: Stripe-Integration für Partner-Paket-Buchungen. Automatisierte Rechnungsstellung via Direktus Flow + lexoffice API."
+    data-tech="Phase 2: Stripe · lexoffice API · Direktus Billing-Flow · SEPA Lastschrift">
+    <span class="cell-icon">💳</span>
+    <div class="cell-title">Payment: AWIN → Stripe (Phase 2)</div>
+    <div class="cell-body">MVP: AWIN-Provision · Phase 2: Stripe + lexoffice</div>
+    <span class="cell-tag tag-future">Phase 2</span>
+  </div>
+
+  <div class="cell support"
+    data-title="CRM & Community-Infrastruktur"
+    data-body="HubSpot Free (oder Zoho) für Partner-CRM. Push-Notification-Service (Web Push via VAPID, Phase 2). Community-Funktionen in Direktus Collections (events, challenges, leaderboard)."
+    data-tech="Phase 2: HubSpot Free · Web Push VAPID · Direktus Community-Collections">
+    <span class="cell-icon">📡</span>
+    <div class="cell-title">CRM & Push-Infrastruktur</div>
+    <div class="cell-body">HubSpot Free · Web Push VAPID · Community DB</div>
+    <span class="cell-tag tag-future">Phase 2</span>
+  </div>
+
+</div><!-- end .blueprint -->
+</div><!-- end .blueprint-wrapper -->
+
+<!-- NOTES PANEL -->
+<div class="notes-panel">
+  <div class="note-block">
+    <h4>Tech-Architektur (festgelegt)</h4>
+    <ul>
+      <li>PWA (SvelteKit) als Basis – kein App-Store in Phase 1, direkter URL-Zugang ermöglicht sofortiges Testen ohne Store-Review.</li>
+      <li>Capacitor wird gezielt nur als Bridge für Health Connect (Android) und HealthKit (iOS) eingesetzt – alle anderen Features bleiben reine PWA.</li>
+      <li>Punkte-Engine als SvelteKit API Routes + Direktus REST; Onboarding-Bonus via /api/auth/register gebucht (kein Direktus Flow nötig).</li>
+      <li>E-Mail + Passwort als Registrierungs- und Login-Methode (Direktus Magic Link in verfügbarer Konfiguration nicht nutzbar – bewusste Entscheidung).</li>
+    </ul>
+  </div>
+  <div class="note-block">
+    <h4>Onboarding-Flow (festgelegt)</h4>
+    <ul>
+      <li>Einstieg via Gesundheitswegweiser (SEO-Artikel + Unauth-Quiz) oder direkt via Landingpage / Social Ad.</li>
+      <li>Conversion-Trigger: Nach Quiz-Abschluss Hinweis 'Du hättest X Punkte verdient – jetzt registrieren.'</li>
+      <li>Registrierung: Benutzername + E-Mail + Passwort (/registrierung) → Login → direkt ins Dashboard (kein Setup-Wizard). Login-Seite verlinkt korrekt auf /registrierung.</li>
+      <li>20P Onboarding-Bonus wird server-seitig in /api/auth/register gebucht (idempotent). Health-Permission contextual beim ersten Tracking-Versuch. PWA Install-Prompt erst nach erstem Dashboard-Besuch.</li>
+    </ul>
+  </div>
+  <div class="note-block">
+    <h4>Kritische MVP-Hypothesen</h4>
+    <ul>
+      <li>Engagement: ≥50% der Erstnutzer lösen ≥3 Challenges in 14 Tagen.</li>
+      <li>Belohnung: ≥30% der aktiven Nutzer lösen ≥1 Gutschein/Monat ein.</li>
+      <li>Partner: ≥70% der gelisteten Angebote werden im Q1 mindestens einmal eingelöst.</li>
+      <li>Fraud: Schritt-Spike-Filter (>20.000 Steps/h) als Minimalschutz Phase 1.</li>
+    </ul>
+  </div>
+  <div class="note-block">
+    <h4>Phase 2 Prioritäten</h4>
+    <ul>
+      <li>Gamification: Challenges, Gewinnspiele, Maskottchen, Leveling System live schalten.</li>
+      <li>Community: Events, Bestenliste, Invite-a-Friend Referral-Programm.</li>
+      <li>Fraud Phase 2: ML-Anomalie-Scoring (Isolation-Forest, Schwellenwert 0,85).</li>
+      <li>Stripe + lexoffice für Partner-Paket-Abrechnung (Plus/Premium/Nachhaltigkeit).</li>
+    </ul>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">AustroFit Service Blueprint · B2C · v1.1 · März 2026 · Intern / CTO-Suche</div>
+  <div class="footer-right"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4f2520272e21212a3c6128212021280f2e3a3c3b3d2029263b612e3b">[email&#160;protected]</a> · austrofit.at</div>
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-title" id="tooltip-title"></div>
+  <div class="tooltip-body" id="tooltip-body"></div>
+  <div class="tooltip-tech" id="tooltip-tech"></div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  const tooltip = document.getElementById('tooltip');
+  const tooltipTitle = document.getElementById('tooltip-title');
+  const tooltipBody = document.getElementById('tooltip-body');
+  const tooltipTech = document.getElementById('tooltip-tech');
+
+  document.querySelectorAll('.cell[data-title]').forEach(cell => {
+    cell.addEventListener('mouseenter', (e) => {
+      tooltipTitle.textContent = cell.dataset.title || '';
+      tooltipBody.textContent = cell.dataset.body || '';
+      const tech = cell.dataset.tech || '';
+      if (tech) {
+        tooltipTech.innerHTML = '<span>' + tech + '</span>';
+        tooltipTech.style.display = 'block';
+      } else {
+        tooltipTech.style.display = 'none';
+      }
+      tooltip.classList.add('active');
+      positionTooltip(e);
+    });
+
+    cell.addEventListener('mousemove', (e) => {
+      positionTooltip(e);
+    });
+
+    cell.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('active');
+    });
+  });
+
+  function positionTooltip(e) {
+    const margin = 16;
+    const tw = 280;
+    const th = tooltip.offsetHeight || 150;
+    let x = e.clientX + margin;
+    let y = e.clientY + margin;
+    if (x + tw > window.innerWidth)  x = e.clientX - tw - margin;
+    if (y + th > window.innerHeight) y = e.clientY - th - margin;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top  = y + 'px';
+  }
+</script>
+
+</body>
+</html>

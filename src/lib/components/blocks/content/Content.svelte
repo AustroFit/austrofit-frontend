@@ -1,17 +1,19 @@
 <script>
   import { getContentBlockClasses, getButtonClasses } from "$lib/design-system/classes";
-  
+  import { cmsAssetUrl } from "$lib/cms/image";
+  import { PUBLIC_CMSURL } from "$env/static/public";
+
   const { block } = $props();
   const blockData = block.item;
   const theme = block.background || 'light';
   const alignment = blockData.alignment || "left";
   const imagePosition = blockData.image_position || null;
   const imageSize = blockData.image_size || 'medium';
-  
+
   const styles = getContentBlockClasses(alignment, theme, imagePosition, imageSize);
-  // Image URL
-  const imageUrl = blockData.image 
-    ? `https://cms.austrofit.at/assets/${blockData.image}` 
+
+  const imageUrl = blockData.image
+    ? cmsAssetUrl(PUBLIC_CMSURL, blockData.image, { width: 1400, quality: 80, format: "webp" })
     : null;
   
   // Button classes

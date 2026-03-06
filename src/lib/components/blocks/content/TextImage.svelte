@@ -1,6 +1,7 @@
 <script>
   import { PUBLIC_CMSURL } from "$env/static/public";
   import { getTextImageClasses } from "$lib/design-system/classes";
+  import { cmsAssetUrl } from "$lib/cms/image";
   const { blockData, theme } = $props();
 
    // Get layout options
@@ -18,10 +19,10 @@
   {#if blockData.image}
     <div class={styles.image}>
       <img
-            src="{PUBLIC_CMSURL}/assets/{blockData.image}"
-            alt={blockData.image.title || blockData.title || 'Bild'}
-            class="w-full h-auto object-cover rounded-lg"            
-          />
+        src={cmsAssetUrl(PUBLIC_CMSURL, blockData.image, { width: 1200, quality: 80, format: "webp" })}
+        alt={blockData.image_alt || blockData.title || 'Bild'}
+        class="w-full h-auto object-cover rounded-lg"
+      />
     </div>
     
   {/if} 

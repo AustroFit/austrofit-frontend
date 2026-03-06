@@ -7,7 +7,9 @@
   const buttonStyle = getButtonClasses('green', 'sm');
   // TODO: This will be fetched from CMS later
   const footerNav = [
-    { label: 'Vision', href: '/vision' },
+    { label: 'Über uns', href: '/ueber-uns' },
+    { label: 'Gesundheitswegweiser', href: '/gesundheitswegweiser' },
+    { label: 'Partner werden', href: '/partner-werden' },
   ];
   
   const legalLinks = [
@@ -28,7 +30,7 @@
       <div class="{styles.column1}">
         <div class={styles.columnContent}>
           <p class={styles.description}>
-            tbd
+            AustroFit belohnt dich fürs Bewegen, Lernen und Vorbeugen – mit echten Prämien bei regionalen Partnern. Kostenlos, motivierend, 100&nbsp;% österreichisch.
           </p>
         </div>
       </div>
@@ -50,8 +52,8 @@
           <!-- Contact -->
           <div class={styles.contactSection}>
             <p class={styles.contactTitle}>
-              Schreib uns gerne bei<br />
-              Fragen und Anregungen:
+              Fragen, Feedback oder<br />
+              Partneranfragen?
             </p>
             <a 
               href="mailto:kontakt@austrofit.at" 
@@ -66,7 +68,7 @@
             <p class={styles.contactTitle}>
               Bleib auf dem Laufenden
             </p>
-            <a href="/newsletter" class={styles.contactLink}>
+            <a href="mailto:kontakt@austrofit.at?subject=Newsletter" class={styles.contactLink}>
               Melde dich zum Newsletter an.
             </a>
           </div>
@@ -88,7 +90,7 @@
     <!-- Copyright Strip -->
     <div class={styles.copyrightStrip}>
       <p class={styles.copyright}>
-        © 2025 Austrofit
+        © 2026 AustroFit
       </p>
     </div>
 

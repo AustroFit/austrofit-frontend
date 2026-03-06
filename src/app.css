@@ -43,9 +43,12 @@
   --color-body: #4A5565;
   --color-tagline: #101828;
 
-  --color-light-white: #FFFFFF;  
+  --color-light-white: #FFFFFF;
 
   --color-dark-black: #000000;
+
+  /* Legacy design-system tokens used in older components */
+  --color-dark-blue-1: #1a2744;
 
   
   
