@@ -42,17 +42,14 @@
 
 <nav class="z-50 flex flex-row justify-center font-montserrat h-[75px] bg-light-grey shadow-sm">
 
-  <div class="h-full min-w-2 flex grow bg-dark-blue-1">
-  </div>
+  <div class="w-full max-w-[1140px] flex flex-row h-full px-4 lg:px-6">
 
-  <div class="w-full max-w-[1140px] flex flex-row h-full">
-
-    <div class="bg-dark-blue-1 rounded-br-[80px_80px] pr-6 lg:rounded-br-[100px_100px] lg:pr-10">
+    <div class="pr-6 lg:pr-10">
       <a href="/" class="flex h-full items-center">
         <img
-          src="/logo/logo_white.svg"
-          alt="Austrofit"
-          class="pr-4 h-10  md:h-12 lg:h-14 w-auto"
+          src="/AF_Favicon.png"
+          alt="AustroFit"
+          class="h-10 md:h-12 lg:h-14 w-auto"
         />
       </a>
     </div>
@@ -89,26 +86,6 @@
           </a>
         </li>
       </ul>
-
-      <!-- Mobile hamburger button -->
-      <button
-        class="mr-2 lg:hidden bg-light-blue-1 rounded-md 1 p-2 cursor-pointer text-dark-blue-1 hover:bg-dark-blue-1 hover:text-light-blue-1 transition-colors"
-        onclick={toggleMobileMenu}
-        aria-label="Menu"
-        aria-expanded={mobileMenuOpen}
-      >
-        {#if mobileMenuOpen}
-          <!-- X icon -->
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        {:else}
-          <!-- Hamburger icon -->
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        {/if}
-      </button>
 
       <!-- Auth links (desktop) -->
       {#if loggedIn}
@@ -148,16 +125,27 @@
         </a>
       {/if}
 
-      <a
-      href="/spenden"
-      class="px-6 py-1 ml-2 text-[16px] font-medium self-center inline-flex font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-dark-green-1  bg-dark-green-1  text-white hover:bg-dark-green-1 /90 hover:border-dark-green-1 /90">
-        Spenden
-      </a>
+      <!-- Mobile hamburger button (rightmost) -->
+      <button
+        class="lg:hidden bg-light-blue-1 rounded-md p-2 cursor-pointer text-dark-blue-1 hover:bg-dark-blue-1 hover:text-light-blue-1 transition-colors"
+        onclick={toggleMobileMenu}
+        aria-label="Menu"
+        aria-expanded={mobileMenuOpen}
+      >
+        {#if mobileMenuOpen}
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        {:else}
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        {/if}
+      </button>
 
     </div>
   </div>
 
-  <div class="grow flex items-cente h-full min-w-2"></div>
 
 </nav>
 
