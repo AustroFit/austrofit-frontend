@@ -32,6 +32,9 @@ export async function loadPageBySlug(slug, fetch) {
         //"blocks.item.*.*",
         "blocks.item.button.*",
         "blocks.item.button.internal_page.slug",
+        // hero button_group (M2O to buttons collection)
+        "blocks.item.button_group.*",
+        "blocks.item.button_group.internal_page.slug",
         // block specific data
         "blocks.item.form.*",
         "blocks.item.form.fields.*",

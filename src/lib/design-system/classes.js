@@ -170,6 +170,15 @@ export const designClasses = {
       badge: 'inline-block px-3 py-1 bg-dark-kvb-blue/10 text-dark-kvb-blue rounded-full text-sm font-medium',
       badgeOnline: 'inline-block px-3 py-1 bg-dark-kvb-blue/10 text-dark-kvb-blue rounded-full text-sm font-medium',
       badgeState: 'inline-block px-3 py-1 bg-dark-kvb-blue/5 text-dark-kvb-blue rounded text-xs'
+    },
+    beige: {
+      background: 'bg-beige',
+      textColor: 'text-dark-kvb-blue',
+      headingColor: 'text-dark-kvb-blue',
+      borderColor: 'border-dark-kvb-blue/10',
+      badge: 'inline-block px-3 py-1 bg-dark-kvb-blue/10 text-dark-kvb-blue rounded-full text-sm font-medium',
+      badgeOnline: 'inline-block px-3 py-1 bg-dark-kvb-blue/10 text-dark-kvb-blue rounded-full text-sm font-medium',
+      badgeState: 'inline-block px-3 py-1 bg-dark-kvb-blue/5 text-dark-kvb-blue rounded text-xs'
     }
   },
 
@@ -288,7 +297,8 @@ export const designClasses = {
   styles: {
     primary: 'border-dark-blue-2 bg-dark-blue-2 text-white hover:bg-dark-blue-2/90 hover:border-dark-blue-2/90',
     pink: 'border-dark-pink-1 bg-dark-pink-1 text-white hover:bg-dark-pink-1/90 hover:border-dark-pink-1/90',
-    green: 'border-dark-green-1  bg-dark-green-1  text-white hover:bg-dark-green-1 /90 hover:border-dark-green-1 /90',
+    red: 'border-dark-pink-1 bg-dark-pink-1 text-white hover:bg-dark-pink-1/90 hover:border-dark-pink-1/90',
+    green: 'border-dark-green-1 bg-dark-green-1 text-white hover:bg-dark-green-1/90 hover:border-dark-green-1/90',
     pink_outline: 'border-dark-pink-1 bg-transparent text-dark-pink-1 hover:bg-dark-pink-1 hover:text-white',
     blue_outline: 'border-dark-blue-2 bg-transparent text-dark-blue-2 hover:bg-dark-blue-2 hover:text-white',
     green_outline: 'border-dark-green-1 bg-transparent text-dark-green-1 hover:bg-dark-green-1 hover:text-white',
@@ -502,7 +512,9 @@ export function getEmbedClasses(alignment="left", theme="light") {
 }
 
 export function getCardClasses(cardAlignment = 'center', cardStyle = "light-grey", hasImage = false) {
-  const style = designClasses.cardStyles[cardStyle] || designClasses.cardStyles.lightgrey;
+  // Normalize German Directus values to English code keys
+  const styleKey = cardStyle === 'weiß' ? 'white' : cardStyle;
+  const style = designClasses.cardStyles[styleKey] || designClasses.cardStyles.lightgrey;
   
   const alignmentClasses = {
     left: 'items-start text-left',

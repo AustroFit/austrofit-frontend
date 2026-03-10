@@ -49,6 +49,16 @@
 
   /* Legacy design-system tokens used in older components */
   --color-dark-blue-1: #1a2744;
+  --color-dark-blue-2: #213161;
+
+  /* Block-system color tokens */
+  --color-darkblue: #1a2744;        /* background_color_dark slug: "darkblue" */
+  --color-dark-kvb-blue: #1a2744;   /* text color on light blocks */
+  --color-light-grey: #F4F4F6;      /* background_color_light slug: "light-grey" / card style */
+  --color-light-blue-1: #EAF0FB;    /* light backgrounds */
+  --color-dark-green-1: #3D7A00;    /* green buttons, footer */
+  --color-dark-pink-1: #E8272A;     /* AustroFit Rot – buttons */
+  --color-beige: #F5F0E4;           /* card style "beige" */
 
   
   
