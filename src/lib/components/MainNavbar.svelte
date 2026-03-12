@@ -68,7 +68,7 @@
               {isActive('/gesundheitswegweiser')
                 ? 'border-b-2 font-semibold'
                 : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-            style={isActive('/gesundheitswegweiser') ? 'color:#5EA500; border-color:#5EA500;' : ''}
+            style={isActive('/gesundheitswegweiser') ? 'color:#4CAF50; border-color:#4CAF50;' : ''}
           >
             Gesundheitswegweiser
           </a>
@@ -80,7 +80,7 @@
               {isActive('/partner')
                 ? 'border-b-2 font-semibold'
                 : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-            style={isActive('/partner') ? 'color:#5EA500; border-color:#5EA500;' : ''}
+            style={isActive('/partner') ? 'color:#4CAF50; border-color:#4CAF50;' : ''}
           >
             Partner
           </a>
@@ -95,7 +95,7 @@
             {isActive('/dashboard')
               ? 'text-white border-transparent'
               : 'border-primary text-primary hover:bg-primary hover:text-white'}"
-          style={isActive('/dashboard') ? 'background:#5EA500; border-color:#5EA500;' : ''}>
+          style={isActive('/dashboard') ? 'background:#4CAF50; border-color:#4CAF50;' : ''}>
           Dashboard
         </a>
         <a
@@ -104,7 +104,7 @@
             {isActive('/profil')
               ? 'text-white border-transparent'
               : 'border-primary text-primary hover:bg-primary hover:text-white'}"
-          style={isActive('/profil') ? 'background:#5EA500; border-color:#5EA500;' : ''}>
+          style={isActive('/profil') ? 'background:#4CAF50; border-color:#4CAF50;' : ''}>
           Profil
         </a>
         <button
@@ -172,7 +172,7 @@
         onclick={closeMobileMenu}
         class="block py-2 px-4 font-medium transition-colors border-t border-black/10 mt-1 pt-3
           {isActive('/gesundheitswegweiser') ? 'font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-        style={isActive('/gesundheitswegweiser') ? 'color:#5EA500;' : ''}
+        style={isActive('/gesundheitswegweiser') ? 'color:#4CAF50;' : ''}
       >
         Gesundheitswegweiser
       </a>
@@ -183,7 +183,7 @@
         onclick={closeMobileMenu}
         class="block py-2 px-4 font-medium transition-colors border-t border-black/10 mt-1 pt-3
           {isActive('/partner') ? 'font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-        style={isActive('/partner') ? 'color:#5EA500;' : ''}
+        style={isActive('/partner') ? 'color:#4CAF50;' : ''}
       >
         Partner
       </a>

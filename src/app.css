@@ -38,46 +38,46 @@
   --default-font-family: var(--font-family-sans);
 
   /* ============================================================
-   * AustroFit Farbpalette – Natürlich & Satt (Palette B)
+   * AustroFit Farbpalette – Frisch & Hell (Palette A)
    * Stand: März 2026
    * ============================================================ */
 
-  /* Primärfarbe: AustroFit Grün */
-  --color-primary: #5EA500;
-  --color-primary-dark: #3D7A00;   /* Hover-State, dunklere Variante */
-  --color-primary-light: #EAF5E0;  /* Chips, Badges, helle Highlights */
+  /* Primärfarbe: Frisches Mittelgrün */
+  --color-primary: #4CAF50;
+  --color-primary-dark: #2E7D32;   /* Hover-State, dunklere Variante */
+  --color-primary-light: #C8E6C9;  /* Chips, Badges, helle Highlights */
 
   /* Sekundärfarbe: Gold (Punkte, Level, Badges) */
-  --color-secondary: #D4A017;
-  --color-gold: #D4A017;           /* semantischer Alias für Gamification */
+  --color-secondary: #F59E0B;
+  --color-gold: #F59E0B;           /* semantischer Alias für Gamification */
 
   /* Typografie */
-  --color-heading: #0F1A06;        /* Fast-Schwarz-Grün */
-  --color-body: #3A4A33;           /* Fließtext, grün-grau */
-  --color-tagline: #0F1A06;
+  --color-heading: #0F1F0F;        /* Fast-Schwarz-Grün */
+  --color-body: #3D5A3E;           /* Fließtext, grün-grau */
+  --color-tagline: #0F1F0F;
 
   /* Basis */
   --color-light-white: #FFFFFF;
-  --color-card-bg: #F4FAF0;        /* Karten-Hintergrund (fast weiß, grün-getönt) */
+  --color-card-bg: #F0FBF1;        /* Karten-Hintergrund (frisches Mintgrün) */
   --color-dark-black: #000000;
 
   /* Semantisch: Fehler / Warnung */
   --color-error: #E8272A;          /* nur für Error-States, nicht mehr für CTAs */
 
   /* Legacy design-system tokens (Namen bleiben – Werte auf Grüntöne umgestellt) */
-  --color-dark-blue-1: #0F2200;    /* → Dunkelgrün (war Navy #1a2744) */
-  --color-dark-blue-2: #3D7A00;    /* → Primary-Dark (war #213161) */
+  --color-dark-blue-1: #0D2E18;    /* → Dunkelgrün (war Navy #1a2744) */
+  --color-dark-blue-2: #2E7D32;    /* → Primary-Dark (war #213161) */
 
   /* Block-system color tokens (Directus-Slugs → CSS-Klassen) */
-  --color-darkblue: #0F2200;       /* slug "darkblue" → jetzt Dunkelgrün (war #1a2744) */
-  --color-dark-kvb-blue: #0F1A06;  /* Textfarbe auf hellen Blöcken (war #1a2744) */
-  --color-light-grey: #F4FAF0;     /* slug "light-grey" – leicht grünlich (war #F4F4F6) */
-  --color-light-blue-1: #EAF5E0;   /* helle Hintergründe → Primary-Light (war #EAF0FB) */
-  --color-dark-green-1: #3D7A00;   /* grüne Buttons, Footer (war #3D7A00) */
+  --color-darkblue: #0D2E18;       /* slug "darkblue" → jetzt Dunkelgrün (war #1a2744) */
+  --color-dark-kvb-blue: #0F1F0F;  /* Textfarbe auf hellen Blöcken (war #1a2744) */
+  --color-light-grey: #F0FBF1;     /* slug "light-grey" – frisches Mintgrün (war #F4F4F6) */
+  --color-light-blue-1: #C8E6C9;   /* helle Hintergründe → Primary-Light (war #EAF0FB) */
+  --color-dark-green-1: #2E7D32;   /* grüne Buttons, Footer */
   --color-dark-pink-1: #E8272A;    /* bleibt – nur Fehler/Warnung */
   --color-beige: #F5F0E4;          /* card style "beige" – bleibt organisch */
-  --color-dark-green: #0F2200;     /* slug "dark-green" – dunkelster BG (war #1A3D1A) */
-  --color-light-green: #EAF5E0;    /* slug "light-green" – Primary-Light (war #EAF5E0) */
+  --color-dark-green: #0D2E18;     /* slug "dark-green" – dunkelster BG */
+  --color-light-green: #C8E6C9;    /* slug "light-green" – Primary-Light */
 
   
   

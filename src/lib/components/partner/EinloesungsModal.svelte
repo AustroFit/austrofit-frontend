@@ -133,7 +133,7 @@
         </div>
         <div class="flex justify-between">
           <span class="text-gray-500">Kosten dieses Angebots</span>
-          <span class="font-semibold" style="color:#5EA500;">−{reward.punkte_kosten}P</span>
+          <span class="font-semibold" style="color:#4CAF50;">−{reward.punkte_kosten}P</span>
         </div>
         <div class="my-1 border-t border-black/10"></div>
         <div class="flex justify-between font-semibold">
@@ -165,7 +165,7 @@
           onclick={einloesen}
           disabled={!hatGenugPunkte || loading}
           class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
-          style={hatGenugPunkte ? 'background:#5EA500;' : 'background:#6b7280;'}
+          style={hatGenugPunkte ? 'background:#4CAF50;' : 'background:#6b7280;'}
         >
           {#if loading}
             Wird eingelöst…

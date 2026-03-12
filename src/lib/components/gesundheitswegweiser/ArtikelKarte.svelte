@@ -80,7 +80,7 @@
     </span>
 
     {#if quiz}
-      <span class="flex items-center gap-1 font-medium" style="color: #5EA500;">
+      <span class="flex items-center gap-1 font-medium" style="color: #4CAF50;">
         <!-- trophy icon -->
         <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

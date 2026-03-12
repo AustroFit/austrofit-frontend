@@ -143,7 +143,7 @@
 
   {:else}
     <!-- Header -->
-    <div class="text-white" style="background:#5EA500;">
+    <div class="text-white" style="background:#4CAF50;">
       <div class="mx-auto max-w-3xl px-4 pt-8 pb-14">
         <h1 class="text-3xl font-bold" style="font-family:'Syne',sans-serif;">
           Partner-Marketplace
@@ -193,7 +193,7 @@
             <button
               onclick={() => { filterKategorie = ''; filterRegion = ''; filterEsg = false; }}
               class="mt-3 text-sm underline underline-offset-2"
-              style="color:#5EA500;"
+              style="color:#4CAF50;"
             >
               Filter zurücksetzen
             </button>

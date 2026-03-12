@@ -24,7 +24,7 @@
       {!activeBlock
         ? 'border-transparent text-white'
         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'}"
-    style={!activeBlock ? 'background: #5EA500; border-color: #5EA500;' : ''}
+    style={!activeBlock ? 'background: #4CAF50; border-color: #4CAF50;' : ''}
   >
     Alle
   </button>
@@ -36,7 +36,7 @@
         {activeBlock === block.id
           ? 'border-transparent text-white'
           : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'}"
-      style={activeBlock === block.id ? 'background: #5EA500; border-color: #5EA500;' : ''}
+      style={activeBlock === block.id ? 'background: #4CAF50; border-color: #4CAF50;' : ''}
     >
       {block.label}
     </button>

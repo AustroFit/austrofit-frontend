@@ -83,7 +83,7 @@
     <div class="mb-3 flex items-center gap-3">
       <div
         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-        style="background:#5EA500;"
+        style="background:#4CAF50;"
       >
         {partnerInitial}
       </div>

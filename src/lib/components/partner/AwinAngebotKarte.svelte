@@ -92,7 +92,7 @@
     {:else}
       <div
         class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-white text-sm font-bold"
-        style="background:#5EA500;"
+        style="background:#4CAF50;"
       >
         {name.charAt(0).toUpperCase()}
       </div>
@@ -108,7 +108,7 @@
     <!-- Online-Partner Badge -->
     <span
       class="ml-auto flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium text-white"
-      style="background:#5EA500;"
+      style="background:#4CAF50;"
     >
       Online
     </span>
@@ -138,7 +138,7 @@
       onclick={handleClick}
       disabled={loading}
       class="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition disabled:opacity-60"
-      style="background:#5EA500;"
+      style="background:#4CAF50;"
     >
       {#if loading}
         <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>

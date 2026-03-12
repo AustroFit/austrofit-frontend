@@ -4,7 +4,8 @@
 // Phase 1: Logging + Basis-Validierung.
 // Phase 2: User-Attribution via clickref → Bonus-Punkte vergeben.
 import { json } from '@sveltejs/kit';
-import { AWIN_API_TOKEN } from '$env/dynamic/private';
+import { env } from '$env/dynamic/private';
+const AWIN_API_TOKEN = env.AWIN_API_TOKEN ?? '';
 
 interface AwinTransaction {
   id: number;
