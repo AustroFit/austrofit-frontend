@@ -73,4 +73,25 @@
   --color-dark-blue-1: #0D2E18;     /* bg-dark-blue-1 – = darkblue        */
   --color-dark-blue-2: #2E7D32;     /* bg-dark-blue-2 – = primary-dark    */
 
+  /* ── FONT ALIAS ────────────────────────────────────────────────
+   * font-montserrat wird in alten Komponenten noch direkt verwendet.
+   * Alias auf Jost → kein Svelte-File muss angefasst werden.
+   * ──────────────────────────────────────────────────────────── */
+  --font-family-montserrat: 'Jost', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── TAILWIND GRAY OVERRIDE ────────────────────────────────────
+   * bg-gray-* / text-gray-* auf AustroFit-Grüntöne mappen.
+   * Wirkt global – kein Svelte-File muss angefasst werden.
+   * ──────────────────────────────────────────────────────────── */
+  --color-gray-50:  #F0FBF1;   /* bg-gray-50  → light-grey (Sektionshintergrund) */
+  --color-gray-100: #E8F5E9;   /* bg-gray-100 → primary-light                   */
+  --color-gray-200: #C8E6C9;   /* bg-gray-200 → light-green                     */
+  --color-gray-300: #A5C8A7;   /* bg-gray-300 → mittlerer Grünton               */
+  --color-gray-400: #6B8F6C;   /* text-gray-400 → gedämpfter Grünton            */
+  --color-gray-500: #3D5A3E;   /* text-gray-500 → body (Fließtext)              */
+  --color-gray-600: #2D4A30;   /* text-gray-600 → body dunkel                   */
+  --color-gray-700: #1E3A20;   /* text-gray-700 → body sehr dunkel              */
+  --color-gray-800: #142815;   /* text-gray-800 → fast Heading                  */
+  --color-gray-900: #0F1F0F;   /* text-gray-900 → heading                       */
+
 }

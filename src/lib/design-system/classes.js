@@ -24,18 +24,18 @@ const spacing = {
 export const designClasses = {
   // Typography (unchanged)
   typography: {
-    tagline: 'text-[1.11rem] md:text-[1.25rem]  font-montserrat pl-px font-semibold uppercase tracking-[0.18em]', // 
-    h1: 'text-[3rem] md:text-5xl font-montserrat font-semibold leading-tight',                          // font-bold = 700
-    h2: 'text-[2rem] md:text-4xl font-montserrat font-semibold leading-tight',                     // font-semibold = 600
-    h3: 'text-[1.7rem] md:text-3xl font-montserrat font-semibold leading-tight tracking-[0.01em]',
-    h4: 'text-[1.4rem] md:text-2xl font-montserrat font-semibold leading-tight' ,                   // font-semibold = 600
-    h5: 'text-[1.2rem] md:text-xl font-montserrat font-semibold leading-tight' ,  
+    tagline: 'text-[1.11rem] md:text-[1.25rem]  font-heading pl-px font-semibold uppercase tracking-[0.18em]', // 
+    h1: 'text-[3rem] md:text-5xl font-heading font-semibold leading-tight',                          // font-bold = 700
+    h2: 'text-[2rem] md:text-4xl font-heading font-semibold leading-tight',                     // font-semibold = 600
+    h3: 'text-[1.7rem] md:text-3xl font-heading font-semibold leading-tight tracking-[0.01em]',
+    h4: 'text-[1.4rem] md:text-2xl font-heading font-semibold leading-tight' ,                   // font-semibold = 600
+    h5: 'text-[1.2rem] md:text-xl font-heading font-semibold leading-tight' ,  
     body: 'text-[18px] leading-[1.6]',                             // font-normal = 400
     bodyLarge: 'text-[19px]',                           // font-normal = 400
     bodySmall: 'text-sm',
     bodyDescription: 'text-[21px] leading-[1.45]',
     quote: 'text-[19px] font-light italic leading-[1.45]', 
-    h_card: 'text-xl font-montserrat tracking-wider font-semibold'
+    h_card: 'text-xl font-heading tracking-wider font-semibold'
   },
 
   textColors: {
@@ -286,7 +286,7 @@ export const designClasses = {
   },
 
   buttons: {
-  base: 'inline-flex font-montserrat tracking-wider items-center justify-center rounded-md transition-colors border-2 mt-2',
+  base: 'inline-flex font-heading tracking-wider items-center justify-center rounded-md transition-colors border-2 mt-2',
   
   sizes: {
     sm: 'px-5 py-1 text-[14px] font-medium',
@@ -308,7 +308,7 @@ export const designClasses = {
 
   //BACKUP MAIN NAVBAR
     mainNavbar: {
-    container: "w-full flex bg-light-grey h-[80px] font-montserrat",
+    container: "w-full flex bg-light-grey h-[80px] font-heading",
     leftSpacer: "bg-dark-kvb-blue grow h-full",
     rightSpacer: "grow h-full",
     content: "basis-[1140px] flex items-center",
