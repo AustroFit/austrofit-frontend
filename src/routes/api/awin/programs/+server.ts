@@ -1,7 +1,7 @@
 // src/routes/api/awin/programs/+server.ts
 // GET: Genehmigte AWIN-Advertiser-Programme abrufen
 import { json } from '@sveltejs/kit';
-import { AWIN_API_TOKEN, AWIN_PUBLISHER_ID } from '$env/static/private';
+import { AWIN_API_TOKEN, AWIN_PUBLISHER_ID } from '$env/dynamic/private';
 import { fetchAwinPrograms } from '$lib/server/awin';
 
 export async function GET({ fetch }) {

@@ -19,7 +19,7 @@
 {#if show}
   <div
     class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-lg"
-    style="background:#2E7D32; animation: slideInUp 250ms ease-out;"
+    style="background:#5EA500; animation: slideInUp 250ms ease-out;"
   >
     <span>👟</span>
     <span>+{punkte} Punkte für deine Schritte!</span>

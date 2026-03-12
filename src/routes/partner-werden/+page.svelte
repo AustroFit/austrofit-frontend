@@ -6,7 +6,7 @@
 <!-- ═══════════════════════════════════════════
      HERO
 ═══════════════════════════════════════════ -->
-<section class="text-white" style="background:#0A1F0D;">
+<section class="text-white" style="background:#0F2200;">
   <div class="mx-auto max-w-4xl px-6 py-20 md:py-28">
     <div class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium mb-6"
          style="background:rgba(232,39,42,0.2); color:#ff8a8c;">
@@ -24,7 +24,7 @@
     <a
       href="mailto:kontakt@austrofit.at?subject=Partnerschaft%20AustroFit"
       class="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-white transition hover:opacity-90"
-      style="background:#2E7D32;"
+      style="background:#5EA500;"
     >
       Jetzt Partner werden
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -51,7 +51,7 @@
     <div class="grid md:grid-cols-3 gap-6">
       <div class="rounded-2xl bg-white border border-black/10 p-6 shadow-sm">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm mb-4"
-             style="background:#2E7D32;">1</div>
+             style="background:#5EA500;">1</div>
         <h3 class="font-semibold text-gray-900 mb-2">Listing im Marketplace</h3>
         <p class="text-sm text-gray-500 leading-relaxed">
           Dein Angebot wird im AustroFit Partner-Marketplace gelistet und von aktiven,
@@ -61,7 +61,7 @@
 
       <div class="rounded-2xl bg-white border border-black/10 p-6 shadow-sm">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm mb-4"
-             style="background:#2E7D32;">2</div>
+             style="background:#5EA500;">2</div>
         <h3 class="font-semibold text-gray-900 mb-2">Kund*innen kommen zu dir</h3>
         <p class="text-sm text-gray-500 leading-relaxed">
           Nutzer*innen lösen ihre gesammelten Punkte gegen einen Gutschein-Code ein
@@ -71,7 +71,7 @@
 
       <div class="rounded-2xl bg-white border border-black/10 p-6 shadow-sm">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm mb-4"
-             style="background:#2E7D32;">3</div>
+             style="background:#5EA500;">3</div>
         <h3 class="font-semibold text-gray-900 mb-2">Du zahlst nur bei Einlösung</h3>
         <p class="text-sm text-gray-500 leading-relaxed">
           Keine monatlichen Fixkosten. Eine Provision fällt ausschließlich bei
@@ -141,7 +141,7 @@
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">
           <h3 class="font-semibold text-gray-700 text-sm">Partner-Dashboard & Dateneinblicke</h3>
-          <span class="rounded-full px-2 py-0.5 text-xs font-medium text-white flex-shrink-0" style="background:#0A1F0D;">Bald verfügbar</span>
+          <span class="rounded-full px-2 py-0.5 text-xs font-medium text-white flex-shrink-0" style="background:#0F2200;">Bald verfügbar</span>
         </div>
         <p class="text-sm text-gray-400 leading-relaxed">
           Geplant: Sieh direkt in deinem Partner-Dashboard, wie oft deine Angebote aufgerufen und eingelöst wurden –
@@ -155,7 +155,7 @@
 <!-- ═══════════════════════════════════════════
      MARKE & IMAGE
 ═══════════════════════════════════════════ -->
-<section class="py-20" style="background:#0A1F0D;">
+<section class="py-20" style="background:#0F2200;">
   <div class="mx-auto max-w-4xl px-6">
     <div class="text-center mb-12">
       <h2 class="text-3xl font-bold text-white mb-3" style="font-family:'Syne',sans-serif;">
@@ -254,9 +254,9 @@
     </div>
 
     <!-- Punktewährung -->
-    <div class="rounded-2xl border-2 p-6 mb-8 text-center" style="border-color:#2E7D32; background:#fff5f5;">
+    <div class="rounded-2xl border-2 p-6 mb-8 text-center" style="border-color:#5EA500; background:#fff5f5;">
       <p class="text-sm text-gray-500 mb-1">Punktewährung</p>
-      <p class="text-3xl font-bold mb-1" style="color:#2E7D32;">100 Punkte = 1 €</p>
+      <p class="text-3xl font-bold mb-1" style="color:#5EA500;">100 Punkte = 1 €</p>
       <p class="text-sm text-gray-500">
         Nutzer*innen verdienen Punkte durch Bewegung, Gesundheitsbildung und Vorsorge
         und lösen diese als Gutschein bei dir ein.
@@ -302,7 +302,7 @@
           </div>
           <div class="rounded-xl p-3 flex justify-between items-center gap-3" style="background:#fff5f5;">
             <span class="text-gray-700">AustroFit-Provision <span class="text-gray-400">(6 % auf Ersparnis)</span></span>
-            <span class="font-bold whitespace-nowrap flex-shrink-0" style="color:#2E7D32;">0,60 €</span>
+            <span class="font-bold whitespace-nowrap flex-shrink-0" style="color:#5EA500;">0,60 €</span>
           </div>
         </div>
         <p class="mt-4 text-xs text-gray-400 leading-relaxed">
@@ -337,7 +337,7 @@
 <!-- ═══════════════════════════════════════════
      CTA
 ═══════════════════════════════════════════ -->
-<section class="py-20 text-white" style="background:#0A1F0D;">
+<section class="py-20 text-white" style="background:#0F2200;">
   <div class="mx-auto max-w-2xl px-6 text-center">
     <h2 class="text-3xl font-bold mb-4" style="font-family:'Syne',sans-serif;">
       Jetzt dabei sein
@@ -350,7 +350,7 @@
     <a
       href="mailto:kontakt@austrofit.at?subject=Partnerschaft%20AustroFit"
       class="inline-flex items-center gap-2 rounded-xl px-8 py-4 font-semibold text-white transition hover:opacity-90"
-      style="background:#2E7D32;"
+      style="background:#5EA500;"
     >
       kontakt@austrofit.at
       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

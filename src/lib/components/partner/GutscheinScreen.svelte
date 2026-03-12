@@ -103,7 +103,7 @@
     <a
       href="/profil/gutscheine"
       class="block w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white transition"
-      style="background:#2E7D32;"
+      style="background:#5EA500;"
     >
       Meine Gutscheine ansehen
     </a>

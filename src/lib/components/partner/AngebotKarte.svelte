@@ -117,7 +117,7 @@
   <!-- Punkte + Ablauf -->
   <div class="mt-3 flex items-center justify-between gap-2">
     <div>
-      <span class="text-2xl font-bold" style="color:#2E7D32;">{reward.punkte_kosten}P</span>
+      <span class="text-2xl font-bold" style="color:#5EA500;">{reward.punkte_kosten}P</span>
       {#if gueltigBis && !abgelaufen}
         <p class="text-xs text-gray-400">Gültig bis {gueltigBis}</p>
       {:else if abgelaufen}
@@ -138,7 +138,7 @@
       <a
         href="/login?next=/partner"
         class="rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-        style="background:#2E7D32;"
+        style="background:#5EA500;"
       >
         Anmelden
       </a>
@@ -146,7 +146,7 @@
       <button
         onclick={() => (modalOpen = true)}
         class="rounded-xl px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-        style="background:#2E7D32;"
+        style="background:#5EA500;"
       >
         Einlösen
       </button>

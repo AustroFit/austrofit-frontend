@@ -2,7 +2,7 @@
 // GET: Erzeugt AWIN-Deeplink und leitet weiter (Publisher-ID bleibt serverseitig)
 // ?url=https://... (optionale Ziel-URL, sonst Advertiser-Homepage)
 import { redirect } from '@sveltejs/kit';
-import { AWIN_API_TOKEN, AWIN_PUBLISHER_ID } from '$env/static/private';
+import { AWIN_API_TOKEN, AWIN_PUBLISHER_ID } from '$env/dynamic/private';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { buildAwinDeeplink, fetchAwinPrograms } from '$lib/server/awin';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';

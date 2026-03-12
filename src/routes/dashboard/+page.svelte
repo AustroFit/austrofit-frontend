@@ -355,7 +355,7 @@
   {:else}
 
     <!-- ── Page header ───────────────────────────────────────────────────── -->
-    <div class="text-white" style="background:#2E7D32;">
+    <div class="text-white" style="background:#5EA500;">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-16">
         <p class="text-sm font-medium opacity-80">
           {new Date().toLocaleDateString('de-AT', {
@@ -381,7 +381,7 @@
         </div>
         <div class="flex items-start justify-between gap-4">
           <div>
-            <div class="text-5xl font-bold leading-none" style="font-family: 'Jost', sans-serif; color:#2E7D32;">
+            <div class="text-5xl font-bold leading-none" style="font-family: 'Jost', sans-serif; color:#5EA500;">
               {totalPoints.toLocaleString('de-AT')}
             </div>
             <div class="mt-1 text-sm text-gray-500">
@@ -397,9 +397,9 @@
           </div>
 
           {#if showOnboardingBadge}
-            <div class="shrink-0 rounded-2xl p-4 text-center" style="background:#2E7D321A;">
-              <div class="text-2xl font-bold" style="color:#2E7D32;">+{ONBOARDING_POINTS}</div>
-              <div class="text-xs font-semibold mt-0.5" style="color:#2E7D32;">Willkommensbonus</div>
+            <div class="shrink-0 rounded-2xl p-4 text-center" style="background:#5EA5001A;">
+              <div class="text-2xl font-bold" style="color:#5EA500;">+{ONBOARDING_POINTS}</div>
+              <div class="text-xs font-semibold mt-0.5" style="color:#5EA500;">Willkommensbonus</div>
             </div>
           {/if}
         </div>
@@ -450,7 +450,7 @@
         <div class="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
           <div
             class="h-full rounded-full transition-all duration-500"
-            style="width:{stepPercent}%; background:#2E7D32;"
+            style="width:{stepPercent}%; background:#5EA500;"
           ></div>
         </div>
         <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
@@ -528,7 +528,7 @@
               <div
                 class="flex h-12 w-12 items-center justify-center rounded-xl text-2xl
                   {badge.earned ? '' : 'opacity-25 grayscale'}"
-                style={badge.earned ? 'background:#2E7D321A;' : 'background:#f3f4f6;'}
+                style={badge.earned ? 'background:#5EA5001A;' : 'background:#f3f4f6;'}
               >
                 {badge.icon}
               </div>
@@ -597,7 +597,7 @@
           <div class="flex items-start gap-4">
             <div
               class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl"
-              style="background:#2E7D321A;"
+              style="background:#5EA5001A;"
             >
               🏆
             </div>
@@ -612,7 +612,7 @@
                 {#if challenge.punkte_wert}
                   <span
                     class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
-                    style="background:#2E7D321A; color:#2E7D32;"
+                    style="background:#5EA5001A; color:#5EA500;"
                   >
                     +{challenge.punkte_wert} Punkte
                   </span>

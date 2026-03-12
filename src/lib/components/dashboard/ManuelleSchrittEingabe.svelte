@@ -216,7 +216,7 @@
           <div class="flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700">{entry.label}</span>
-              <span class="text-xs font-bold" style="color:#2E7D32;">
+              <span class="text-xs font-bold" style="color:#5EA500;">
                 → {calculatePoints(entry.steps)}P
               </span>
             </div>
@@ -249,7 +249,7 @@
                 onclick={() => saveDay(i)}
                 disabled={entry.saving}
                 class="shrink-0 rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition disabled:opacity-60"
-                style="background:#2E7D32;"
+                style="background:#5EA500;"
               >
                 {entry.saving ? '…' : 'Speichern'}
               </button>

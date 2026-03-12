@@ -45,7 +45,7 @@
         onclick={() => setKategorie(k.value)}
         class="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
         style={kategorie === k.value
-          ? 'background:#2E7D32; color:white; border-color:#2E7D32;'
+          ? 'background:#5EA500; color:white; border-color:#5EA500;'
           : 'background:white; color:#374151; border-color:#d1d5db;'}
       >
         {k.label}
