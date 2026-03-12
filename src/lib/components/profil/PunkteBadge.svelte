@@ -17,14 +17,14 @@
   <div class="flex flex-col items-center gap-2 py-4">
     <div
       class="text-6xl font-bold leading-none"
-      style="font-family: 'Jost', sans-serif; color:#E8272A;"
+      style="font-family: 'Jost', sans-serif; color:#2E7D32;"
     >
       {punkte.toLocaleString('de-AT')}
     </div>
     <div class="text-sm uppercase tracking-widest text-gray-500">AustroFit-Punkte</div>
     <div
       class="mt-1 rounded-full px-4 py-1 text-sm font-semibold text-white"
-      style="background:#E8272A;"
+      style="background:#2E7D32;"
     >
       Level {info.current.level} – {info.current.name}
     </div>
@@ -36,7 +36,7 @@
     </div>
     <div>
       <div class="text-xs text-gray-500">Punkte</div>
-      <div class="text-xs font-semibold" style="color:#E8272A;">
+      <div class="text-xs font-semibold" style="color:#2E7D32;">
         Lv.{info.current.level} {info.current.name}
       </div>
     </div>

@@ -63,7 +63,7 @@
 <main class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24">
 
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
-  <div class="text-white" style="background:#E8272A;">
+  <div class="text-white" style="background:#2E7D32;">
     <div class="mx-auto max-w-2xl px-4 pt-8 pb-14">
       <a
         href="/profil"
@@ -104,7 +104,7 @@
             onclick={() => (activeTab = tab.key)}
             class="relative flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all
               {activeTab === tab.key ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
-            style={activeTab === tab.key ? 'background:#E8272A;' : ''}
+            style={activeTab === tab.key ? 'background:#2E7D32;' : ''}
           >
             {tab.label}
             {#if count > 0}
@@ -134,7 +134,7 @@
             <a
               href="/partner"
               class="rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-              style="background:#E8272A;"
+              style="background:#2E7D32;"
             >
               Partner entdecken
             </a>

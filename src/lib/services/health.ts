@@ -126,7 +126,12 @@ export async function getStepsForLastDays(
     });
 
     return (result.samples ?? [])
-      .map((s) => ({ date: s.startDate.split('T')[0], steps: s.value ?? 0 }))
+      .map((s) => {
+        // Use local date (not UTC) so Vienna UTC+1 users don't get yesterday's date
+        const d = new Date(s.startDate);
+        const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        return { date: localDate, steps: s.value ?? 0 };
+      })
       .sort((a, b) => b.date.localeCompare(a.date));
   } catch (e) {
     console.warn('[health] getStepsForLastDays failed:', e);

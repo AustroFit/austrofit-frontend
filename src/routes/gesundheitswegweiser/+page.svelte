@@ -97,7 +97,7 @@
 </svelte:head>
 
 <!-- ─── Hero ──────────────────────────────────────────────────────────────── -->
-<div class="text-white" style="background: #E8272A;">
+<div class="text-white" style="background: #2E7D32;">
   <div class="mx-auto max-w-[1140px] px-4 py-10 md:py-14">
     <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-white/70">
       Gesundheitswegweiser

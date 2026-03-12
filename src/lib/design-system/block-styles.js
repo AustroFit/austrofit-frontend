@@ -1,7 +1,8 @@
 // src/lib/design-system/block-styles.js
 // Tailwind safelist: dynamic bg classes generated from Directus color slugs
 // bg-darkblue bg-dark-green bg-light-white bg-light-grey bg-light-green bg-beige bg-dark-blue-1 bg-light-blue-1
-// text-dark-kvb-blue text-white
+// bg-primary bg-primary-light bg-card-bg
+// text-dark-kvb-blue text-white text-primary text-primary-dark
 
 export function getBlockStyles(block) {
 

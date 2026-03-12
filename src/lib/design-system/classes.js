@@ -295,7 +295,7 @@ export const designClasses = {
   },
    
   styles: {
-    primary: 'border-dark-blue-2 bg-dark-blue-2 text-white hover:bg-dark-blue-2/90 hover:border-dark-blue-2/90',
+    primary: 'border-primary bg-primary text-white hover:bg-primary-dark hover:border-primary-dark',
     pink: 'border-dark-pink-1 bg-dark-pink-1 text-white hover:bg-dark-pink-1/90 hover:border-dark-pink-1/90',
     red: 'border-dark-pink-1 bg-dark-pink-1 text-white hover:bg-dark-pink-1/90 hover:border-dark-pink-1/90',
     green: 'border-dark-green-1 bg-dark-green-1 text-white hover:bg-dark-green-1/90 hover:border-dark-green-1/90',

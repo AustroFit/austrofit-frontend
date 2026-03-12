@@ -50,7 +50,7 @@
     <div class="mb-8 text-center">
       <div
         class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl"
-        style="background:#E8272A1A;"
+        style="background:#2E7D321A;"
       >
         🏃
       </div>
@@ -110,7 +110,7 @@
         type="submit"
         disabled={loading}
         class="mt-1 w-full rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
-        style="background:#E8272A;"
+        style="background:#2E7D32;"
       >
         {loading ? 'Konto wird erstellt…' : 'Jetzt registrieren & Punkte sichern'}
       </button>

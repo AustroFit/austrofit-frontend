@@ -6,6 +6,7 @@
   import { getAccessToken } from '$lib/utils/auth';
   import { track, identifyUser } from '$lib/utils/mixpanel';
   import { getLevelInfo, LEVEL_DEFS } from '$lib/utils/level';
+  import { calculatePoints } from '$lib/utils/streak';
   import { getBadgeDefs } from '$lib/utils/badges';
   import type { BadgeDef } from '$lib/utils/badges';
   import { qs } from '$lib/utils/qs';
@@ -39,6 +40,8 @@
   let stepsToday = $state(0);
   const STEP_GOAL = 7000;
   const stepPercent = $derived(Math.min(100, Math.round((stepsToday / STEP_GOAL) * 100)));
+  const todayPoints = $derived(calculatePoints(stepsToday));
+  const bonusSteps = $derived(stepsToday > STEP_GOAL ? stepsToday - STEP_GOAL : 0);
 
   // Streak
   let streakDays = $state(0);
@@ -113,12 +116,22 @@
 
   async function refreshDashboardData() {
     if (!userId) return;
-    const [ledgerRes, earnedRes] = await Promise.all([
+    const token = getAccessToken();
+    const authHeader = { Authorization: `Bearer ${token}` };
+    const [ledgerRes, earnedRes, entriesRes, profileRes] = await Promise.all([
       fetch(`/api/ledger-total?${qs({ user: userId })}`),
-      fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`)
+      fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`),
+      fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`),
+      fetch('/api/profile', { headers: authHeader })
     ]);
     if (ledgerRes.ok) totalPoints = Number((await ledgerRes.json()).total ?? 0);
     if (earnedRes.ok) earnedPoints = Number((await earnedRes.json()).total ?? 0);
+    if (entriesRes.ok) recentEntries = (await entriesRes.json()).data ?? [];
+    if (profileRes.ok) {
+      const profileData = await profileRes.json();
+      streakDays    = Number(profileData?.data?.streak_days    ?? 0);
+      longestStreak = Number(profileData?.data?.longest_streak ?? 0);
+    }
     await loadStepsFromHealth();
   }
 
@@ -134,7 +147,7 @@
   onMount(async () => {
     const token = getAccessToken();
     if (!token) {
-      goto('/registrierung');
+      goto('/login');
       return;
     }
 
@@ -147,11 +160,11 @@
         fetch('/api/profile', { headers: authHeader })
       ]);
 
-      if (!meRes.ok) { goto('/registrierung'); return; }
+      if (!meRes.ok) { goto('/login'); return; }
       const me = await meRes.json();
       userId = me?.data?.id ?? '';
       firstName = me?.data?.first_name ?? '';
-      if (!userId) { goto('/registrierung'); return; }
+      if (!userId) { goto('/login'); return; }
 
       // Analytics: Re-identify bei Rückkehr-Sessions + Dashboard-View tracken
       identifyUser(userId);
@@ -342,7 +355,7 @@
   {:else}
 
     <!-- ── Page header ───────────────────────────────────────────────────── -->
-    <div class="text-white" style="background:#E8272A;">
+    <div class="text-white" style="background:#2E7D32;">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-16">
         <p class="text-sm font-medium opacity-80">
           {new Date().toLocaleDateString('de-AT', {
@@ -368,7 +381,7 @@
         </div>
         <div class="flex items-start justify-between gap-4">
           <div>
-            <div class="text-5xl font-bold leading-none" style="font-family: 'Jost', sans-serif; color:#E8272A;">
+            <div class="text-5xl font-bold leading-none" style="font-family: 'Jost', sans-serif; color:#2E7D32;">
               {totalPoints.toLocaleString('de-AT')}
             </div>
             <div class="mt-1 text-sm text-gray-500">
@@ -384,9 +397,9 @@
           </div>
 
           {#if showOnboardingBadge}
-            <div class="shrink-0 rounded-2xl p-4 text-center" style="background:#E8272A1A;">
-              <div class="text-2xl font-bold" style="color:#E8272A;">+{ONBOARDING_POINTS}</div>
-              <div class="text-xs font-semibold mt-0.5" style="color:#E8272A;">Willkommensbonus</div>
+            <div class="shrink-0 rounded-2xl p-4 text-center" style="background:#2E7D321A;">
+              <div class="text-2xl font-bold" style="color:#2E7D32;">+{ONBOARDING_POINTS}</div>
+              <div class="text-xs font-semibold mt-0.5" style="color:#2E7D32;">Willkommensbonus</div>
             </div>
           {/if}
         </div>
@@ -415,9 +428,20 @@
                 <span class="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700 normal-case font-semibold">Test</span>
               {/if}
             </div>
-            <div class="mt-1 font-semibold text-lg">
-              {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
-            </div>
+            {#if stepsToday >= STEP_GOAL}
+              <div class="mt-1 font-semibold text-lg text-emerald-600">
+                {stepsToday.toLocaleString('de-AT')} Schritte ✓
+              </div>
+              {#if bonusSteps > 0}
+                <div class="text-xs text-gray-500 mt-0.5">
+                  +{bonusSteps.toLocaleString('de-AT')} Bonusschritte · {todayPoints}P heute
+                </div>
+              {/if}
+            {:else}
+              <div class="mt-1 font-semibold text-lg">
+                {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
+              </div>
+            {/if}
           </div>
           <div class="text-3xl">👟</div>
         </div>
@@ -426,7 +450,7 @@
         <div class="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
           <div
             class="h-full rounded-full transition-all duration-500"
-            style="width:{stepPercent}%; background:#E8272A;"
+            style="width:{stepPercent}%; background:#2E7D32;"
           ></div>
         </div>
         <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
@@ -459,7 +483,7 @@
       <!-- Test mode: manual step entry card -->
       {#if showTestMode}
         <div class="rounded-2xl bg-white border border-amber-200 shadow-sm p-6">
-          <ManuelleSchrittEingabe {userId} />
+          <ManuelleSchrittEingabe {userId} onSave={refreshDashboardData} />
         </div>
       {/if}
 
@@ -504,7 +528,7 @@
               <div
                 class="flex h-12 w-12 items-center justify-center rounded-xl text-2xl
                   {badge.earned ? '' : 'opacity-25 grayscale'}"
-                style={badge.earned ? 'background:#E8272A1A;' : 'background:#f3f4f6;'}
+                style={badge.earned ? 'background:#2E7D321A;' : 'background:#f3f4f6;'}
               >
                 {badge.icon}
               </div>
@@ -573,7 +597,7 @@
           <div class="flex items-start gap-4">
             <div
               class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl"
-              style="background:#E8272A1A;"
+              style="background:#2E7D321A;"
             >
               🏆
             </div>
@@ -588,7 +612,7 @@
                 {#if challenge.punkte_wert}
                   <span
                     class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
-                    style="background:#E8272A1A; color:#E8272A;"
+                    style="background:#2E7D321A; color:#2E7D32;"
                   >
                     +{challenge.punkte_wert} Punkte
                   </span>

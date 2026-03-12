@@ -97,7 +97,7 @@
         <!-- Icon -->
         <div
           class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-2xl"
-          style="background:#E8272A1A;"
+          style="background:#2E7D321A;"
         >
           {#if healthState === 'unavailable'}🌐{:else if healthState === 'denied'}⚠️{:else}👟{/if}
         </div>
@@ -131,7 +131,7 @@
               <button
                 onclick={handleTestMode}
                 class="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity"
-                style="background:#E8272A;"
+                style="background:#2E7D32;"
               >
                 Schritte manuell eingeben
               </button>
@@ -145,7 +145,7 @@
               <button
                 onclick={handleTestMode}
                 class="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity"
-                style="background:#E8272A;"
+                style="background:#2E7D32;"
               >
                 Trotzdem manuell eingeben
               </button>
@@ -161,7 +161,7 @@
                 onclick={handleConnect}
                 disabled={requesting}
                 class="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
-                style="background:#E8272A;"
+                style="background:#2E7D32;"
               >
                 {requesting ? 'Zugriff wird angefragt…' : 'Zugriff erlauben'}
               </button>

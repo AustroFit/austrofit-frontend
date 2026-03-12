@@ -18,7 +18,7 @@ export async function GET({ url, fetch }: { url: URL; fetch: typeof globalThis.f
     sort: '-occurred_at,-created_at',
     limit: String(limit),
     offset: String(offset),
-    meta: 'total_count'
+    meta: 'filter_count'
   });
 
   if (sourceType) params.set('filter[source_type][_eq]', sourceType);
@@ -29,5 +29,5 @@ export async function GET({ url, fetch }: { url: URL; fetch: typeof globalThis.f
 
   if (!res.ok) return json({ data: [], total: 0 });
   const body = await res.json();
-  return json({ data: body.data ?? [], total: body.meta?.total_count ?? 0 });
+  return json({ data: body.data ?? [], total: body.meta?.filter_count ?? 0 });
 }

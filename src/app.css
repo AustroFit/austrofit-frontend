@@ -37,30 +37,47 @@
   --font-family-heading: 'Jost', ui-sans-serif, system-ui, sans-serif;
   --default-font-family: var(--font-family-sans);
 
-  --color-primary: #5EA500;
-  --color-secondary: #FFD847;
-  --color-heading: #101828;
-  --color-body: #4A5565;
-  --color-tagline: #101828;
+  /* ============================================================
+   * AustroFit Farbpalette – Premium & Dunkel (Palette C)
+   * Stand: März 2026
+   * ============================================================ */
 
+  /* Primärfarbe: Flaschengründ */
+  --color-primary: #2E7D32;
+  --color-primary-dark: #1B5E20;   /* Hover-State, dunklere Variante */
+  --color-primary-light: #E8F5E9;  /* Chips, Badges, helle Highlights */
+
+  /* Sekundärfarbe: Gold (Punkte, Level, Badges) */
+  --color-secondary: #F5A623;
+  --color-gold: #F5A623;           /* semantischer Alias für Gamification */
+
+  /* Typografie */
+  --color-heading: #0A1C0B;        /* Fast-Schwarz-Grün */
+  --color-body: #2D4A30;           /* Fließtext, grün-grau */
+  --color-tagline: #0A1C0B;
+
+  /* Basis */
   --color-light-white: #FFFFFF;
-
+  --color-card-bg: #F8FDF8;        /* Karten-Hintergrund (fast weiß, grün-getönt) */
   --color-dark-black: #000000;
 
-  /* Legacy design-system tokens used in older components */
-  --color-dark-blue-1: #1a2744;
-  --color-dark-blue-2: #213161;
+  /* Semantisch: Fehler / Warnung */
+  --color-error: #E8272A;          /* nur für Error-States, nicht mehr für CTAs */
 
-  /* Block-system color tokens */
-  --color-darkblue: #1a2744;        /* background_color_dark slug: "darkblue" */
-  --color-dark-kvb-blue: #1a2744;   /* text color on light blocks */
-  --color-light-grey: #F4F4F6;      /* background_color_light slug: "light-grey" / card style */
-  --color-light-blue-1: #EAF0FB;    /* light backgrounds */
-  --color-dark-green-1: #3D7A00;    /* green buttons, footer */
-  --color-dark-pink-1: #E8272A;     /* AustroFit Rot – buttons */
-  --color-beige: #F5F0E4;           /* card style "beige" */
-  --color-dark-green: #1A3D1A;      /* background_color_dark slug: "dark-green" */
-  --color-light-green: #EAF5E0;     /* background_color_light slug: "light-green" */
+  /* Legacy design-system tokens (Namen bleiben – Werte auf Grüntöne umgestellt) */
+  --color-dark-blue-1: #0A1F0D;    /* → Dunkelgrün (war Navy #1a2744) */
+  --color-dark-blue-2: #1B5E20;    /* → Primary-Dark (war #213161) */
+
+  /* Block-system color tokens (Directus-Slugs → CSS-Klassen) */
+  --color-darkblue: #0A1F0D;       /* slug "darkblue" → jetzt Dunkelgrün (war #1a2744) */
+  --color-dark-kvb-blue: #0A1C0B;  /* Textfarbe auf hellen Blöcken (war #1a2744) */
+  --color-light-grey: #F4F8F4;     /* slug "light-grey" – leicht grünlich (war #F4F4F6) */
+  --color-light-blue-1: #E8F5E9;   /* helle Hintergründe → Primary-Light (war #EAF0FB) */
+  --color-dark-green-1: #1B5E20;   /* grüne Buttons, Footer (war #3D7A00) */
+  --color-dark-pink-1: #E8272A;    /* bleibt – nur Fehler/Warnung */
+  --color-beige: #F5F0E4;          /* card style "beige" – bleibt organisch */
+  --color-dark-green: #0A1F0D;     /* slug "dark-green" – dunkelster BG (war #1A3D1A) */
+  --color-light-green: #E8F5E9;    /* slug "light-green" – Primary-Light (war #EAF5E0) */
 
   
   

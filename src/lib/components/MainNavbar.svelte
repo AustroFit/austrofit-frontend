@@ -68,7 +68,7 @@
               {isActive('/gesundheitswegweiser')
                 ? 'border-b-2 font-semibold'
                 : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-            style={isActive('/gesundheitswegweiser') ? 'color:#E8272A; border-color:#E8272A;' : ''}
+            style={isActive('/gesundheitswegweiser') ? 'color:#2E7D32; border-color:#2E7D32;' : ''}
           >
             Gesundheitswegweiser
           </a>
@@ -80,7 +80,7 @@
               {isActive('/partner')
                 ? 'border-b-2 font-semibold'
                 : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-            style={isActive('/partner') ? 'color:#E8272A; border-color:#E8272A;' : ''}
+            style={isActive('/partner') ? 'color:#2E7D32; border-color:#2E7D32;' : ''}
           >
             Partner
           </a>
@@ -94,8 +94,8 @@
           class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2
             {isActive('/dashboard')
               ? 'text-white border-transparent'
-              : 'border-dark-blue-1 text-dark-blue-1 hover:bg-dark-blue-1 hover:text-white'}"
-          style={isActive('/dashboard') ? 'background:#E8272A; border-color:#E8272A;' : ''}>
+              : 'border-primary text-primary hover:bg-primary hover:text-white'}"
+          style={isActive('/dashboard') ? 'background:#2E7D32; border-color:#2E7D32;' : ''}>
           Dashboard
         </a>
         <a
@@ -103,31 +103,31 @@
           class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2
             {isActive('/profil')
               ? 'text-white border-transparent'
-              : 'border-dark-blue-1 text-dark-blue-1 hover:bg-dark-blue-1 hover:text-white'}"
-          style={isActive('/profil') ? 'background:#E8272A; border-color:#E8272A;' : ''}>
+              : 'border-primary text-primary hover:bg-primary hover:text-white'}"
+          style={isActive('/profil') ? 'background:#2E7D32; border-color:#2E7D32;' : ''}>
           Profil
         </a>
         <button
           onclick={logout}
-          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-dark-blue-1/40 text-dark-blue-1/70 hover:border-dark-blue-1 hover:text-dark-blue-1">
+          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-primary/40 text-primary/70 hover:border-primary hover:text-primary">
           Logout
         </button>
       {:else}
         <a
           href="/login"
-          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-dark-blue-1 text-dark-blue-1 hover:bg-dark-blue-1 hover:text-white">
+          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-primary text-primary hover:bg-primary hover:text-white">
           Login
         </a>
         <a
           href="/registrierung"
-          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-light-blue-1 bg-light-blue-1 text-dark-blue-1 hover:bg-dark-blue-1 hover:text-white hover:border-dark-blue-1">
+          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-primary bg-primary text-white hover:bg-primary-dark hover:border-primary-dark">
           Registrieren
         </a>
       {/if}
 
       <!-- Mobile hamburger button (rightmost) -->
       <button
-        class="lg:hidden bg-light-blue-1 rounded-md p-2 cursor-pointer text-dark-blue-1 hover:bg-dark-blue-1 hover:text-light-blue-1 transition-colors"
+        class="lg:hidden bg-primary-light rounded-md p-2 cursor-pointer text-primary hover:bg-primary hover:text-white transition-colors"
         onclick={toggleMobileMenu}
         aria-label="Menu"
         aria-expanded={mobileMenuOpen}
@@ -172,7 +172,7 @@
         onclick={closeMobileMenu}
         class="block py-2 px-4 font-medium transition-colors border-t border-black/10 mt-1 pt-3
           {isActive('/gesundheitswegweiser') ? 'font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-        style={isActive('/gesundheitswegweiser') ? 'color:#E8272A;' : ''}
+        style={isActive('/gesundheitswegweiser') ? 'color:#2E7D32;' : ''}
       >
         Gesundheitswegweiser
       </a>
@@ -183,7 +183,7 @@
         onclick={closeMobileMenu}
         class="block py-2 px-4 font-medium transition-colors border-t border-black/10 mt-1 pt-3
           {isActive('/partner') ? 'font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-        style={isActive('/partner') ? 'color:#E8272A;' : ''}
+        style={isActive('/partner') ? 'color:#2E7D32;' : ''}
       >
         Partner
       </a>
@@ -195,8 +195,7 @@
             href="/dashboard"
             onclick={closeMobileMenu}
             class="block py-2 px-3 rounded-md font-medium transition-colors
-              {isActive('/dashboard') ? 'font-semibold' : 'text-dark-blue-1 hover:bg-dark-blue-1/10'}"
-            style={isActive('/dashboard') ? 'color:#E8272A;' : ''}
+              {isActive('/dashboard') ? 'font-semibold text-primary' : 'text-primary/80 hover:bg-primary/10'}"
           >
             Dashboard
           </a>
@@ -204,27 +203,26 @@
             href="/profil"
             onclick={closeMobileMenu}
             class="block py-2 px-3 rounded-md font-medium transition-colors
-              {isActive('/profil') ? 'font-semibold' : 'text-dark-blue-1 hover:bg-dark-blue-1/10'}"
-            style={isActive('/profil') ? 'color:#E8272A;' : ''}
+              {isActive('/profil') ? 'font-semibold text-primary' : 'text-primary/80 hover:bg-primary/10'}"
           >
             Profil
           </a>
           <button
             onclick={logout}
-            class="text-left py-2 px-3 rounded-md font-medium text-dark-blue-1/60 hover:text-dark-blue-1 hover:bg-dark-blue-1/10 transition-colors">
+            class="text-left py-2 px-3 rounded-md font-medium text-primary/50 hover:text-primary hover:bg-primary/10 transition-colors">
             Logout
           </button>
         {:else}
           <a
             href="/login"
             onclick={closeMobileMenu}
-            class="block py-2 px-3 rounded-md font-medium text-dark-blue-1 hover:bg-dark-blue-1/10 transition-colors">
+            class="block py-2 px-3 rounded-md font-medium text-primary hover:bg-primary/10 transition-colors">
             Login
           </a>
           <a
             href="/registrierung"
             onclick={closeMobileMenu}
-            class="block py-2 px-3 rounded-md font-medium text-dark-blue-1 hover:bg-dark-blue-1/10 transition-colors">
+            class="block py-2 px-3 rounded-md font-medium bg-primary text-white rounded-md text-center hover:bg-primary-dark transition-colors">
             Registrieren
           </a>
         {/if}

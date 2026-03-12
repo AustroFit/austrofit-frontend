@@ -149,7 +149,7 @@
 
   {:else}
     <!-- ── Punkte-Header (kompakt, rot) ──────────────────────────────────── -->
-    <div class="text-white" style="background:#E8272A;">
+    <div class="text-white" style="background:#2E7D32;">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-14">
         <a href="/dashboard" class="mb-4 inline-flex items-center gap-1.5 text-sm opacity-80 hover:opacity-100">
           ← Zurück zum Dashboard
@@ -247,7 +247,7 @@
               <div
                 class="flex items-center gap-4 rounded-xl p-3 transition-all
                   {isCurrent ? 'border-2 shadow-sm' : 'border border-black/5'}"
-                style={isCurrent ? 'border-color:#E8272A; background:#E8272A08;' : ''}
+                style={isCurrent ? 'border-color:#2E7D32; background:#2E7D3208;' : ''}
               >
                 <!-- Level-Nummer -->
                 <div
@@ -257,7 +257,7 @@
                       : isDone
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-gray-100 text-gray-400'}"
-                  style={isCurrent ? 'background:#E8272A;' : ''}
+                  style={isCurrent ? 'background:#2E7D32;' : ''}
                 >
                   {lvl.level}
                 </div>
@@ -270,7 +270,7 @@
                     {#if isCurrent}
                       <span
                         class="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-                        style="background:#E8272A;"
+                        style="background:#2E7D32;"
                       >Aktuell</span>
                     {:else if isDone}
                       <span class="text-xs text-emerald-600">✓ Erreicht</span>

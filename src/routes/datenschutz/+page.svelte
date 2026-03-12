@@ -17,9 +17,9 @@
       </p>
       <address class="mt-3 not-italic text-sm text-gray-700">
         AustroFit<br />
-        [PLATZHALTER: Vor- und Nachname]<br />
-        [PLATZHALTER: Straße Hausnummer]<br />
-        [PLATZHALTER: PLZ Ort], Österreich<br />
+        Johannes Gnong<br />
+        Sollingergasse 8-12/5/10<br />
+        1190 Wien, Österreich<br />
         E-Mail: <a href="mailto:kontakt@austrofit.at" class="underline">kontakt@austrofit.at</a>
       </address>
     </section>
@@ -60,13 +60,32 @@
         <li>→ <strong>Keine Cookies:</strong> Die Analyse erfolgt ohne Browser-Cookies, ausschließlich über eine anonyme ID im lokalen Speicher (localStorage).</li>
         <li>→ <strong>IP-Anonymisierung:</strong> IP-Adressen werden vor der Speicherung anonymisiert.</li>
         <li>→ <strong>Gespeicherte Events:</strong> Registrierung, Quiz-Abschluss, Health-Permission-Entscheidung, Gutschein-Einlösung – keine Inhalte, keine personenbezogenen Texteingaben.</li>
-        <li>→ <strong>Widerspruch:</strong> Du kannst die Speicherung der anonymen Analytics-ID durch Löschen des localStorage-Eintrags <code class="bg-gray-100 px-1 rounded text-xs">austrofit_analytics_id</code> verhindern.</li>
+        <li>→ <strong>Widerspruch:</strong> Du kannst die Speicherung der anonymen Analytics-ID durch Löschen des localStorage-Eintrags <code class="bg-gray-100 px-1 rounded text-xs">austrofit_anonymous_id</code> verhindern.</li>
       </ul>
     </section>
 
-    <!-- 4. Hosting -->
+    <!-- 4. Affiliate-Links (AWIN) -->
     <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
-      <h2 class="mb-4 text-lg font-semibold text-gray-900">4. Hosting & Infrastruktur</h2>
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">4. Affiliate-Links (AWIN)</h2>
+      <p class="text-sm text-gray-600 leading-relaxed mb-3">
+        AustroFit nimmt am Affiliate-Partnerprogramm von <strong>AWIN AG</strong> (Eichhornstraße 3, 10785 Berlin, Deutschland) teil.
+        Auf unserer Plattform können Links zu Angeboten von AWIN-Partnern eingebettet sein. Wenn du auf einen
+        solchen Link klickst, wird eine Verbindung zu den Servern von AWIN hergestellt, um die Vermittlung
+        nachzuverfolgen.
+      </p>
+      <ul class="text-sm text-gray-600 space-y-1.5 list-none">
+        <li>→ <strong>Zweck:</strong> Nachverfolgung von Vermittlungen zur Abrechnung von Provisionen</li>
+        <li>→ <strong>Rechtsgrundlage:</strong> Berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)</li>
+        <li>→ <strong>Datenschutzerklärung AWIN:</strong> <a href="https://www.awin.com/de/datenschutz" target="_blank" rel="noopener noreferrer" class="underline">www.awin.com/de/datenschutz</a></li>
+      </ul>
+      <p class="mt-3 text-sm text-gray-600 leading-relaxed">
+        Affiliate-Links sind in der Regel als solche erkennbar oder werden entsprechend gekennzeichnet.
+      </p>
+    </section>
+
+    <!-- 5. Hosting -->
+    <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">5. Hosting & Infrastruktur</h2>
       <p class="text-sm text-gray-600 leading-relaxed">
         Das Content-Management-System (Directus) und die Datenbank (PostgreSQL) sind auf einem
         Server in der EU (Hetzner, Deutschland) selbst gehostet. Es erfolgt keine Übertragung
@@ -75,9 +94,9 @@
       </p>
     </section>
 
-    <!-- 5. Aufbewahrung -->
+    <!-- 6. Aufbewahrung -->
     <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
-      <h2 class="mb-4 text-lg font-semibold text-gray-900">5. Speicherdauer</h2>
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">6. Speicherdauer</h2>
       <p class="text-sm text-gray-600 leading-relaxed">
         Kontodaten und Aktivitätsdaten werden gespeichert, solange ein aktives Konto besteht.
         Nach Löschung des Kontos (möglich unter Profil → Einstellungen → Konto löschen) werden
@@ -86,9 +105,9 @@
       </p>
     </section>
 
-    <!-- 6. Betroffenenrechte -->
+    <!-- 7. Betroffenenrechte -->
     <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
-      <h2 class="mb-4 text-lg font-semibold text-gray-900">6. Deine Rechte</h2>
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">7. Deine Rechte</h2>
       <p class="mb-3 text-sm text-gray-600 leading-relaxed">
         Gemäß DSGVO hast du folgende Rechte gegenüber dem Verantwortlichen:
       </p>

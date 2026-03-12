@@ -132,7 +132,7 @@
     <button
       onclick={onclose}
       class="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-      style="background:#E8272A;"
+      style="background:#2E7D32;"
     >
       Schließen
     </button>

@@ -17,13 +17,13 @@
         </div>
         <div>
           <dt class="font-medium text-gray-500">Inhaber / Betreiber</dt>
-          <dd>[PLATZHALTER: Vor- und Nachname]</dd>
+          <dd>Johannes Gnong</dd>
         </div>
         <div>
           <dt class="font-medium text-gray-500">Adresse</dt>
           <dd>
-            [PLATZHALTER: Straße und Hausnummer]<br />
-            [PLATZHALTER: PLZ] [PLATZHALTER: Ort]<br />
+            Sollingergasse 8-12/5/10<br />
+            1190 Wien<br />
             Österreich
           </dd>
         </div>
@@ -34,14 +34,6 @@
         <div>
           <dt class="font-medium text-gray-500">Unternehmensgegenstand</dt>
           <dd>Digitale Gesundheitsplattform – Bewegungsförderung und Prävention</dd>
-        </div>
-        <div>
-          <dt class="font-medium text-gray-500">UID-Nummer</dt>
-          <dd>[PLATZHALTER: ATU-Nummer, sofern vorhanden – sonst entfernen]</dd>
-        </div>
-        <div>
-          <dt class="font-medium text-gray-500">Gewerbebehörde</dt>
-          <dd>[PLATZHALTER: z.B. Magistrat Wien / Bezirkshauptmannschaft XY]</dd>
         </div>
       </dl>
     </section>

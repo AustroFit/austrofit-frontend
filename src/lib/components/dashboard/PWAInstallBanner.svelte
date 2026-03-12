@@ -80,7 +80,7 @@
               onclick={install}
               disabled={installing}
               class="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
-              style="background:#E8272A;"
+              style="background:#2E7D32;"
             >
               {installing ? 'Wird installiert…' : 'Installieren'}
             </button>

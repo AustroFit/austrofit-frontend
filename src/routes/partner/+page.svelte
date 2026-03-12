@@ -4,6 +4,7 @@
   import { onMount } from 'svelte';
   import { getAccessToken } from '$lib/utils/auth';
   import AngebotKarte from '$lib/components/partner/AngebotKarte.svelte';
+  import AwinAngebotKarte from '$lib/components/partner/AwinAngebotKarte.svelte';
   import PartnerFilter from '$lib/components/partner/PartnerFilter.svelte';
 
   interface Reward {
@@ -17,15 +18,26 @@
     id: string;
     name: string;
     logo_url?: string | null;
-    kategorie?: string | null;
-    region?: string | null;
+    kategorie?: string;
+    region?: string;
     esg_zertifiziert?: boolean;
     rewards: Reward[];
+  }
+
+  interface AwinProgram {
+    id: number;
+    name: string;
+    url: string;
+    logoUrl: string | null;
+    displayUrl: string;
+    description: string | null;
+    category: string | null;
   }
 
   let loading = $state(true);
   let errorMsg = $state('');
   let partners = $state<Partner[]>([]);
+  let awinPrograms = $state<AwinProgram[]>([]);
   let userPoints = $state(0);
   let isLoggedIn = $state(false);
 
@@ -61,15 +73,28 @@
     const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
     try {
-      // Partner-Daten und Profil parallel laden
-      const [partnerRes, profileRes] = await Promise.all([
+      // Alle Daten parallel laden
+      const [partnerRes, awinRes, profileRes] = await Promise.all([
         fetch('/api/partner'),
+        fetch('/api/awin/programs'),
         authHeader ? fetch('/api/profile', { headers: authHeader }) : Promise.resolve(null)
       ]);
 
       if (!partnerRes.ok) throw new Error(`Angebote konnten nicht geladen werden (${partnerRes.status})`);
       const body = await partnerRes.json();
       partners = body.data ?? [];
+
+      if (awinRes.ok) {
+        const awinBody = await awinRes.json();
+        awinPrograms = awinBody.data ?? [];
+      }
+
+      // null → undefined normalisieren (API kann null liefern, Interface erwartet undefined)
+      partners = partners.map((p) => ({
+        ...p,
+        kategorie: p.kategorie ?? undefined,
+        region: p.region ?? undefined
+      }));
 
       if (profileRes?.ok) {
         const meBody = await profileRes.json();
@@ -118,7 +143,7 @@
 
   {:else}
     <!-- Header -->
-    <div class="text-white" style="background:#E8272A;">
+    <div class="text-white" style="background:#2E7D32;">
       <div class="mx-auto max-w-3xl px-4 pt-8 pb-14">
         <h1 class="text-3xl font-bold" style="font-family:'Syne',sans-serif;">
           Partner-Marketplace
@@ -168,7 +193,7 @@
             <button
               onclick={() => { filterKategorie = ''; filterRegion = ''; filterEsg = false; }}
               class="mt-3 text-sm underline underline-offset-2"
-              style="color:#E8272A;"
+              style="color:#2E7D32;"
             >
               Filter zurücksetzen
             </button>
@@ -191,6 +216,36 @@
           {gefilterteAngebote.length === 1 ? 'Angebot' : 'Angebote'}
           {gefilterteAngebote.length < alleAngebote.length ? `von ${alleAngebote.length} gefiltert` : 'verfügbar'}
         </p>
+      {/if}
+
+      <!-- AWIN Online-Partner (Affiliate) -->
+      {#if awinPrograms.length > 0}
+        <div class="mt-8">
+          <div class="mb-3 flex items-center gap-2">
+            <h2 class="font-semibold text-gray-900" style="font-family:'Syne',sans-serif;">
+              Online-Partner
+            </h2>
+            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+              {awinPrograms.length}
+            </span>
+          </div>
+          <p class="mb-4 text-sm text-gray-500">
+            Exklusive Angebote unserer Online-Partner – kostenlos & ohne Punkte einlösen.
+          </p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            {#each awinPrograms as program (program.id)}
+              <AwinAngebotKarte
+                programId={program.id}
+                name={program.name}
+                logoUrl={program.logoUrl}
+                displayUrl={program.displayUrl}
+                description={program.description}
+                category={program.category}
+                targetUrl={program.url}
+              />
+            {/each}
+          </div>
+        </div>
       {/if}
     </div>
   {/if}
