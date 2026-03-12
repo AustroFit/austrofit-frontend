@@ -1,0 +1,76 @@
+/* ================================================================
+ * AustroFit Design Tokens – Farbpalette
+ * Palette: Frisch & Hell (A)   Stand: März 2026
+ *
+ * EINZIGE Quelle für alle Farben im Projekt.
+ * Änderungen hier → wirken automatisch auf gesamte App + PWA.
+ *
+ * Tailwind v4: @theme-Block definiert Utility-Klassen.
+ * Verwendung: bg-primary, text-primary, border-primary, …
+ * ================================================================ */
+
+@theme {
+
+  /* ── PRIMÄRFARBE: Frisches Mittelgrün ──────────────────────────
+   * Hauptfarbe für Buttons, Links, CTAs, aktive Zustände.
+   * ──────────────────────────────────────────────────────────── */
+  --color-primary:       #4CAF50;   /* bg-primary / text-primary          */
+  --color-primary-dark:  #2E7D32;   /* bg-primary-dark  – Hover, gedrückt */
+  --color-primary-light: #C8E6C9;   /* bg-primary-light – Chips, Badges   */
+
+  /* ── SEKUNDÄRFARBE: Gold ───────────────────────────────────────
+   * Gamification: Punkte, Level-Badges, Streak-Highlights.
+   * ──────────────────────────────────────────────────────────── */
+  --color-secondary: #F59E0B;       /* bg-secondary / text-secondary      */
+  --color-gold:      #F59E0B;       /* bg-gold – semantischer Alias       */
+
+  /* ── FEHLER / WARNUNG ──────────────────────────────────────────
+   * NUR für Error-States, Validierungsfehler, Warnmeldungen.
+   * KEIN CTA-Einsatz mehr (früher AustroFit Rot #E8272A).
+   * ──────────────────────────────────────────────────────────── */
+  --color-error:     #E8272A;       /* bg-error / text-error              */
+
+  /* ── TYPOGRAFIE ────────────────────────────────────────────────
+   * ──────────────────────────────────────────────────────────── */
+  --color-heading:   #0F1F0F;       /* text-heading – Überschriften       */
+  --color-body:      #3D5A3E;       /* text-body    – Fließtext           */
+  --color-tagline:   #0F1F0F;       /* text-tagline – Taglines            */
+
+  /* ── HINTERGRÜNDE ──────────────────────────────────────────────
+   * ──────────────────────────────────────────────────────────── */
+  --color-light-white: #FFFFFF;     /* bg-light-white – reines Weiß       */
+  --color-card-bg:     #F0FBF1;     /* bg-card-bg – Karten, Sektionen     */
+  --color-dark-black:  #000000;     /* bg-dark-black – selten             */
+
+  /* ── BLOCK-SYSTEM (Directus-Slugs → Tailwind-Klassen) ─────────
+   * In Directus werden background_color_dark/light mit einem
+   * "slug" vergeben. Dieser slug wird als CSS-Klassenname
+   * verwendet: bg-{slug}. Die Werte hier definieren das Aussehen.
+   *
+   *   Slug          Klasse           Einsatz
+   *   ──────────────────────────────────────────────────────
+   *   darkblue    → bg-darkblue    – dunkle Hero/Footer-Sektionen
+   *   dark-green  → bg-dark-green  – alternative dunkle Sektion
+   *   light-grey  → bg-light-grey  – Standard-Hellhintergrund
+   *   light-green → bg-light-green – grüner Hellhintergrund
+   *   light-blue-1→ bg-light-blue-1– helle Akzentflächen
+   *   beige       → bg-beige       – organischer Warmton
+   * ──────────────────────────────────────────────────────────── */
+  --color-darkblue:      #0D2E18;   /* bg-darkblue    – tiefes Waldgrün   */
+  --color-dark-green:    #0D2E18;   /* bg-dark-green  – = darkblue        */
+  --color-dark-green-1:  #2E7D32;   /* bg-dark-green-1– Buttons, Footer   */
+  --color-dark-kvb-blue: #0F1F0F;   /* text-dark-kvb-blue – Text auf hell */
+  --color-light-grey:    #F0FBF1;   /* bg-light-grey  – Mintgrün hell     */
+  --color-light-green:   #C8E6C9;   /* bg-light-green – Primary-Light     */
+  --color-light-blue-1:  #C8E6C9;   /* bg-light-blue-1– = light-green     */
+  --color-beige:         #F5F0E4;   /* bg-beige       – organischer Ton   */
+  --color-dark-pink-1:   #E8272A;   /* bg-dark-pink-1 – = error           */
+
+  /* ── LEGACY TOKENS (rückwärtskompatibel) ──────────────────────
+   * Alte Komponenten verwenden noch dark-blue-1/2.
+   * Namen bleiben, Werte zeigen jetzt Grüntöne.
+   * ──────────────────────────────────────────────────────────── */
+  --color-dark-blue-1: #0D2E18;     /* bg-dark-blue-1 – = darkblue        */
+  --color-dark-blue-2: #2E7D32;     /* bg-dark-blue-2 – = primary-dark    */
+
+}

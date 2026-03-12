@@ -32,69 +32,27 @@
   font-style: italic;
 }
 
+/* Farben: siehe src/styles/tokens.css */
+
 @theme {
   --font-family-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-family-heading: 'Jost', ui-sans-serif, system-ui, sans-serif;
   --default-font-family: var(--font-family-sans);
 
-  /* ============================================================
-   * AustroFit Farbpalette – Frisch & Hell (Palette A)
-   * Stand: März 2026
-   * ============================================================ */
-
-  /* Primärfarbe: Frisches Mittelgrün */
-  --color-primary: #4CAF50;
-  --color-primary-dark: #2E7D32;   /* Hover-State, dunklere Variante */
-  --color-primary-light: #C8E6C9;  /* Chips, Badges, helle Highlights */
-
-  /* Sekundärfarbe: Gold (Punkte, Level, Badges) */
-  --color-secondary: #F59E0B;
-  --color-gold: #F59E0B;           /* semantischer Alias für Gamification */
-
-  /* Typografie */
-  --color-heading: #0F1F0F;        /* Fast-Schwarz-Grün */
-  --color-body: #3D5A3E;           /* Fließtext, grün-grau */
-  --color-tagline: #0F1F0F;
-
-  /* Basis */
-  --color-light-white: #FFFFFF;
-  --color-card-bg: #F0FBF1;        /* Karten-Hintergrund (frisches Mintgrün) */
-  --color-dark-black: #000000;
-
-  /* Semantisch: Fehler / Warnung */
-  --color-error: #E8272A;          /* nur für Error-States, nicht mehr für CTAs */
-
-  /* Legacy design-system tokens (Namen bleiben – Werte auf Grüntöne umgestellt) */
-  --color-dark-blue-1: #0D2E18;    /* → Dunkelgrün (war Navy #1a2744) */
-  --color-dark-blue-2: #2E7D32;    /* → Primary-Dark (war #213161) */
-
-  /* Block-system color tokens (Directus-Slugs → CSS-Klassen) */
-  --color-darkblue: #0D2E18;       /* slug "darkblue" → jetzt Dunkelgrün (war #1a2744) */
-  --color-dark-kvb-blue: #0F1F0F;  /* Textfarbe auf hellen Blöcken (war #1a2744) */
-  --color-light-grey: #F0FBF1;     /* slug "light-grey" – frisches Mintgrün (war #F4F4F6) */
-  --color-light-blue-1: #C8E6C9;   /* helle Hintergründe → Primary-Light (war #EAF0FB) */
-  --color-dark-green-1: #2E7D32;   /* grüne Buttons, Footer */
-  --color-dark-pink-1: #E8272A;    /* bleibt – nur Fehler/Warnung */
-  --color-beige: #F5F0E4;          /* card style "beige" – bleibt organisch */
-  --color-dark-green: #0D2E18;     /* slug "dark-green" – dunkelster BG */
-  --color-light-green: #C8E6C9;    /* slug "light-green" – Primary-Light */
-
-  
-  
   /* Design tokens */
   --max-width-standard: 1140px;
   --max-width-wide: 1440px;
   --max-width-narrow: 800px;
-  
+
   /* Spacing scale */
   --spacing-s: 1rem;        /* 16px */
   --spacing-m: 1.5rem;      /* 24px */
   --spacing-l: 2rem;        /* 32px */
-  
+
   /* Container padding */
   --spacing-container-x: 1rem;
   --spacing-container-x-lg: 2rem;
-  
+
   /* Typography scale */
   --font-size-xs: 0.75rem;
   --font-size-s: 0.875rem;
@@ -105,12 +63,12 @@
   --font-size-3xl: 1.875rem;
   --font-size-4xl: 2.25rem;
   --font-size-5xl: 3rem;
-  
+
   /* Border radius */
   --radius-s: 0.25rem;
   --radius-m: 0.5rem;
   --radius-l: 1rem;
-  
+
   /* Shadows */
   --shadow-s: 0 1px 3px rgba(0,0,0,0.1);
   --shadow-m: 0 4px 6px rgba(0,0,0,0.1);
