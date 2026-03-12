@@ -46,10 +46,17 @@
 
     <div class="pr-6 lg:pr-10">
       <a href="/" class="flex h-full items-center">
+        <!-- Desktop: Logo mit Text -->
+        <img
+          src="/AF_Logo.png"
+          alt="AustroFit"
+          class="hidden md:block h-9 lg:h-10 w-auto"
+        />
+        <!-- Mobile: Favicon -->
         <img
           src="/AF_Favicon.png"
           alt="AustroFit"
-          class="h-10 md:h-12 lg:h-14 w-auto"
+          class="md:hidden h-10 w-auto"
         />
       </a>
     </div>

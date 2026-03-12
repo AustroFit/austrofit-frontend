@@ -87,10 +87,10 @@
 </script>
 
 <svelte:head>
-  <title>Gesundheitswegweiser – Tipps für ein gesünderes Leben | AustroFit</title>
+  <title>Gesundheitswegweiser – Deine Gesundheitskompetenz. Dein Weg. | AustroFit</title>
   <meta
     name="description"
-    content="Evidenzbasierte Gesundheitsartikel zu Bewegung, Ernährung und Prävention. Lerne mehr und verdiene Punkte mit unseren interaktiven Quizzen."
+    content="Dein Gesundheitswegweiser für Österreich – fundiertes Wissen zu Bewegung, Ernährung und Prävention, ausschließlich aus seriösen, ÖGPK-geprüften Quellen."
   />
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html `<script type="application/ld+json">${jsonLd}<\/script>`}
@@ -106,11 +106,11 @@
       class="text-3xl font-bold md:text-4xl"
       style="font-family: var(--font-family-heading);"
     >
-      Tipps für ein gesünderes Leben
+      Deine Gesundheitskompetenz. Dein Weg.
     </h1>
     <p class="mt-2 max-w-xl text-base text-white/80">
-      Evidenzbasierte Gesundheitsartikel für Österreich.
-      Quiz lösen und Punkte verdienen.
+      Dein persönlicher Wegweiser zu verlässlichem Gesundheitswissen – alle Inhalte basieren
+      ausschließlich auf seriösen österreichischen Quellen nach den Qualitätskriterien der ÖGPK.
     </p>
   </div>
 </div>
