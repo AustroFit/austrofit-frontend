@@ -1,10 +1,12 @@
 # ============================================================
 # AustroFit – Technische Strategie & Systemlogik
-# Version: 1.2
+# Version: 1.3
 # Zweck: Maschinenlesbarer Kontext für Claude Code / VS Code
 # Stand: März 2026
-# Änderungen v1.2: Aktualisiert auf Basis des tatsächlich
-#   implementierten Codes (SvelteKit + Directus 11.7.2)
+# Änderungen v1.3: Android Health Connect native Build fertig (git commit März 2026)
+#   @capgo/capacitor-health v8.2.17 installiert + getestet
+#   Klarstellung: rewards_direktpartner = CODE fertig, kein Business-Betrieb
+#   AWIN = Phase 1 (Business), Direktpartner = Phase 2 (Business)
 # ============================================================
 
 meta:
@@ -15,20 +17,21 @@ meta:
     frontend: "SvelteKit (Svelte 5 Runes: $state, $derived, $props, $effect)"
     css: "Tailwind CSS v4 via @tailwindcss/vite (config in src/app.css @theme)"
     analytics: "PostHog EU Cloud (eu.i.posthog.com, DSGVO-konform Frankfurt)"
-    native_wrapper: "Capacitor (vorbereitet, stubs aktiv – native Plugins noch nicht installiert)"
-    movement_api_android: "Google Health Connect (via @capacitor/health-connect – noch nicht im native Build)"
-    movement_api_ios: "Apple HealthKit (via @capacitor-community/health-kit – spätere Phase)"
-    affiliate_network: "AWIN (Phase 2 – noch nicht implementiert)"
+    native_wrapper: "Capacitor – Android Build fertig (android/ Verzeichnis, Capacitor 8)"
+    movement_api_android: "Google Health Connect via @capgo/capacitor-health v8.2.17 – IMPLEMENTIERT (März 2026)"
+    movement_api_ios: "Apple HealthKit – Phase 2 (noch nicht implementiert)"
+    affiliate_network: "AWIN – Phase 1 Business (technische Integration ausstehend)"
     payments: "Stripe oder lexoffice (geplant ab Direktpartnerschaften)"
   status:
     bildungsmodul: "FERTIG – Artikel, Quizze, Quiz-Attempts, anonym+authentifiziert"
     punktesystem: "FERTIG – points_ledger, Streak, Level (5 Stufen), Badges (5), Claim-Flow"
-    bewegungstracking: "TEILWEISE – Capacitor Health Connect vorbereitet (stubs), Manual Entry fertig, native Plugins noch nicht installiert"
-    rewards_direktpartner: "FERTIG – Direktpartner-Flow: redeem, QR-Code Gutscheine, 90-Tage-Verfall, /partner Marketplace"
-    rewards_awin: "OFFEN – Webhook-Infrastruktur, Deeplink-Generation, AWIN-Integration: Phase 2"
+    bewegungstracking: "TEILWEISE – Android Health Connect FERTIG (@capgo/capacitor-health v8.2.17); iOS + Laufen/Radfahren Phase 2"
+    rewards_direktpartner_code: "CODE FERTIG – Technischer Flow: redeem, QR-Code Gutscheine, 90-Tage-Verfall, /partner Marketplace"
+    rewards_direktpartner_business: "OFFEN – Keine echten Partner-Verträge; kein Partner-Onboarding; kein B2B-Dashboard"
+    rewards_awin: "OFFEN – Phase 1 Business: AWIN Publisher-Account, Webhook /api/awin/webhook, Deeplinks ausstehend"
     user_management: "FERTIG – Directus Auth, Login, Registrierung, Profil-Einstellungen, Account-Löschung (DSGVO)"
     community: "OFFEN"
-    partner_dashboard_b2b: "OFFEN – User-seitige Marketplace-Seite fertig; B2B-Dashboard für Partner-Firmen: Phase 2"
+    partner_dashboard_b2b: "OFFEN – User-seitige Marketplace-Seite fertig; B2B-Self-Service für Partner-Firmen: Phase 2"
     analytics: "FERTIG – PostHog EU, 7 Core-Events, DSGVO-konform"
     pwa: "FERTIG – Service Worker, Install-Banner, Background Sync (Schritt-Sync-Flag)"
 
@@ -614,7 +617,7 @@ phase_2_roadmap:
     beschreibung: "Zusätzlich zum wöchentlichen Milestone-Bonus"
   - feature: "Bewegungs-Tracking (Laufen + Radfahren)"
     beschreibung: "Wöchentliche Aggregation, WHO-Ziel 150 min/Woche"
-    voraussetzung: "Native Capacitor Build mit @capacitor/health-connect"
+    voraussetzung: "Android Health Connect native Build FERTIG – Erweiterung auf workout_types nötig"
   - feature: "B2B Partner-Dashboard"
     beschreibung: "Self-Service für Direktpartner: Angebots-Upload, Statistiken"
   - feature: "Erweiterte Fraud-Detection"

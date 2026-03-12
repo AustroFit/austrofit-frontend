@@ -1,0 +1,1566 @@
+# AustroFit Business Plan
+# Maschinenlesbares Format – iterativ versionierbar
+# Quelle: AustroFit Business Plan (Wien, 2025-08) von Johannes H. Gnong
+# Zuletzt aktualisiert: 2026-03-09
+
+meta:
+  titel: AustroFit Business Plan
+  untertitel: "Prävention, die doppelt belohnt – Heute und in der Zukunft"
+  version: "1.2"
+  datum_original: "2025-08"
+  letztes_update: "2026-03-09"
+  autor:
+    name: Johannes H. Gnong
+    email: johannes.gnong@austrofit.at
+    linkedin: Johannes H. Gnong
+  website: https://austrofit.at/
+  ort: Wien
+  seiten: 53
+  aenderungslog:
+    - version: "1.2"
+      datum: "2026-03-09"
+      aenderungen:
+        - "Faktencheck März 2026: Zahlen mit aktuellen Quellen abgeglichen"
+        - "Fitnesswirtschaft Österreich: 1.273.000 → 1.300.000 Mitglieder (WKO Eckdatenstudie 2025)"
+        - "WeWard: Umsatz 7,4 Mio USD (2022) → >10 Mio USD (CEO 2024); Funding 20 Mio als VC-Runde klargestellt"
+        - "Sweatcoin: Umsatz 20 Mio USD → ~32,7 Mio USD (BusinessOfApps 2024)"
+        - "Apotheken: Marktvolumen 6,9 Mrd EUR als Gesamtpharmamarkt klargestellt; Apothekenkanal ~6,2 Mrd EUR"
+        - "AWIN: Publisher-Account bereits vorhanden (ID 1896704); 52 Programme identifiziert, 0 beigetreten"
+        - "Fitness-App CAGR 10,3%: Verifikationsvorbehalt hinzugefügt (Statista-Paywall; EU-Schnitt ~7,74%)"
+    - version: "1.1"
+      datum: "2026-03-09"
+      aenderungen:
+        - "Implementierungsstand hinzugefügt (auf Basis austrofit-strategy.yaml v1.2 + Codebasis)"
+        - "Henne-Ei-Strategie präzisiert: AWIN Phase 1 (kein Overhead), Direktpartner Phase 2 (nach Nutzerbasis)"
+        - "Wichtig: Direktpartner-Code technisch fertig, aber keine echten Partner; B2B-Onboarding + Dashboard fehlen"
+        - "MVP-Umfang aktualisiert: Technische Direktpartner-Infrastruktur bereit, AWIN-Integration Phase 1 Business"
+        - "Android Health Connect (Capacitor) als fertig markiert (git commit März 2026)"
+        - "Tech-Stack konkretisiert: SvelteKit, Directus 11.7.2, Capacitor, @capgo/capacitor-health"
+        - "Punkteformel: MVP-Hinweis zu Flat-Rate 10P (statt geplanter gleitender Skala 4001–6999)"
+        - "Laufende Kosten: Supabase-Verweis durch Vercel + Directus ersetzt"
+    - version: "1.0"
+      datum: "2026-03-09"
+      aenderungen:
+        - "Initiale YAML-Konvertierung aus Business Plan PDF (August 2025)"
+
+# ──────────────────────────────────────────────
+# 1. EXECUTIVE SUMMARY
+# ──────────────────────────────────────────────
+executive_summary:
+  mission: >
+    AustroFit ist eine mobile Multipartner-Plattform, die Menschen dafür belohnt,
+    dass sie sich aktiv um ihre Gesundheit kümmern. Nutzer*innen sammeln durch
+    Bewegung, Gesundheitsbildung und Vorsorge Punkte und lösen diese bei
+    regionalen Partnerunternehmen ein.
+  vision: >
+    Prävention sichtbar, motivierend und sozial verankert machen – mit dem Ziel,
+    die individuelle Gesundheit zu verbessern und das österreichische
+    Gesundheitssystem langfristig zu entlasten.
+
+  problem:
+    praevention_anteil_pct: 5          # Anteil der Gesundheitsausgaben in Prävention
+    vorsorge_nutzung_pct: 15           # Bevölkerungsanteil, der Vorsorgeangebote nutzt
+    lebensstil_erkrankte_mio: 4.9      # Personen mit lebensstilbedingten Erkrankungen
+    eingeschraenkte_gesundheitskompetenz_pct: 50  # davon mit eingeschränkter Gesundheitskompetenz
+
+  loesung_usp:
+    - Bewegungstracking via HealthKit / Health Connect
+    - Gesundheitsbildung via evidenzbasierte Artikel & Quiz
+    - Gamified Belohnungssystem (Punkte, Badges, Challenges)
+    - Regionale Partnerökonomie (Einlösung nur bei gesundheitsfördernden Angeboten)
+
+  markt:
+    smartphone_besitzer_18_64_mio: 5.5
+    inaktiv_oder_teil_aktiv_mio: 4.3
+    marktdurchdringung_5pct_nutzer: 270_000
+    fitness_app_markt_wachstum_2024_2027_pct: 34
+
+  geschaeftsmodell:
+    nutzer_kostenlos: true
+    einnahmequellen:
+      - Provisionen bei Gutscheineinlösung
+      - Partnerpakete (Sichtbarkeit, Features)
+      - Listungsgebühren
+    umsatz_prognose:
+      jahr_3:
+        nutzer: 800
+        partner: 40
+        umsatz_eur: 11_000
+
+  finanzplanung:
+    kapitalbedarf_eur: 16_000
+    eigenkapital_vorhanden: true
+    foerderantraege_geplant:
+      - aws First Incubator
+      - FFG Projekt.Start
+      - Wirtschaftsagentur Wien
+      - NeuFöG
+    break_even:
+      monat: 42
+      nutzer: 1_010
+      partner: 51
+
+  roadmap_highlights:
+    - "MVP weitgehend fertiggestellt (Stand März 2026): Bildungsmodul, Punktesystem, Direktpartner-Rewards, Auth, PWA, Analytics"
+    - "Bewegungstracking Android (Health Connect) implementiert; iOS + Laufen/Radfahren folgen Phase 2"
+    - "AWIN-Affiliate-Integration erst Phase 2 (nach Nutzerbasis-Aufbau)"
+    - "Jahr 1: 200 Nutzer*innen, 10 Direktpartner"
+    - "Jahr 5: 2.000 Nutzer*innen, 150 Partner"
+
+  team:
+    gruender: Johannes H. Gnong
+    co_founder_gesucht: CTO (10–15 % Equity)
+    expertise: Gesundheitstechnologie & Regulatory Affairs (7+ Jahre)
+
+# ──────────────────────────────────────────────
+# IMPLEMENTIERUNGSSTAND (März 2026)
+# Quelle: austrofit-strategy.yaml v1.2 + Codebasis
+# ──────────────────────────────────────────────
+implementierungsstand:
+  stand: "2026-03-09"
+  tech_stack:
+    frontend: "SvelteKit (Svelte 5 Runes: $state, $derived, $props, $effect)"
+    css: "Tailwind CSS v4 via @tailwindcss/vite"
+    backend: "Directus CMS v11.7.2 (REST API)"
+    native_wrapper: "Capacitor"
+    health_api_android: "@capgo/capacitor-health v8.2.17 (Capacitor 8)"
+    health_api_ios: "Apple HealthKit – Phase 2"
+    analytics: "PostHog EU Cloud (DSGVO-konform, Frankfurt)"
+    hosting: "Vercel (frontend, nodejs22.x) + Directus Cloud"
+
+  module:
+    bildungsmodul:
+      status: "FERTIG"
+      details: "Artikel, Quizze (anonym + authentifiziert), Claim-Flow nach Registrierung"
+    punktesystem:
+      status: "FERTIG"
+      details: "points_ledger, Streak, Level (5 Stufen), 5 Badges, anonymer Claim-Flow"
+    bewegungstracking:
+      status: "TEILWEISE"
+      details: "Android Health Connect (Capacitor) implementiert; manuelle Eingabe (Test-Modus) fertig"
+      offen: "iOS HealthKit, Laufen/Radfahren-Tracking (Minuten/Woche)"
+    rewards_direktpartner_tech:
+      status: "CODE FERTIG"
+      details: "Technischer Flow (Redeem, QR-Gutscheine, Marketplace) vollständig implementiert"
+      offen_geschaeftlich: "Keine echten Partner-Verträge, kein Onboarding-Prozess, kein B2B-Dashboard – Business-seitig Phase 2"
+    rewards_awin:
+      status: "OFFEN – Phase 1 (Business)"
+      details: "AWIN Publisher-Account bereits vorhanden (ID 1896704, März 2026); 52 Programme identifiziert, 0 beigetreten; Frontend-Integration (Deeplinks, Tracking) noch offen"
+    user_management:
+      status: "FERTIG"
+      details: "Directus Auth, Login, Registrierung, Profil-Einstellungen, DSGVO-Löschung"
+    community:
+      status: "OFFEN"
+      details: "Phase 2 – Leaderboard, Social Sharing, Events"
+    partner_dashboard_b2b:
+      status: "OFFEN"
+      details: "Nutzer-seitige Marketplace-Seite fertig; B2B-Self-Service-Dashboard Phase 2"
+    analytics:
+      status: "FERTIG"
+      details: "PostHog EU, 7 Core-Events: user_registered, user_logged_in, dashboard_viewed, health_permission_result, quiz_completed, steps_synced, voucher_redeemed"
+    pwa:
+      status: "FERTIG"
+      details: "Service Worker, Install-Banner, Background Sync (Schritt-Sync-Flag)"
+
+  deployment:
+    production: "austrofit.at (Vercel, main branch)"
+    preview: "dev.austrofit.at (Vercel, dev branch)"
+    android_app: "Capacitor Build vorbereitet (android/), Google Play Upload ausstehend"
+    ios_app: "Phase 2 – TestFlight noch nicht"
+
+# ──────────────────────────────────────────────
+# 2. PRODUKT
+# ──────────────────────────────────────────────
+produkt:
+  name: AustroFit-App
+  typ: Mobile Multipartner-Plattform
+  kein_medizinprodukt: true
+  mdr_regulation: "(EU) 2017/745 – nicht anwendbar"
+
+  beschreibung: >
+    Gesundheitsförderndes Verhalten wird sichtbar belohnt. Nutzer*innen sammeln
+    Punkte durch Bewegung, Gesundheitsbildung und Präventionsmaßnahmen und lösen
+    diese bei regionalen Partnerunternehmen ein.
+
+  punktequellen:
+    - Bewegung (Schritte, Laufen, Radfahren)
+    - Gesundheitsbildung (Artikel lesen + Quiz bestehen)
+    - Präventionsmaßnahmen (Vorsorgeuntersuchungen, Impfungen)
+
+  einloesbare_partner_kategorien:
+    - Fitnessstudios & Sportgeschäfte
+    - Private Krankenversicherungen, Wellnessbetriebe, Thermen, Spas, Freibäder
+    - Apotheken, Beratungen & Therapien (Psychologie, Ernährung)
+    - BIO-Lebensmittelhersteller & Pflegeproduktanbieter
+
+  gamification:
+    framework: Octalysis (Core Drives 1, 2, 5)
+    testing: A/B-Tests
+    elemente:
+      - Tages- und Wochenziele (BMWKMS-Empfehlungen)
+      - Streaks und Challenges
+      - Levelsystem mit steigenden Vorteilen
+      - Digitale Badges als Erfolgsmarker
+      - Regelmäßige Gewinnspiele
+
+  punkte_audit_log:
+    beschreibung: Jede Punktebuchung wird im Backend mit Zeitstempel & Quelle versioniert
+    zweck: Spätere Validierungen und Anpassungen
+
+  community_funktionen:
+    - Gemeinsame Aktivitäten
+    - Bestenlisten
+    - Regionale Events
+    - Austausch
+
+  mvp:
+    version: "v1.0"
+    ziel_datum: "Q3 2026 (App Store / Google Play Launch)"
+    umfang_implementiert:
+      - "Bewegungstracking Android (Google Health Connect) – Schritte ✓; Laufen/Radfahren → Phase 2"
+      - "Bildungsmodul (eingebettete Artikel & Quiz) – vollständig ✓"
+      - "Punktebackend (Ledger, Streak, Level 1–5, 5 Badges) – vollständig ✓"
+      - "Direktpartner-Gutscheine mit QR-Code (Pay-per-Redemption) ✓"
+      - "User-Management: Login, Registrierung, Profil, DSGVO-Kontoloeschung ✓"
+      - "Analytics: PostHog EU Cloud, 7 Core-Events ✓"
+      - "PWA: Service Worker, Install-Banner, Background Sync ✓"
+      - "Capacitor Android Native Build (Health Connect integriert) ✓"
+    umfang_phase_2:
+      - "Bewegungstracking iOS (HealthKit)"
+      - "Bewegungstracking: Laufen + Radfahren (Minuten/Woche)"
+      - "AWIN-Affiliate-Integration (Webhook, Deeplinks)"
+      - "B2B Partner-Dashboard (Self-Service: Angebots-Upload, KPIs)"
+      - "Community-Features (Leaderboard, Social Sharing, Events)"
+      - "Gleitende Schritt-Skala 4001–6999 (aktuell MVP Flat-Rate 10P)"
+      - "Täglicher Streak-Bonus (+20P/Tag), Bewegungs-Streak-Boni"
+
+  mvp_hypothesen:
+    engagement: "≥ 50 % der Erstnutzer absolvieren ≥ 3 Challenges in 14 Tagen"
+    belohnung: "≥ 30 % der aktiven Nutzer lösen ≥ 1 Gutschein pro Monat ein"
+    partner: "≥ 70 % der gelisteten Angebote werden im ersten Quartal mindestens einmal eingelöst"
+
+  henne_ei_strategie:
+    phase_1:
+      bezeichnung: "Affiliate-Netzwerk AWIN (Online-Partner)"
+      begruendung: >
+        AWIN ermöglicht sofort ein umfangreiches Angebot für User ohne
+        individuelle Partnerverhandlungen. Kein Partner-Onboarding, kein
+        B2B-Dashboard, keine Exklusivität nötig – idealer Kaltstart.
+      status: "BEREIT – AWIN Publisher-Account bereits vorhanden (ID: 1896704, Stand März 2026); 52 Programme identifiziert, 0 beigetreten"
+      naechste_schritte: "Programme auswählen und beitreten; Deeplinks + Tracking-Integration ins Frontend"
+      tech_bereit: "Code-Infrastruktur für Direktpartner bereits implementiert und nutzbar auch für AWIN-Gutscheine"
+    phase_2:
+      bezeichnung: "Direktpartner (regionale KMU)"
+      begruendung: >
+        Sobald kritische Nutzerzahl erreicht: Direktverhandlungen mit regionalen
+        Partnern (Fitnessstudios, Thermen, Bio-Läden). Höhere Provision möglich,
+        stärkere Markenbindung, ESG-Fokus.
+      status: "OFFEN – nach Nutzerbasis-Aufbau"
+      noch_fehlend:
+        - Echte Partner-Beziehungen (noch keine Verträge)
+        - Partner-Onboarding-Prozess
+        - B2B Self-Service-Dashboard (Angebots-Upload, Statistiken)
+        - KYC-Light Verfahren (Firmenbuch + ESG-Selbstaudit)
+
+  skalierung_features_geplant:
+    - Schnittstellen zu Krankenkassen (ELGA, SVS)
+    - Onboarding-Prozesse für Partner (verifizierte Angebote)
+    - Impact-Analytics-API für B2G-Partner (differential privacy, DSGVO-konform)
+
+  fraud_detection:
+    phase_1:
+      - Device-ID-Check
+      - GPS-Plausibilität
+      - Schritt-Spike-Filter (> 20.000 Steps/h)
+    phase_2:
+      - ML-Anomalie-Scoring: Isolation-Forest auf Einlösemustern, Schwellenwert 0.85
+    partner_whitelisting: KYC-Light (Firmenbuch + ESG-Selbstaudit)
+    nutzerverhalten: Dreistufige Warn-/Sperr-Logik mit Transparenzbericht im Profil
+
+  kundennutzen:
+    b2c:
+      - Punkte sammeln durch Bewegung, Bildung, Prävention
+      - Belohnungen bei regionalen Partnern einlösen
+      - Fortschritt durch Gamification erleben
+      - Vernetzung durch Community-Funktionen
+      - App dauerhaft kostenlos
+      - WCAG_2_1_AA_konform: true
+    b2b:
+      - Zugang zu gesundheitsbewusster, aktiver Zielgruppe
+      - Neukundengewinnung & Kundenbindung
+      - Regionale Sichtbarkeit & Markenwahrnehmung
+      - Datenbasierte Rückmeldungen (bei gebuchten Paketen)
+    gesellschaft:
+      - Niedrigschwellige Prävention
+      - Soziale Teilhabe
+      - Förderung regionaler Wertschöpfung
+
+  usp:
+    kombination:
+      - Präventives Verhalten (Bewegung, Bildung, Vorsorge)
+      - Positive Verstärkung durch Gamification
+      - Soziale Motivation durch Community & Events
+      - Regionale Belohnung bei gesundheitsfördernden Unternehmen
+    differenzierung_zu_wettbewerb: >
+      Während Sweatcoin/WeWard nur Schritte mit monetären Rewards belohnen und
+      Krankenkassen-Bonusprogramme ohne Gamification auskommen, verbindet
+      AustroFit Prävention, Bildung und Community mit regionaler Wertschöpfung.
+
+  staerken:
+    - Ganzheitlichkeit (Bewegung, Bildung, Prävention, Community, Belohnung)
+    - Gamification & Motivation (wissenschaftlich fundiert, AIHTA-Studie)
+    - Community & soziale Teilhabe
+    - Regionale Einbindung
+    - Systemischer Mehrwert (österreichische Gesundheitsziele)
+    - Kostenfreiheit & Barrierearmut
+
+  schwaechen_und_loesungen:
+    - schwaeche: Partnerabhängigkeit
+      loesung: Diversifiziertes Partner-Portfolio + Start über Affiliate-Netzwerke
+    - schwaeche: Keine monetären Prämien
+      loesung: Indirekte Vorteile über Rabatte & Gutscheine für gesundheitsfördernde Angebote
+    - schwaeche: Erfolgsfaktor Nutzerbindung
+      loesung: Streaks, Challenges, Community-Events, Feedback-Schleifen
+    - schwaeche: Technologische Abhängigkeit (HealthKit / Health Connect)
+      loesung: Mehrere Schnittstellen + mehrstufiges Fraud-Detection-System
+
+  innovationsgrad:
+    arten:
+      - Soziale Innovation
+      - Prozessinnovation
+      - Kreativwirtschaftliche Innovation (Octalysis, Storytelling)
+      - Umwelt & Nachhaltigkeit (ESG-Partner, regionale Einlösung)
+      - Technische Innovation (Privacy-by-Design, Fraud-Detection)
+    marktvergleich:
+      international: "niedrig bis mittel (Sweatcoin, WeWard: nur Schritte)"
+      national: "mittel (SVS, ÖGK: ohne Gamification)"
+      austrofit: "hoch – erste Plattform in Österreich mit dieser Tiefe"
+
+  markenschutz:
+    domain_registriert: true
+    markenanmeldung_geplant: true
+    nizza_klassen:
+      - 42  # Software, IT-Dienstleistungen
+      - 44  # Gesundheitsförderung
+    patent: "nicht angestrebt (Innovation in strategischer Kombination, nicht Einzeltechnologie)"
+    urheberrecht: "Quellcode automatisch nach § 40a UrhG"
+    vertraglicher_schutz: "AGB & Lizenzbedingungen"
+
+  leistungserstellung:
+    phase: Startphase als EPU
+    outsourcing:
+      - MVP-Software-Entwicklung
+      - UX/UI-Design
+      - Content & digitales Marketing
+      - Recht & Datenschutz (bei Bedarf)
+      - Steuerberatung
+    tech_basis:
+      frontend: "SvelteKit (Svelte 5 Runes), Tailwind CSS v4"
+      backend: "Directus CMS v11.7.2 (Headless CMS + REST API)"
+      native: "Capacitor (@capgo/capacitor-health v8.2.17)"
+      hosting: "Vercel (Frontend, nodejs22.x)"
+      analytics: "PostHog EU Cloud (DSGVO-konform, Frankfurt)"
+      health_apis:
+        android: "Google Health Connect (via @capgo/capacitor-health)"
+        ios: "Apple HealthKit (Phase 2)"
+    punktevergabe_automatisiert:
+      - Bewegungstracking über Schnittstellen
+      - Artikel lesen + Quizabschluss
+      - Nachweis-Upload (Impfpass, Vorsorge) mit Backend-Validierung
+    partner_dashboard: Selbstverwaltung (Angebote, Einlösungen, Statistiken)
+
+# ──────────────────────────────────────────────
+# 3. UNTERNEHMEN & MANAGEMENT
+# ──────────────────────────────────────────────
+unternehmen:
+  name: AustroFit
+  rechtsform_aktuell: "in Vorbereitung"
+  rechtsform_geplant: "AustroFit e.U."
+  rechtsform_spaeter: "GmbH (bei steigender Komplexität)"
+  sitz: Wien
+  gruendungsstatus: "in Vorbereitung"
+  gruendung_nach: "Fertigstellung des MVP"
+
+  gruender:
+    name: Johannes H. Gnong
+    erfahrung_jahre: 7
+    branche: Medizinprodukte
+    expertise:
+      - Quality Management
+      - Regulatory Affairs
+      - Medizinprodukte-Softwareentwicklung
+    rollen:
+      - Strategie, Produktentwicklung & Partnerakquise
+      - Technische Basis (MVP-Definition, Prozessautomatisierung)
+      - Regulatorische & datenschutzrechtliche Umsetzung
+
+  team_ausbau:
+    cto:
+      titel: Co-Founder*in / CTO
+      equity_pct_range: [10, 15]
+      fokus: Mobile-Development, Gamification, DevOps
+      timing: ab MVP-Validierung
+    cmo:
+      titel: Chief Marketing Officer / Growth Lead
+      start: ab > 1.000 Nutzer*innen
+      überbrückung: Freelancer
+    cfo:
+      titel: CFO Finance & Controlling
+      start_intern: ab Jahr 3
+      ueberbrueckung: externe Beratung
+    advisory_board:
+      aufbau: ab Jahr 1
+      bereiche:
+        - Public Health
+        - Growth Marketing
+        - IT-Security
+      interesse_bekundet: Future Health Lab
+
+  swot:
+    staerken:
+      - Fachliche Expertise in Gesundheitstechnologie & Regulatorik
+      - Innovatives, gamifiziertes Präventionsmodell mit evidenzbasiertem Impact
+      - Kostenfreier Zugang & niedrige Einstiegshürden
+      - Regionale Verankerung & lokale Wertschöpfung
+      - Community-Fokus als Verstärker für soziale Teilhabe
+      - Kombination aus Bildung, Bewegung, Belohnung und sozialem Impact
+    schwaechen:
+      - Noch kein fixes Kernteam / stark vom Gründer abhängig
+      - Noch kein Advisory Board
+      - Plattformnutzen abhängig vom regionalen Partnerangebot
+      - Impact nur bei regelmäßiger Nutzung (Gamification muss langfristig motivieren)
+      - Technologische Abhängigkeit von HealthKit / Health Connect
+    chancen:
+      - Wachsende Nachfrage nach niedrigschwelliger Prävention & Digital Health
+      - Hohes gesellschaftliches & politisches Interesse an Gesundheitsförderung
+      - Starke Wachstumsprognose für Fitness- & Gesundheits-Apps in Österreich
+      - Förderung durch öffentliche Stellen
+      - Anschlussfähigkeit an nationale Gesundheitsziele
+    risiken:
+      - Hoher Wettbewerb im App-Markt
+      - Kritische Masse an Nutzer*innen & Partnern muss erst aufgebaut werden
+      - Nutzerbindung erfordert ständige Optimierung
+      - Mögliche Verzögerungen bei B2G-Kooperationen
+
+  ziele:
+    kurzfristig_0_12_monate:
+      fokus: B2C
+      ziele:
+        - MVP entwickeln und launchen (Bewegungstracking, Bildungsmodul, Punktesystem)
+        - SEO-Blog mit gesundheitsbezogenen Inhalten aufbauen
+        - 200 registrierte Nutzer*innen gewinnen
+        - 10 regionale Partner (via Affiliate-Netzwerk)
+        - Förderanträge vorbereiten & als Social Business etablieren
+    mittelfristig_1_3_jahre:
+      fokus: B2B2C
+      ziele:
+        - B2B2C-Modell mit direkten Kooperationspartnern
+        - 1.000 aktive Nutzer*innen
+        - 40 Partnerunternehmen
+        - Community-Challenges & Events
+        - Partner-Dashboard mit KPIs
+        - Beiträge zu Gesundheitszielen (Ziel 3, 5, 8)
+    langfristig_3_5_jahre:
+      fokus: B2G2C
+      ziele:
+        - Belohnungsfähige Präventionsmaßnahmen in staatliche Programme integrieren
+        - Interdisziplinäres Kernteam aufbauen
+        - Erste B2G-Kooperation
+        - Forschungspartnerschaften zur Wirkungsmessung
+        - Beiträge zu Gesundheitszielen (1, 2, 6, 9)
+
+  umsetzungsplanung:
+    phasen:
+      - name: MVP-Entwicklung & Vorgründung
+        zeitraum: "< 1 Jahr"
+        app:
+          - Bewegungstracking
+          - Bildungsmodul (Artikel & Quiz)
+          - Punktesystem & Einlösung bei Affiliate-Partnern
+        unternehmen:
+          - Business Plan fertigstellen & einreichen (i2b-Wettbewerb)
+          - Pitch-Unterlagen erstellen
+          - Webseite + Gesundheitsblog aufbauen
+          - Gewerbeanmeldung, Markenanmeldung, Förderanträge vorbereiten
+          - Partnerunternehmen via Affiliate-Netzwerke
+      - name: MVP-Launch & Validierung / Gründungsphase
+        zeitraum: "< 1 Jahr"
+        app:
+          - Veröffentlichung (Google Play)
+          - Marketingkampagnen zur Validierung
+        unternehmen:
+          - Firmengründung
+          - Markenanmeldung
+          - Erste Fördermittel
+          - Erste Gespräche (Future Health Lab)
+      - name: App-Entwicklung & B2B2C-Erweiterung / Skalierung
+        zeitraum: "1–3 Jahre"
+        app:
+          - Gamification (Challenges, Gewinnspiele, Maskottchen, Leveling, Badges)
+          - User & Partner-Dashboard
+          - Community & UI/UX
+          - Direkte Partnerschaften (B2B2C)
+          - Fraud-Detection
+        unternehmen:
+          - Weitere Marketingkampagnen (Partner-Gewinnung)
+          - Erste Gespräche mit öffentlichen Gesundheitsakteuren (B2G)
+          - AustroFit-Team erweitern
+      - name: Impact Skalierung & B2G-Erweiterung
+        zeitraum: "3–5 Jahre"
+        app:
+          - Belohnungsfähige Präventionsmaßnahmen in öffentliche Programme einbinden
+          - Schnittstellen-Integration zu öffentlichen Gesundheitsakteuren
+        unternehmen:
+          - Pilotprojekte mit öffentlichen Gesundheitsakteuren
+          - Interdisziplinäres Team aufbauen
+
+# ──────────────────────────────────────────────
+# 4. BRANCHE, MARKT & WETTBEWERB
+# ──────────────────────────────────────────────
+markt:
+  branche:
+    positionierung:
+      - Digital Health
+      - Prävention
+      - Fitnesswirtschaft
+      - Gesundheitsbildung
+    fitness_app_markt_oesterreich:
+      umsatz_2024_mio_eur: 15.8
+      umsatz_2027_mio_eur: 21.0
+      wachstum_pct: 34
+      cagr_pct: 10.3  # ⚠ NICHT unabhängig verifiziert (Statista-Paywall); EU-Markt-CAGR laut anderen Quellen ~7,74%; Auditor-Hinweis: Quelle ggf. direkt verlinken
+    fitnesswirtschaft_oesterreich:
+      mitglieder: 1_300_000  # WKO Eckdatenstudie 2025 (Daten 2024): ca. 1,3 Mio (+6,4% vs. 2023)
+      mitglieder_2023: 1_273_000  # Vorjahreswert (nicht mehr aktuell)
+      branchenumsatz_netto_mio_eur: 654.8  # bestätigt, WKO 2025
+      fitnessanlagen: 1_349  # bestätigt, WKO 2025
+      quelle: "WKO/DHfPG Eckdatenstudie 2025 (nicht IHRSA)"
+    praeventionslandschaft:
+      vorsorge_nutzer_pct: 15
+      vorsorge_nutzer_mio: 1.08
+      praevention_anteil_gesundheitsausgaben_pct: 5
+      praevention_ausgaben_mrd_eur: 1.8
+
+  porter_analyse:
+    neue_anbieter: mittel
+    lieferanten_partnerunternehmen: mittel
+    kaeufer_nutzer: hoch
+    ersatzprodukte: hoch
+    wettbewerb_bestehend: hoch
+    fazit: "Strategische Lücke im Bereich digitaler Prävention mit regionalem Impact"
+
+  marktpotenzial:
+    b2c:
+      smartphone_besitzer_18_64_mio: 5.5
+      inaktiv_oder_teil_aktiv_mio: 4.2
+      realistisch_adressierbar_mio: 3.4
+      smartphone_penetration_annahme_pct: 95
+      absatz_konservativ:
+        - jahr: 1
+          nutzer: 200
+          umsatz_eur: 400
+        - jahr: 2
+          nutzer: 500
+          umsatz_eur: 1_800
+        - jahr: 3
+          nutzer: 800
+          umsatz_eur: 3_900
+        - jahr: 4
+          nutzer: 1_200
+          umsatz_eur: 7_100
+        - jahr: 5
+          nutzer: 2_000
+          umsatz_eur: 13_100
+    b2b:
+      potenzielle_partner_gesamt: 59_000
+      kategorien:
+        - kategorie: Fitnessstudios
+          anzahl: "> 1.349"
+          branchenumsatz_mio_eur: 654.8
+        - kategorie: Private Sportanbieter
+          anzahl: "≈ 10.000"
+          marktvolumen_mrd_eur: 3.15
+        - kategorie: Apotheken
+          anzahl: "≈ 1.400"
+          marktvolumen_mrd_eur: 6.2  # Apothekenkanal (OTC + Rx exkl. Spitalseinkäufe); Gesamtpharmamarkt AT inkl. Spital ≈ 6,9 Mrd EUR
+        - kategorie: BIO-Betriebe
+          anzahl: "≈ 24.000"
+          marktvolumen_mio_eur: 873
+      absatz_konservativ:
+        - jahr: 1
+          partner: 0  # nur Affiliate
+          umsatz_eur: 0
+        - jahr: 2
+          partner: 20
+          umsatz_eur: 3_700
+        - jahr: 3
+          partner: 40
+          umsatz_eur: 7_400
+        - jahr: 4
+          partner: 80
+          umsatz_eur: 14_800
+        - jahr: 5
+          partner: 150
+          umsatz_eur: 27_700
+    b2g:
+      akteure:
+        - Gesundheitsministerien
+        - Sozialversicherungsträger & Krankenkassen
+        - Gemeinden mit Präventionsprogrammen
+        - Sport-Dachverbände (ASKÖ, ASVÖ, SPORTUNION)
+        - Öffentliche Sportangebote (Bewegt im Park, Jackpot.fit)
+      ab_jahr: 3
+
+  zielgruppen:
+    b2c:
+      beschreibung: "Gesund-aktive und teil-aktive Menschen, 18–64 Jahre (3,38 Mio.)"
+      personas:
+        - name: Thomas
+          typ: "Urban Health-Enthusiast"
+          alter: 28
+          interessen: [Outdoor-Fitness, Yoga, Bio-Food]
+          werte: [Gesundheit, Nachhaltigkeit, Community]
+          pain_points:
+            - App-Flut (> 10 Fitness-Apps), keine sticht heraus
+            - Keine echten lokalen Benefits
+          desired_gain: "Gamifizierte App mit Bio-Gutscheinen in der Stadt"
+        - name: Anna
+          typ: "Time-Pressed Professional"
+          alter: 45
+          interessen: [Wearables, Pendel-Radfahren, Family-Health]
+          werte: [Work-Life-Balance, Effizienz]
+          pain_points:
+            - Zeitmangel (50-h-Woche)
+            - Motivation bricht ohne Sofortbelohnung ab
+          desired_gain: "Schritt-Sync + schnelle Einlösung in < 3 Min."
+      zugangskanäle:
+        - SEO-Blog & Google-Suche
+        - Instagram / TikTok via Gesundheits-Influencer
+        - Referral ("Lade eine Person ein, erhalte Punkte")
+        - Hinweis in Partnerbetrieben
+    b2b:
+      beschreibung: "KMU mit gesundheitsförderndem Angebot"
+      persona:
+        name: "VitaFit OG"
+        typ: Regionaler Gesundheits-KMU
+        pain_points:
+          - Hohe CAC in klassischen Online-Kanälen (Meta-Ads > 3 €/Click)
+          - Geringe Sichtbarkeit bei präventionsaffiner Zielgruppe
+        desired_gain: "Pay-per-Redemption-Plattform mit messbarem Dashboard"
+      zugangskanäle:
+        - Direktansprache (E-Mail, LinkedIn, Pitchmaterial)
+        - Empfehlungen durch andere Partner
+        - Regionale Gesundheitsevents
+        - Affiliate-Netzwerke
+    b2g:
+      beschreibung: "Öffentliche Gesundheitsinstitutionen"
+      anwendungsfelder:
+        - Integration in Gesundheitsziele Österreich (Ziel 3, 5, 8)
+        - Partnerschaften mit "Bewegt im Park", "Jackpot.fit"
+        - Bonusmodelle mit Krankenkassen oder Gemeinden
+        - Pilotprojekte zur Impact-Messung
+
+  trends:
+    - Gesundheit als Lebensstrategie
+    - Prävention & Frühintervention als Schlüsselstrategie
+    - Digital Health & eHealth auf dem Vormarsch (Statista +34 % bis 2027)
+    - Innovation durch Technologie & Datensouveränität (Privacy-by-Design)
+    - Patient*innenzentrierung & Partizipation
+    - Betriebliche Gesundheitsförderung als neuer Standard
+
+  konkurrenzanalyse:
+    methodik: "Features & Merkmale nach AustroFit-Kriterien; exkludiert: reine Tracking-Apps"
+    identifizierte_apps_gesamt: 24
+    hoch_uebereinstimmend_apps: 11
+    ausgewaehlte_wettbewerber:
+      - name: Pandocs
+        typ: Betriebliche Gesundheitsförderung
+        punktesystem: hoch
+        gamification: hoch
+        bewegung: gering
+        bildung: hoch
+        community: hoch
+        belohnungssystem: gering
+        downloads_google_play: "5K+"
+      - name: Optimity
+        typ: Health & Rewards
+        punktesystem: hoch
+        gamification: gering
+        bewegung: hoch
+        bildung: hoch
+        community: gering
+        belohnungssystem: keine
+        downloads_google_play: "100K+"
+        funding_mio_usd: 6.05
+      - name: WeWard
+        typ: Reward-for-Steps
+        punktesystem: gering
+        gamification: hoch
+        bewegung: gering
+        bildung: keine
+        community: hoch
+        belohnungssystem: hoch
+        downloads_google_play: "10M+"
+        umsatz_mio_usd: ">10"  # CEO-Aussage 2024: "tens of millions of USD"; 7,4 Mio war 2022-Schätzung
+        funding_2025_mio_usd: 20  # VC-Finanzierungsrunde (NICHT Umsatz)
+      - name: Sweatcoin
+        typ: Reward-for-Steps
+        punktesystem: gering
+        gamification: hoch
+        bewegung: gering
+        bildung: keine
+        community: keine
+        belohnungssystem: keine
+        downloads_google_play: "100M+"
+        registrierte_nutzer_mio: 190
+        umsatz_mio_usd: 32.7  # BusinessOfApps-Schätzung 2024; ältere Quellen nannten fälschlicherweise 20 Mio
+      - name: Evidation
+        typ: App & Research-Rewards
+        punktesystem: hoch
+        gamification: keine
+        bewegung: gering
+        bildung: gering
+        community: gering
+        belohnungssystem: keine
+        downloads_google_play: "1M+"
+        umsatz_mio_usd: 36.1
+      - name: Paceline
+        typ: iOS-App + Fintech
+        punktesystem: gering
+        gamification: gering
+        bewegung: hoch
+        bildung: keine
+        community: keine
+        belohnungssystem: gering
+        app_store_bewertungen: "18K+"
+        funding_gesamt_mio_usd: 54.9
+        umsatz_mio_usd: 11.5
+      - name: SVS Gesundheitshunderter
+        typ: Österreichische Sozialversicherung (Selbständige)
+        versicherte: 1_200_000
+        bonus_pro_person_eur: 100
+        max_budget_mio_eur: 120
+      - name: ÖGK
+        typ: Österreichische Pflichtversicherung
+        versicherte: 7_600_000
+        budget_2025_mrd_eur: 21
+    luecken_im_markt:
+      - Kein Anbieter kombiniert Bewegung, Bildung, Community, Gamification und Prävention
+      - Globale Apps kaum KMU-Partner, keine regionale Wertschöpfung
+      - Community-Funktionen meist nur Leaderboards
+      - Nachhaltigkeit selten integriert
+      - Belohnungen nicht auf Gesundheitsförderung fokussiert
+      - Datenschutz oft intransparent
+
+  markteintrittsbarrieren:
+    - Technische Komplexität (Integration, Datenschutz, Fraud-Detection)
+    - Verhaltensänderung erfordert verhaltenspsychologisch fundierte Gamification
+    - Partnerakquise & Angebotsdichte (natürliche Eintrittsbarriere)
+    - Regulatorik & Vertrauen (DSGVO-Konformität)
+
+  abhaengigkeiten:
+    - Technologie-Schnittstellen (Google, Apple APIs)
+    - Partnerbeteiligung (User Engagement = Partnerbindung)
+    - Nutzeraktivität & Retention
+    - Zugang zu öffentlichen Stellen (B2G, politische Entscheidungsprozesse)
+
+# ──────────────────────────────────────────────
+# 5. MARKETING & VERTRIEB
+# ──────────────────────────────────────────────
+marketing:
+  strategie: "Zweistufig: Community-Aufbau + zielgerichtete Aktivierung"
+  roas_zielwert: ">= 3 (Umsatz/Marketingkosten)"
+  tracking: "UTM in Mixpanel/PostHog"
+
+  funnel_aarrr:
+    awareness_acquisition:
+      kanaele: [SEO-Blog, Social Ads, Influencer]
+      kpi: "Cost-per-Signup (CPS) ≤ 2,50 €"
+    activation:
+      massnahmen: [Onboarding-Quiz, Challenge Day 1]
+      kpi: "Day-1-Activation-Rate ≥ 30 %"
+    retention:
+      massnahmen: [Streaks, Push-Reminder, Community-Events]
+      kpi: "Week-4 Retention ≥ 10 %"
+    referral:
+      massnahmen: ["Invite-a-Friend (z. B. 50 Punkte)"]
+      kpi: "Viral-K-Factor ≥ 0,2"
+    revenue:
+      massnahmen: ["1–2 Gutscheineinlösungen/Monat"]
+      kpi: "ARPU ≥ 0,41 €/Monat"
+
+  phasen:
+    vorbereitungsphase:
+      - SEO-Blog (Bewegung, Ernährung, Prävention, mentale Gesundheit)
+      - Organische Reichweite über Google-Suche
+      - Lead-Generierung (Vorregistrierung, Newsletter)
+      - Affiliate-Partner-Integration im Blog
+    aktivierungsphase:
+      - Social-Media-Kampagnen (Instagram, Facebook, TikTok)
+      - Influencer-Partnerschaften (Gesundheit, Fitness, Lifestyle)
+      - Google Ads (Keyword-Targeting auf Präventionsthemen)
+      - Referral-Programm ("Lade eine Freundin ein – Extra-Punkte")
+
+  budget:
+    jahr_1_monatlich_eur: 170
+    cac_ziel_erste_1000_nutzer_eur: [8, 10]
+
+  vertrieb:
+    b2c:
+      strategie: Inbound (Content-Marketing, Social Ads, Referral)
+    b2b:
+      phase_1:
+        zeitraum: "Jahr 1–2"
+        kanal: Affiliate-Netzwerke (AWIN)
+        vorteile:
+          - Niedrige Hürden
+          - Schneller Proof-of-Concept
+          - Skalierbar ab Launch
+      phase_2:
+        ab: "Jahr 2"
+        massnahmen:
+          - Direktansprache (bestehende Kontakte, regionale Netzwerke)
+          - Branchen-Events & Gesundheitstage
+          - 1:1-Pitches & Videocalls
+          - Referenzen durch Pilotpartner als "Showcase"
+          - Outbound-Zyklus (Research → Warm-E-Mail → Demo)
+      tools:
+        crm: "HubSpot Free oder Zoho"
+        partner_scoring: "Engagement-Score 0–100 für Follow-up-Frequenz"
+    b2g:
+      massnahmen:
+        - Pilotprojekte mit Gemeinden, Krankenkassen, Sozialversicherungen
+        - Anbindung an bestehende Initiativen (Bewegt im Park, Jackpot.fit)
+        - Nutzung bestehender Gesundheitsförderprogramme
+
+  partner_onboarding:
+    schritte:
+      1: "Lead-Generation via Landing-Page"
+      2: "Self-Service-Registrierung (AGB, Verhaltenskodex)"
+      3: "Angebots-Upload (CSV/JSON-Template)"
+      4: "API-Key Ausgabe & Test-Voucher"
+      5: "Go-Live"
+
+# ──────────────────────────────────────────────
+# 6. PREISGESTALTUNG
+# ──────────────────────────────────────────────
+preisgestaltung:
+  b2c:
+    kostenlos: true
+    kernfunktionen_kostenlos:
+      - Bewegungstracking & Challenges
+      - Quiz-basierte Gesundheitsbildung
+      - Punktevergabe & Belohnungseinlösung
+      - Community-Funktionen
+      - Events & Gewinnspiele
+    premium_abo: false
+    wert_exchange: "100 Punkte ≙ 1 €"
+
+  b2b_provisionsmodell:
+    basis: Pay-per-Redemption
+    staffel:
+      - monatsumsatz_bis_eur: 5_000
+        provision_pct: 6
+      - monatsumsatz_von_eur: 5_000
+        monatsumsatz_bis_eur: 25_000
+        provision_pct: 5
+      - monatsumsatz_ab_eur: 25_000
+        provision_pct: 4
+
+  b2b_listungsgebuehr:
+    erneuerung_tage: 90
+    staffel:
+      - unternehmensgroesse: Grossunternehmen
+        kosten_pro_angebot_eur: 0.25
+      - unternehmensgroesse: Mittelunternehmen
+        kosten_pro_angebot_eur: 0.15
+      - unternehmensgroesse: "Einzel-, Kleinst- & Kleinunternehmen"
+        kosten_pro_angebot_eur: 0.0
+
+  b2b_pakete:
+    - paket: Basic
+      monatsbeitrag_eur: 0
+      leistungen:
+        - Gutschein-Einlösung
+        - Zugang zum Dashboard
+    - paket: Plus
+      monatsbeitrag_eur: 19
+      leistungen:
+        - Basic-Paket
+        - Priorisierte Darstellung
+        - Highlight-Badge
+        - 50 Gratis-Listings
+    - paket: Premium
+      monatsbeitrag_eur: 39
+      leistungen:
+        - Plus-Paket
+        - Event-Integration
+        - Statistikauswertungen
+        - Logo-Branding
+        - 200 Gratis-Listings
+    - paket: Nachhaltigkeit
+      monatsbeitrag_eur: 29
+      bedingung: "ESG-Zertifikat erforderlich"
+      leistungen:
+        - Premium-Paket
+        - ESG-Label
+        - Filterplatzierung
+        - 300 Gratis-Listings
+
+  paketverteilung_annahme:
+    basic_pct: 40
+    plus_pct: 35
+    premium_pct: 15
+    nachhaltigkeit_pct: 10
+
+  zahlungskonditionen:
+    abrechnungsrhythmus: monatlich oder quartalsweise
+    zahlungsziel_tage: 14
+    abrechnungsmodell: Automatisiert via Partner-Dashboard
+    technische_umsetzung: "Stripe oder lexoffice"
+
+  kundenservice:
+    b2c:
+      - FAQ & Hilfecenter in App
+      - In-App-Feedbackformular
+      - Support-E-Mail
+    b2b:
+      - Partner-Dashboard mit Support-Zugang
+      - Digitales Onboarding-Manual
+      - Check-ins per E-Mail/Video (1. Monat nach Registrierung)
+      - Self-Service-Bereich mit Video-Tutorials
+
+# ──────────────────────────────────────────────
+# 7. FINANZPLANUNG
+# ──────────────────────────────────────────────
+finanzplanung:
+  gruendungskosten:
+    kapitalbedarf_mvp_eur: 5_000
+    investitionen:
+      - bereich: Web-App-Entwicklung (MVP)
+        betrag_eur: 50
+        bemerkung: "KI-Tools + Expertennetzwerk"
+      - bereich: "UI/UX-Design & Testing"
+        betrag_eur: 0
+        bemerkung: Expertennetzwerk
+      - bereich: "Branding, Website & Blogaufbau"
+        betrag_eur: 0
+        bemerkung: eigenständig + Expertennetzwerk
+      - bereich: "Marketing-Vorbereitung (SEO)"
+        betrag_eur: 0
+        bemerkung: eigenständig + Expertennetzwerk
+      - bereich: "Hosting & Software-Tools"
+        betrag_eur: 500
+        bemerkung: "Domain, Hosting, DB, Google Play, Apple App Store"
+      - bereich: "Recht & Datenschutz (AGB, DSGVO)"
+        betrag_eur: 1_000
+        bemerkung: WKO-Erstberatung
+      - bereich: Gewerbeanmeldung
+        betrag_eur: 0
+        bemerkung: kostenlos
+      - bereich: Markenregistrierung
+        betrag_eur: 1_250
+        bemerkung: einmalige Gebühr
+      - bereich: "Reserve & unvorhergesehene Kosten"
+        betrag_eur: 2_000
+        bemerkung: Puffer
+
+  laufende_kosten_jahr_1:
+    monatlich_gesamt_eur: 600  # exkl. Puffer & Deferred Salary
+    positionen:
+      - position: "Domain & Website-Hosting"
+        eur_monat: 10
+      - position: "App-Hosting & Cloud-Infrastruktur"
+        eur_monat: 25
+        beispiel: "Vercel (Frontend) + Directus Cloud (Backend CMS)"
+      - position: App-Entwicklerkonto
+        eur_monat: 8
+        bemerkung: Apple App Store
+      - position: "Schnittstellen & APIs"
+        eur_monat: 0
+        bemerkung: "HealthKit, Health Connect kostenlos"
+      - position: Marketingkosten
+        eur_monat: 200
+        bemerkung: "CAC; steigt jährlich"
+      - position: "Buchhaltung & Steuerberatung"
+        eur_monat: 100
+      - position: "App-Wartung & Support"
+        eur_monat: 0
+        bemerkung: "intern zu Beginn"
+      - position: "Versicherungen & gewerbliche Abgaben"
+        eur_monat: 200
+        bemerkung: "Unfall, Haftpflicht, Cyber, Grundumlagen"
+      - position: "Unternehmerlohn / Deferred Salary"
+        eur_monat: 600
+        bedingung: "Auszahlung erst ab ≥ 15.000 € MRR"
+      - position: "Reserve & unvorhergesehene Kosten"
+        eur_jahr: 2_000
+
+  arpu_berechnung:
+    gesundheits_portemonnaie_eur_monat: 273
+    formel: "ARPU/Jahr = Gesundheits-Portemonnaie × Capture-Rate × Provision × 12"
+    szenarien:
+      - capture_rate_pct: 1
+        provision_pct: 5
+        arpu_eur_jahr: 1.6
+        interpretation: "Sehr konservativ – Proof of Concept"
+      - capture_rate_pct: 3
+        provision_pct: 5
+        arpu_eur_jahr: 4.9
+        interpretation: "Realistische Traction nach 24 Monaten"
+      - capture_rate_pct: 5
+        provision_pct: 5
+        arpu_eur_jahr: 8.2
+        interpretation: "Guter Partnermix nach 24 Monaten"
+      - capture_rate_pct: 10
+        provision_pct: 5
+        arpu_eur_jahr: 16.4
+        interpretation: "Ambitioniert – starkes Loyalty-Programm"
+
+  umsatzziele:
+    provision:
+      - jahr: 1
+        nutzer: 200
+        capture_rate_pct: 1
+        partner_brutto_umsatz_eur: 6_541
+        provisionssatz_pct: 6
+        austrofit_provision_eur: 400
+      - jahr: 2
+        nutzer: 500
+        capture_rate_pct: 2
+        partner_brutto_umsatz_eur: 32_705
+        provisionssatz_pct: 5.5
+        austrofit_provision_eur: 1_800
+      - jahr: 3
+        nutzer: 800
+        capture_rate_pct: 3
+        partner_brutto_umsatz_eur: 78_492
+        provisionssatz_pct: 5
+        austrofit_provision_eur: 3_900
+      - jahr: 4
+        nutzer: 1_200
+        capture_rate_pct: 4
+        partner_brutto_umsatz_eur: 156_984
+        provisionssatz_pct: 4.5
+        austrofit_provision_eur: 7_100
+      - jahr: 5
+        nutzer: 2_000
+        capture_rate_pct: 5
+        partner_brutto_umsatz_eur: 327_049
+        provisionssatz_pct: 4
+        austrofit_provision_eur: 13_100
+      - jahr: "~10"
+        nutzer: 270_000
+        capture_rate_pct: 10
+        partner_brutto_umsatz_mio_eur: 88
+        provisionssatz_pct: 4
+        austrofit_provision_mio_eur: 3.5
+
+    pakete:
+      - jahr: 1
+        partner: 0
+        plus_eur: 0
+        premium_eur: 0
+        nachhaltigkeit_eur: 0
+        gesamt_eur: 0
+      - jahr: 2
+        partner: 20
+        plus_eur: 1_596
+        premium_eur: 1_404
+        nachhaltigkeit_eur: 696
+        gesamt_eur: 3_700
+      - jahr: 3
+        partner: 40
+        plus_eur: 3_192
+        premium_eur: 2_808
+        nachhaltigkeit_eur: 1_392
+        gesamt_eur: 7_400
+      - jahr: 4
+        partner: 80
+        plus_eur: 6_384
+        premium_eur: 5_616
+        nachhaltigkeit_eur: 2_784
+        gesamt_eur: 14_800
+      - jahr: 5
+        partner: 150
+        plus_eur: 11_970
+        premium_eur: 10_530
+        nachhaltigkeit_eur: 5_220
+        gesamt_eur: 27_700
+      - jahr: "~10"
+        partner: 2_950
+        plus_eur: 235_410
+        premium_eur: 207_090
+        nachhaltigkeit_eur: 102_660
+        gesamt_eur: 545_000
+
+    listungsgebuehren:
+      annahmen:
+        avg_pro_angebot_eur: 0.20
+        avg_listings_pro_partner: 25
+        zahlende_partner_pct: 60
+        jahresgebuehr_pro_zahlendem_partner_eur: 20  # 25 × 0,20 × 4 Quartale
+      - jahr: 1
+        partner: 0
+        gebuehren_eur: 0
+      - jahr: 2
+        partner: 20
+        gebuehren_eur: 240
+      - jahr: 3
+        partner: 40
+        gebuehren_eur: 480
+      - jahr: 4
+        partner: 80
+        gebuehren_eur: 960
+      - jahr: 5
+        partner: 150
+        gebuehren_eur: 1_800
+      - jahr: "~10"
+        partner: 2_950
+        gebuehren_eur: 35_400
+
+    gesamtumsatz:
+      - jahr: 1
+        provision_eur: 400
+        pakete_eur: 0
+        gebuehren_eur: 0
+        gesamt_eur: 400
+      - jahr: 2
+        provision_eur: 1_800
+        pakete_eur: 3_700
+        gebuehren_eur: 200
+        gesamt_eur: 5_700
+      - jahr: 3
+        provision_eur: 3_900
+        pakete_eur: 7_400
+        gebuehren_eur: 500
+        gesamt_eur: 11_700
+      - jahr: 4
+        provision_eur: 7_100
+        pakete_eur: 14_800
+        gebuehren_eur: 1_000
+        gesamt_eur: 22_900
+      - jahr: 5
+        provision_eur: 13_100
+        pakete_eur: 27_700
+        gebuehren_eur: 1_800
+        gesamt_eur: 42_600
+      - jahr: "~10"
+        provision_mio_eur: 3.5
+        pakete_mio_eur: 0.545
+        gebuehren_eur: 35_400
+        gesamt_mio_eur: 4.1
+
+  guv:
+    - jahr: 1
+      kosten_eur: 19_000
+      umsatz_eur: 400
+      gewinn_eur: -18_600
+      worst_case_eur: -22_500
+    - jahr: 2
+      kosten_eur: 14_700
+      umsatz_eur: 5_700
+      gewinn_eur: -9_000
+      worst_case_eur: -13_000
+    - jahr: 3
+      kosten_eur: 16_000
+      umsatz_eur: 11_700
+      gewinn_eur: -4_300
+      worst_case_eur: -9_800
+    - jahr: 4
+      kosten_eur: 19_000
+      umsatz_eur: 22_900
+      gewinn_eur: 3_900
+      worst_case_eur: -4_500
+    - jahr: 5
+      kosten_eur: 26_000
+      umsatz_eur: 42_600
+      gewinn_eur: 16_600
+      worst_case_eur: 2_900
+    - jahr: "~10"
+      kosten_mio_eur: 1.7
+      umsatz_mio_eur: 4.1
+      gewinn_mio_eur: 2.4
+      worst_case_mio_eur: 1.2
+
+  break_even:
+    zwischen_jahr: [3, 4]
+    monat: 42  # Juni im 4. Jahr
+    nutzer: 1_010
+    partner: 51
+    berechnung:
+      monatlicher_zuwachs_eur: 683.33
+      formel: "G(t) = -4.300 € + 683,33 € × t = 0 → t = 6,29 Monate"
+    worst_case:
+      verschiebung_monate: 55.3
+      verschiebung_pct: 30
+      nutzer: 1_686
+      partner: 122
+
+  liquiditaet:
+    kapitalbedarf_gesamt_eur: 16_000
+    ampelsystem:
+      gruen: "> 6 Monatskosten (> 3.600 €) – Wachstum"
+      gelb: "3–6 Monatskosten (1.800–3.600 €) – Warnung"
+      orange: "1,5–3 Monatskosten (900–1.800 €) – Kritisch"
+      rot: "< 1,5 Monatskosten (< 900 €) – Alarm"
+    massnahmen_nach_ampel:
+      gruen:
+        - Kampagnen nur bei ROAS ≥ 3 weiterlaufen lassen
+        - MVP-Backlog abarbeiten
+        - Freelancer statt Festanstellung
+        - Weekly KPI-Check
+      gelb:
+        - Paid-Ads -30 %, Fokus auf SEO & Referral
+        - Zwei KMU als kostenlose Pilot-Partner listen
+        - Förderanträge einreichen
+        - Gamification/Community auf Post-MVP verschieben
+      orange:
+        - Einstellungs-/Freelance-Freeze
+        - Budget < 50 €/Monat (nur Retargeting)
+        - Cloud & Hosting-Tiers downgraden
+        - Bridge-Note 10.000–15.000 € für 6–8 Monate
+      rot:
+        - B2B-Partnerpakete mit 20 % Rabatt prepaid verkaufen
+        - Crowdfunding (Health-Goodie-Box + In-App-Badge)
+        - Convertible SAFE ≈ 50.000 € sichern
+
+  kapitalstruktur:
+    gesamtbedarf_exkl_deferred_eur: 16_000
+    gesamtbedarf_inkl_deferred_eur: 41_200  # 16.000 + 25.200
+    deferred_salary_total_eur: 25_200  # 600 € × 42 Monate
+    worst_case_bedarf_eur: 28_500
+
+  finanzierungsquellen:
+    - Eigenmittel des Gründers (vorhanden für MVP-Start)
+    - Förderungen (siehe Förderstrategie)
+    - Langfristig: B2G-Kooperationen oder Impact-Investor*innen
+
+  foerderstrategie:
+    vor_gruendung:
+      - programm: "FFG Projekt.Start + aws First Incubator"
+        max_summe_eur: 59_000  # 10.000 + 49.000
+        foerderquote_pct: [60, 90]
+        work_packages: ["WP0 Markt & Regulatory", "WP1 MVP-Build"]
+      - programm: NeuFöG
+        max_summe_eur: 450
+        foerderquote_pct: 100
+        zweck: Firmenbuchgebühren
+    waehrend_gruendung_monat_0_6:
+      - programm: "aws First Incubator (Hauptphase) + Coworking-Modul"
+        max_summe_eur: 51_000
+        foerderquote_pct: 90
+      - programm: SVS-Gründerbegünstigung
+        ersparnis_eur_jahr: 1_000
+        beschreibung: "50 % KV/PV-Reduktion für EPU (Jahr 1–3)"
+      - programm: "Gründungsstipendium Wien (optional)"
+        max_summe_eur: 8_000
+        foerderquote_pct: 100
+        zweck: Persönliche Lebenskosten
+    early_growth_monat_6_18:
+      - programm: "aws impulse XS oder Creative Impact"
+        max_summe_eur: 50_000
+        foerderquote_pct: 70
+        work_package: "WP3 Gamification-Iteration"
+      - programm: WA Lebensqualität Wien
+        max_summe_eur: 150_000
+        foerderquote_pct: 50
+        zweck: Social-Impact-Module
+      - programm: AMS Eingliederungsbeihilfe
+        max_summe_eur_range: [6_000, 12_000]
+        foerderquote_pct: 66
+    pilot_skalierung_monat_18_36:
+      - programm: "FFG Impact Innovation + WA Wien Innovation"
+        max_summe_eur: 375_000
+        foerderquote_pct: [50, 45]
+        work_packages: ["WP5 ÖGK-Pilot", "WP6 Data-Eval"]
+      - programm: Wirtschaftsagentur Digitalisierung
+        max_summe_eur: 50_000
+        foerderquote_pct: 50
+      - programm: "Forschungsprämie 14 % + FFG Kleinprojekt"
+        foerderquote: "14 % Steuergutschrift + 80 %"
+        work_package: "WP8 KI-Fraud-Engine"
+
+# ──────────────────────────────────────────────
+# 8. NACHHALTIGKEIT (ESG)
+# ──────────────────────────────────────────────
+esg:
+  sdg_ziele:
+    - sdg: 3
+      titel: "Gesundheit & Wohlergehen"
+      beitrag: "Gamifizierte Bewegungs-, Bildungs- und Vorsorge-Module; KPIs DSGVO-konform im Impact-Report"
+    - sdg: 8
+      titel: "Menschenwürdige Arbeit & Wirtschaftswachstum"
+      beitrag: "Pay-per-Redemption ohne Fixkosten für KMU; regionale Sichtbarkeit"
+    - sdg: 12
+      titel: "Nachhaltiger Konsum & Produktion"
+      beitrag: "Low-CO₂-Architektur; ESG-Partner bevorzugt und unterstützt"
+
+  oekologisch:
+    - Aktive Mobilität (Schritte statt Auto) senkt CO₂
+    - Regionale, saisonale Partner verkürzen Transportwege
+    - Extra Punkte bei Partnern mit Nachhaltigkeitslabel
+  sozial:
+    - Dauerhaft gratis (Einkommen/Bildung spielen keine Rolle)
+    - Bildungsmodul stärkt Gesundheitskompetenz
+    - Community vernetzt Nutzer*innen
+    - Intuitive UI/UX + Gamification aktivieren auch Technikferne
+  governance:
+    - DSGVO-konformer Umgang mit Gesundheitsdaten
+    - Privacy-by-Design (pseudonymisierte Daten)
+    - Kein Datenverkauf; Bonuspunkte nur bei freiwilliger Forschungsfreigabe
+    - Partner erfüllen ESG-Mindeststandards
+
+  impact_flywheel: >
+    Jede absolvierte Challenge verbessert die Gesundheit, stärkt regionale
+    Wirtschaft und lenkt Kaufkraft in verantwortungsvolle Produkte.
+
+# ──────────────────────────────────────────────
+# 9. SOCIAL IMPACT
+# ──────────────────────────────────────────────
+social_impact:
+  gesellschaftliches_problem:
+    chronisch_erkrankte_mio: 4.9          # 66 % der Bevölkerung
+    eingeschraenkte_gesundheitskompetenz_mio: 2.4  # 50 % davon
+    vorsorge_nutzung_pct: 15
+    vorsorge_nutzende_mio: 1.08
+    praevention_anteil_ausgaben_pct: 5
+    steuerlich_nicht_absetzbar: true     # Impfungen, Mundhygiene, Sportangebote
+
+  loesung_ebenen:
+    individuell: "Motivation zu mehr Bewegung, Vorsorge & Gesundheitswissen"
+    sozial: "Erreichbarkeit von benachteiligten Gruppen durch Barrierefreiheit"
+    systemisch: "Beitrag zu Gesundheitszielen Österreich (Ziel 1, 2, 3, 5, 6, 8, 9)"
+
+  skalierbarkeit:
+    geografisch: DACH-Raum
+    thematisch:
+      - Persönlicher Trainingsplan
+      - Live-Training-Sessions
+    systemisch: Integration in Gesundheitsprogramme & Forschung
+    b2g_ab_jahr: 3
+
+  impact_messung:
+    quantitativ:
+      - Schritte / Bewegungsminuten pro Woche
+      - Anzahl gelesener Artikel & absolvierter Quizze
+      - Teilnahme an Vorsorgeprogrammen
+      - Community-Aktivität (Events, Challenges)
+      - Eingelöste Belohnungen bei Partnern
+    qualitativ:
+      - Nutzerumfragen (HLS-EU-Q16 nach 3 Monaten)
+      - App-Store-Bewertungen
+      - Forschungspartnerschaften
+
+# ──────────────────────────────────────────────
+# ANHANG A1: PUNKTEFORMEL
+# ──────────────────────────────────────────────
+punkteformel:
+  implementierungshinweis: >
+    MVP-Vereinfachung (implementiert in src/lib/utils/streak.ts + stepsService.ts):
+    Die gleitende Skala 4001–6999 ist als Flat-Rate 10P vereinfacht.
+    Die vollständige gleitende Skala (10 + floor((schritte-4001)/500)*5) ist für Phase 2 geplant.
+    Änderungen der Formel niemals retroaktiv – nur für neue Einträge.
+    Fraud-Cap: Tagesschritte werden auf max. 20.000 gekappt (src/lib/server/stepsService.ts).
+  schritte:
+    - tages_schritte_von: 0
+      tages_schritte_bis: 3_999
+      punkte: 0
+      erlaeuterung: "Unterhalb des Mortalitäts-Schwellwertes"
+    - tages_schritte: 4_000
+      punkte: 10
+      erlaeuterung: "Einstiegsschwelle – erste messbare Mortalitätsreduktion"
+    - tages_schritte_von: 4_001
+      tages_schritte_bis: 6_999
+      formel: "10 P + 5 P pro angefangene 500 Schritte"
+      beispiel: "5.500 Schritte = 20 P"
+      erlaeuterung: "Gleitende Belohnung bis zum Mindesttagesziel"
+    - tages_schritte: 7_000
+      punkte: 40
+      bezeichnung: "Volle Tagespunkte"
+      erlaeuterung: "7.000 Schritte senken Sterberisiko um ≈ 50–70 %"
+    - tages_schritte_ab: 7_001
+      formel: "40 P + 5 P pro angefangene 500 Schritte"
+      beispiele:
+        - schritte: 10_000
+          punkte: 70
+        - schritte: 20_000
+          punkte: 170
+      erlaeuterung: "Kein Deckel, aber Fraud-Checks"
+
+  bewegung_laufen_radfahren:
+    - woechentliche_min_von: 0
+      woechentliche_min_bis: 49
+      punkte: 0
+    - woechentliche_min: 50
+      punkte: 50
+      erlaeuterung: "≈ ⅓ des WHO-Ziels – analog zu 4.000 Schritten"
+    - woechentliche_min_von: 51
+      woechentliche_min_bis: 150
+      formel: "50 P + 15 P je angefangene 10 min"
+      beispiele:
+        - min: 80
+          punkte: 95
+        - min: 120
+          punkte: 155
+    - woechentliche_min: 150
+      punkte: 200
+      bezeichnung: "Volle Wochenpunkte"
+      erlaeuterung: WHO-Empfehlung erreicht
+    - woechentliche_min_ab: 151
+      formel: "200 P + 15 P je angefangene 10 min"
+      beispiel:
+        min: 200
+        punkte: 275
+
+  bildung:
+    - ereignis: Quiz absolvieren
+      bedingung: "100 % richtige Antworten"
+      punkte: 40
+      erlaeuterung: "Gleiche Größenordnung wie Schritt-Tagesziel (7.000 = 40 P)"
+    - ereignis: Refresh-Quiz
+      bedingung: "90 Tage nach letztem Abschluss, erneut 100 %"
+      punkte: 40
+      erlaeuterung: "Festigt Wissen & liefert denselben sofortigen Reward"
+
+  streak_bonus:
+    schritte:
+      - modul: Streak-Tag
+        bedingung: "Min. 7.000 Schritte aufeinanderfolgend"
+        punkte: 20  # ½ × 40
+        beispiel: "5-Tage-Streak: +100 P"
+      - modul: Streak-Woche
+        bedingung: "7 aufeinanderfolgende Tage ≥ 7.000 Schritte ODER Mindestwochenschritte 49.000"
+        punkte: 60  # 1,5 × 40
+        beispiel: "Tag 7 +60 P, Tag 14 +60 P, ..."
+    bewegung:
+      - modul: Streak-Woche
+        bedingung: "Zweite und jede folgende Woche ≥ 150 min"
+        punkte: 100  # ½ × 200
+        beispiel: "3-Wochen-Streak: +300 P"
+      - modul: Streak-Monat
+        bedingung: "4 aufeinanderfolgende Ziel-Wochen"
+        punkte: 300  # 1,5 × 200
+        badge: "Erster Move-Champion-Badge"
+    bildung:
+      - modul: Wissens-Combo
+        bedingung: "3 perfekte Quizze innerhalb von 7 Tagen"
+        punkte: 40
+      - modul: Wissens-Streak
+        bedingung: "Jede weitere Woche mit ≥ 3 perfekten Quizzen"
+        punkte: 20  # je Woche
+      - modul: Quartals-Mastery
+        bedingung: "12 Streak-Wochen am Stück"
+        punkte: 60
+        einmalig: true
+
+# ──────────────────────────────────────────────
+# ANHANG A2: MARKTPOTENZIAL (Auszug)
+# ──────────────────────────────────────────────
+marktpotenzial_detail:
+  b2c_zielgruppen_18_64:
+    - segment: "Gesund & aktiv"
+      definition: "Erfüllen WHO-Empfehlung für Ausdauer + Kraft"
+      bev_anteil_pct: 23.6
+      personen_mio: 1.36
+      smartphone_mio: 1.3
+    - segment: "Teil-aktiv / braucht Motivation"
+      definition: "Bewegen sich, schaffen nur eine WHO-Empfehlung"
+      bev_anteil_pct: 38.0
+      personen_mio: 2.19
+      smartphone_mio: 2.08
+    - segment: "Inaktiv / hohes Potenzial"
+      definition: "Wenig Bewegung, schaffen keine WHO-Empfehlung"
+      bev_anteil_pct: 38.4
+      personen_mio: 2.2
+      smartphone_mio: 2.09
+    - segment: "GESAMT (18–64)"
+      personen_mio: 5.75
+      smartphone_mio: 5.5
+      smartphone_penetration_pct: 95
+
+  b2b_partner_kategorien:
+    - kategorie: Fitnessstudios
+      anzahl: "> 1.349"
+      branchenumsatz_mio_eur: 654.8
+      monatsumsatz_pro_person_eur: 43
+    - kategorie: "Sport-Fachgeschäfte (Geräte, Bekleidung)"
+      anzahl: "> 789"
+      marktvolumen_mrd_eur: 2.44
+      monatsumsatz_pro_person_eur: 22
+    - kategorie: "Private Sportangebote (Yoga, Tanz etc.)"
+      anzahl: "≈ 10.000"
+      marktvolumen_mrd_eur: 3.149
+      monatsumsatz_pro_person_eur: 20
+    - kategorie: Private Krankenversicherungen
+      anzahl: 10
+      marktvolumen_mrd_eur: 3.2
+      monatsumsatz_pro_person_eur: 93
+      versicherte: 3_570_020
+    - kategorie: Apotheken
+      anzahl: "≈ 1.426"
+      marktvolumen_mrd_eur: 6.2  # Apothekenkanal AT; Gesamtpharmamarkt inkl. Spital ≈ 6,9 Mrd EUR (nicht vergleichbar)
+      monatsumsatz_pro_person_eur: 77
+    - kategorie: BIO-Betriebe
+      anzahl: "≈ 24.100"
+      marktvolumen_mio_eur: 873.6
+      monatsumsatz_pro_person_eur: 13
+    - kategorie: Nahrungsergänzungsmittel-Hersteller
+      anzahl: "> 100"
+      marktvolumen_mio_eur: 145.67
+    - kategorie: Wellness & Spa
+      anzahl: 591
+      marktvolumen_mio_eur: 230
+    - kategorie: Thermen
+      anzahl: 40
+      marktvolumen_mio_eur: 142.4
+    - kategorie: "Beratungen & Therapien (Psycho, Ernährung etc.)"
+      anzahl: "> 20.000"
+
+# ──────────────────────────────────────────────
+# ANHANG A3: GESUNDHEITS-PORTEMONNAIE
+# ──────────────────────────────────────────────
+gesundheits_portemonnaie:
+  gesamt_eur_monat: 273
+  bestandteile:
+    - kategorie: Private Krankenversicherung
+      monatlich_eur: 93
+      bevoelkerungsfaktor_pct: 45
+      gewichteter_wert_eur: 42
+    - kategorie: "Therapien (alle 5 Kategorien)"
+      monatlich_eur: 713
+      bevoelkerungsfaktor_pct: 2.7
+      gewichteter_wert_eur: 18
+    - kategorie: Alle anderen Kategorien
+      monatlich_eur: 213
+      bevoelkerungsfaktor_pct: 100
+      gewichteter_wert_eur: 213
+
+# ──────────────────────────────────────────────
+# ANHANG A4: GESUNDHEITSZIELE ÖSTERREICH
+# ──────────────────────────────────────────────
+gesundheitsziele_oesterreich:
+  - ziel_nr: 1
+    titel: "Gemeinsam gesundheitsförderliche Lebens- und Arbeitsbedingungen schaffen"
+    austrofit_beitrag: Bewegungsförderung im Alltag
+  - ziel_nr: 2
+    titel: "Gesundheitliche Chancengerechtigkeit sicherstellen"
+    austrofit_beitrag: "App kostenlos & barrierearm"
+  - ziel_nr: 3
+    titel: "Gesundheitskompetenz der Bevölkerung stärken"
+    austrofit_beitrag: "Quiz-Module, evidenzbasierte Artikel"
+  - ziel_nr: 5
+    titel: "Durch sozialen Zusammenhalt die Gesundheit stärken"
+    austrofit_beitrag: "Community-Funktionen & Events"
+  - ziel_nr: 6
+    titel: "Gesundes Aufwachsen für Kinder und Jugendliche"
+    austrofit_beitrag: Für Jugendliche adaptierbar
+  - ziel_nr: 7
+    titel: "Gesunde und nachhaltige Ernährung für alle zugänglich machen"
+    austrofit_beitrag: "Fokus auf regionale & saisonale Partner, Bio-Lebensmittelhersteller"
+  - ziel_nr: 8
+    titel: "Gesunde und sichere Bewegung im Alltag fördern"
+    austrofit_beitrag: "Schrittziele, Challenges, Gamification"
+  - ziel_nr: 9
+    titel: "Psychosoziale Gesundheit fördern"
+    austrofit_beitrag: "Soziale Motivation, Gesundheitswissen"
