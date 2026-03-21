@@ -25,15 +25,15 @@ meta:
   status:
     bildungsmodul: "FERTIG – Artikel, Quizze, Quiz-Attempts, anonym+authentifiziert"
     punktesystem: "FERTIG – points_ledger, Streak inkl. Streak-Tag-Bonus (+20P/Tag ab Tag 1), Level (5 Stufen), Badges (5), Claim-Flow"
-    bewegungstracking: "TEILWEISE – Android Health Connect FERTIG (@capgo/capacitor-health v8.2.17); iOS + Laufen/Radfahren Phase 2"
+    bewegungstracking: "TEILWEISE – Android Health Connect FERTIG (@capgo/capacitor-health v8.2.17); PWA zeigt 'Kommt bald'-UI (kein Health-Zugriff im Browser); iOS + Laufen/Radfahren Phase 2"
     rewards_direktpartner_code: "CODE FERTIG – Technischer Flow: redeem, QR-Code Gutscheine, 90-Tage-Verfall, /partner Marketplace"
     rewards_direktpartner_business: "OFFEN – Keine echten Partner-Verträge; kein Partner-Onboarding; kein B2B-Dashboard"
-    rewards_awin: "OFFEN – Phase 1 Business: AWIN Publisher-Account, Webhook /api/awin/webhook, Deeplinks ausstehend"
-    user_management: "FERTIG – Directus Auth, Login, Registrierung, Profil-Einstellungen, Account-Löschung (DSGVO)"
+    rewards_awin: "OFFEN – Phase 1 Business: AWIN Publisher-Account vorhanden (ID 1896704); Integration via Gutscheincodes (nicht Deep-Links); 0 Programme beigetreten"
+    user_management: "FERTIG – Directus Auth, Login, Registrierung (E-Mail+Passwort), Profil-Einstellungen, Account-Löschung (DSGVO); Magic Link nicht verfügbar"
     community: "OFFEN"
     partner_dashboard_b2b: "OFFEN – User-seitige Marketplace-Seite fertig; B2B-Self-Service für Partner-Firmen: Phase 2"
     analytics: "FERTIG – PostHog EU, 7 Core-Events, DSGVO-konform"
-    pwa: "FERTIG – Service Worker, Install-Banner, Background Sync (Schritt-Sync-Flag)"
+    pwa: "FERTIG – Service Worker, Install-Banner, Background Sync (Schritt-Sync-Flag); Health-Tracking zeigt 'Kommt bald'-UI; Schritte-Streak + Schritt-Tracking-Aktionen nur in nativer App sichtbar"
 
 # ============================================================
 # WERT-EXCHANGE GRUNDLOGIK
@@ -448,9 +448,6 @@ api_routes:
     - methode: POST
       pfad: /api/auth/register
       beschreibung: "E-Mail + Passwort Registrierung"
-    - methode: POST
-      pfad: /api/auth/magic-link
-      beschreibung: "Magic-Link Generierung (Infrastruktur vorhanden, nicht im aktiven Flow)"
     - methode: GET
       pfad: /api/me
       beschreibung: "Aktuelles User-Profil via Bearer Token"

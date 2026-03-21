@@ -91,7 +91,7 @@
         href: '/gesundheitswegweiser'
       });
     }
-    if (!hasSchritte) {
+    if (!hasSchritte && isNativePlatform) {
       list.push({
         id: 'first-steps',
         icon: '🏃',
@@ -293,21 +293,21 @@
 
     if (!browser) return;
 
+    // ── Detect native platform ────────────────────────────────────────────
+    try {
+      const { Capacitor } = await import('@capacitor/core');
+      isNativePlatform = Capacitor.isNativePlatform();
+    } catch { /* Capacitor not available in browser */ }
+
     // ── Health / steps logic ──────────────────────────────────────────────
     const healthCached = localStorage.getItem('austrofit_health_permission');
     healthConnected = healthCached === 'granted';
     testMode = localStorage.getItem('austrofit_test_mode') === 'true';
     if (healthCached === 'granted') {
       loadStepsFromHealth();
-    } else if (healthCached !== 'later' && healthCached !== 'denied') {
+    } else if (isNativePlatform && healthCached !== 'later' && healthCached !== 'denied') {
       showHealthPrompt = true;
     }
-
-    // ── Detect native platform ────────────────────────────────────────────
-    try {
-      const { Capacitor } = await import('@capacitor/core');
-      isNativePlatform = Capacitor.isNativePlatform();
-    } catch { /* Capacitor not available in browser */ }
 
     // ── Trigger A: automatic step sync ───────────────────────────────────
     if (isNativePlatform) {
@@ -451,19 +451,32 @@
           <!-- Test mode – manual entry -->
           <ManuelleSchrittEingabe {userId} onSave={refreshDashboardData} />
         {:else if !healthConnected}
-          <!-- Health not connected -->
-          <div class="rounded-xl bg-primary/5 border border-primary/20 p-4">
-            <p class="text-sm text-body leading-relaxed mb-3">
-              Verbinde dich mit Google Health Connect oder Apple HealthKit, um deine täglichen
-              Schritte automatisch zu tracken und Punkte zu verdienen.
-            </p>
-            <button
-              onclick={() => (showHealthPrompt = true)}
-              class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
-            >
-              👟 Schritt-Tracking verbinden
-            </button>
-          </div>
+          {#if isNativePlatform}
+            <!-- Native: connect to Health Connect -->
+            <div class="rounded-xl bg-primary/5 border border-primary/20 p-4">
+              <p class="text-sm text-body leading-relaxed mb-3">
+                Verbinde dich mit Google Health Connect oder Apple HealthKit, um deine täglichen
+                Schritte automatisch zu tracken und Punkte zu verdienen.
+              </p>
+              <button
+                onclick={() => (showHealthPrompt = true)}
+                class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+              >
+                👟 Schritt-Tracking verbinden
+              </button>
+            </div>
+          {:else}
+            <!-- PWA: coming soon -->
+            <div class="rounded-xl bg-gray-50 border border-black/10 p-4">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-sm font-semibold text-heading">Schritt-Tracking</span>
+                <span class="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Kommt bald</span>
+              </div>
+              <p class="text-sm text-gray-500 leading-relaxed">
+                Die AustroFit Android App mit automatischem Schritt-Tracking erscheint in Kürze im Play Store.
+              </p>
+            </div>
+          {/if}
         {:else}
           <!-- Health connected – show progress -->
           {#if stepsToday >= STEP_GOAL}
@@ -580,24 +593,26 @@
         <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Streak</div>
         <div class="flex flex-col gap-4">
 
-          <!-- Schritte-Streak -->
-          <div class="flex items-center gap-3">
-            <div class="text-3xl {streakDays > 0 ? '' : 'opacity-25'}">🔥</div>
-            <div class="flex-1">
-              <div class="text-xs font-medium text-gray-400 mb-0.5">Schritte-Streak</div>
-              {#if streakDays > 0}
-                <div class="text-xl font-bold">{streakDays} {streakDays === 1 ? 'Tag' : 'Tage'} in Folge</div>
-                <div class="mt-0.5 text-xs text-gray-500">
-                  Noch {daysToNextStepBonus} {daysToNextStepBonus === 1 ? 'Tag' : 'Tage'} bis +60P Bonus
-                </div>
-              {:else}
-                <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
-                <div class="text-xs text-gray-400">Erreich heute 4.000 Schritte!</div>
-              {/if}
+          <!-- Schritte-Streak (nur Native App) -->
+          {#if isNativePlatform}
+            <div class="flex items-center gap-3">
+              <div class="text-3xl {streakDays > 0 ? '' : 'opacity-25'}">🔥</div>
+              <div class="flex-1">
+                <div class="text-xs font-medium text-gray-400 mb-0.5">Schritte-Streak</div>
+                {#if streakDays > 0}
+                  <div class="text-xl font-bold">{streakDays} {streakDays === 1 ? 'Tag' : 'Tage'} in Folge</div>
+                  <div class="mt-0.5 text-xs text-gray-500">
+                    Noch {daysToNextStepBonus} {daysToNextStepBonus === 1 ? 'Tag' : 'Tage'} bis +60P Bonus
+                  </div>
+                {:else}
+                  <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
+                  <div class="text-xs text-gray-400">Erreich heute 4.000 Schritte!</div>
+                {/if}
+              </div>
             </div>
-          </div>
 
-          <div class="border-t border-black/5"></div>
+            <div class="border-t border-black/5"></div>
+          {/if}
 
           <!-- Quiz-Streak -->
           <div class="flex items-center gap-3">
@@ -618,7 +633,7 @@
 
         </div>
 
-        {#if longestStreak > 0}
+        {#if isNativePlatform && longestStreak > 0}
           <div class="mt-4 pt-4 border-t border-black/5 text-sm text-gray-400">
             Längster Schritte-Streak: <span class="font-semibold text-gray-600">{longestStreak} Tage</span>
           </div>

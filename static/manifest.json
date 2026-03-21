@@ -1,0 +1,17 @@
+{
+  "name": "AustroFit",
+  "short_name": "AustroFit",
+  "description": "Dein österreichischer Fitness-Begleiter",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1B7A44",
+  "icons": [
+    {
+      "src": "/AF_Favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

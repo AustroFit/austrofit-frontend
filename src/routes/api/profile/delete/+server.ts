@@ -67,7 +67,13 @@ export async function DELETE({
       }
     }
 
-    // 3b) Alle reward_redemptions des Users löschen
+    // 3b) user_profiles des Users löschen (id = userId, eigener Token)
+    await fetch(`${PUBLIC_CMSURL}/items/user_profiles/${userId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // 3c) Alle reward_redemptions des Users löschen
     const redemptionsRes = await fetch(
       `${PUBLIC_CMSURL}/items/reward_redemptions?filter[user][_eq]=${userId}&fields=id&limit=500`,
       { headers: adminHeaders }
@@ -84,13 +90,31 @@ export async function DELETE({
       }
     }
 
-    // 4) User-Account löschen
+    // 3c) directus_presets des Users löschen (FK kann User-Löschung blockieren)
+    const presetsRes = await fetch(
+      `${PUBLIC_CMSURL}/presets?filter[user][_eq]=${userId}&fields=id&limit=500`,
+      { headers: adminHeaders }
+    );
+    if (presetsRes.ok) {
+      const pr = await presetsRes.json();
+      const ids: number[] = (pr.data ?? []).map((e: { id: number }) => e.id);
+      if (ids.length > 0) {
+        await fetch(`${PUBLIC_CMSURL}/presets`, {
+          method: 'DELETE',
+          headers: adminHeaders,
+          body: JSON.stringify(ids)
+        });
+      }
+    }
+
+    // 4) User-Account löschen (eigener Token → DELETE /users/:id)
     const deleteRes = await fetch(`${PUBLIC_CMSURL}/users/${userId}`, {
       method: 'DELETE',
-      headers: adminHeaders
+      headers: { Authorization: `Bearer ${token}` }
     });
     if (!deleteRes.ok) {
       const t = await deleteRes.text();
+      console.error('[profile/delete] Directus user delete failed:', t);
       return json({ error: 'Benutzer konnte nicht gelöscht werden', details: t }, { status: 500 });
     }
 

@@ -88,9 +88,10 @@
         <div class="flex-1 min-w-0">
           <!-- Title & text per state -->
           {#if healthState === 'unavailable'}
-            <h3 class="font-semibold leading-snug">Schritt-Tracking nicht verfügbar</h3>
+            <h3 class="font-semibold leading-snug">App kommt bald</h3>
             <p class="mt-1 text-sm text-gray-500 leading-relaxed">
-              Health-Tracking benötigt die AustroFit App auf deinem Smartphone.
+              Automatisches Schritt-Tracking ist in der AustroFit Android App verfügbar –
+              sie erscheint in Kürze im Play Store.
             </p>
           {:else if healthState === 'denied'}
             <h3 class="font-semibold leading-snug">Zugriff verweigert</h3>
@@ -114,7 +115,7 @@
                 onclick={handleDismiss}
                 class="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                Später
+                Verstanden
               </button>
             {:else if healthState === 'denied'}
               <button
