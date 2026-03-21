@@ -90,8 +90,13 @@ export async function fetchAwinProgramsWithPromotions(
   publisherId: string,
   fetchFn: typeof globalThis.fetch = fetch
 ): Promise<AwinProgram[]> {
-  // Joined-Programme von AWIN abrufen (optional – nur zur Datenanreicherung)
-  const joinedPrograms = await fetchAwinPrograms(apiToken, publisherId, fetchFn);
+  // Joined-Programme von AWIN abrufen (optional – nur zur Datenanreicherung, nie blockierend)
+  let joinedPrograms: AwinProgram[] = [];
+  try {
+    joinedPrograms = await fetchAwinPrograms(apiToken, publisherId, fetchFn);
+  } catch {
+    /* AWIN API nicht erreichbar – manuelle Promotions trotzdem anzeigen */
+  }
   const joinedMap = new Map(joinedPrograms.map((p) => [p.id, p]));
 
   const result: AwinProgram[] = [];
