@@ -87,6 +87,7 @@
 
   // ── State ─────────────────────────────────────────────────────────────
   let loading = $state(true);
+  let isNativePlatform = $state(false);
   let errorMsg = $state('');
   let awinPrograms = $state<AwinProgram[]>([]);
   let userPoints = $state(0);
@@ -193,6 +194,11 @@
 
   // ── Load ──────────────────────────────────────────────────────────────
   onMount(async () => {
+    try {
+      const { Capacitor } = await import('@capacitor/core');
+      isNativePlatform = Capacitor.isNativePlatform();
+    } catch { /* not available in browser */ }
+
     const token = await getValidAccessToken();
     isLoggedIn = !!token;
     const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
@@ -305,7 +311,7 @@
       <!-- Tab Navigation -->
       <div class="mb-6 flex w-full rounded-[var(--radius-card)] border border-black/10 bg-white p-1 shadow-sm sm:w-auto sm:inline-flex">
         {#each tabs as tab}
-          {@const count = tab.key === 'aktiv' ? aktivItemsAll.length : tab.key === 'archiv' ? archivItems.length : offeneOffers.length + direktusAngebote.length}
+          {@const count = tab.key === 'aktiv' ? aktivItemsAll.length : tab.key === 'archiv' ? archivItems.length : offeneOffers.length + (isNativePlatform ? direktusAngebote.length : 0)}
           <button
             onclick={() => (activeTab = tab.key)}
             class="relative flex flex-1 items-center justify-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-medium transition-all sm:flex-none
@@ -441,7 +447,7 @@
       {:else if activeTab === 'offen'}
 
         <!-- Kategorie-Chips (Regionale Partner) -->
-        {#if direktusKategorienSlugs.length > 0}
+        {#if isNativePlatform && direktusKategorienSlugs.length > 0}
           <div class="mb-5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-0.5">
             <button
               onclick={() => (filterKategorieDirektus = '')}
@@ -557,8 +563,8 @@
 
       {/if}
 
-      <!-- Regionale Partner (Direktus) -->
-      {#if activeTab === 'offen' && direktusAngebote.length > 0}
+      <!-- Regionale Partner (Direktus) – nur in nativer App -->
+      {#if isNativePlatform && activeTab === 'offen' && direktusAngebote.length > 0}
         <section class="mt-12">
           <h2 class="font-heading text-xl font-bold text-heading mb-4">Regionale Partner</h2>
 
