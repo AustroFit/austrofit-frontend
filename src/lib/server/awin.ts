@@ -3,7 +3,7 @@
 // Hinweis: Die AWIN Publisher-REST-API hat keinen öffentlichen Promotions-Endpoint.
 // Codes werden manuell in src/lib/data/awinManualPromotions.ts gepflegt.
 
-import { getActivePromotions, MANUAL_PROMOTIONS, PROGRAM_NAMES } from '$lib/data/awinManualPromotions';
+import { getActivePromotions, MANUAL_PROMOTIONS, PROGRAM_NAMES, PROGRAM_META } from '$lib/data/awinManualPromotions';
 
 /** Promotion-Objekt das an den Client gesendet wird (KEIN code-Feld) */
 export interface AwinPromotionPublic {
@@ -115,16 +115,17 @@ export async function fetchAwinProgramsWithPromotions(
       // code wird absichtlich NICHT mitgesendet
     }));
 
-    // Programmdaten aus AWIN-API nehmen falls vorhanden, sonst Fallback
+    // Programmdaten: AWIN-API > manuelle Metadaten > Fallback
     const joined = joinedMap.get(advertiserId);
+    const meta = PROGRAM_META[advertiserId];
     result.push({
       id: advertiserId,
-      name: joined?.name ?? PROGRAM_NAMES[advertiserId] ?? String(advertiserId),
+      name: joined?.name ?? meta?.name ?? PROGRAM_NAMES[advertiserId] ?? String(advertiserId),
       url: joined?.url ?? '',
-      logoUrl: joined?.logoUrl ?? null,
-      displayUrl: joined?.displayUrl ?? '',
+      logoUrl: joined?.logoUrl ?? meta?.logoUrl ?? null,
+      displayUrl: joined?.displayUrl ?? meta?.displayUrl ?? '',
       description: joined?.description ?? null,
-      category: joined?.category ?? null,
+      category: joined?.category ?? meta?.category ?? null,
       currencyCode: joined?.currencyCode ?? 'EUR',
       promotions: publicPromos
     });

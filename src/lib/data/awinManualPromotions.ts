@@ -54,6 +54,22 @@ export function getActivePromotions(advertiserId: number): AwinPromotionInternal
   return promos.filter((p) => new Date(p.endDate) > now);
 }
 
+/** Advertiser-Metadaten (Fallback wenn AWIN-API keine Programmdaten liefert) */
+export const PROGRAM_META: Record<number, { name: string; displayUrl: string; logoUrl: string | null; category: string | null }> = {
+  103075: {
+    name: 'myfruits',
+    displayUrl: 'myfruits.eu',
+    logoUrl: 'https://ui2.awin.com/merchant-logos/103075/logo.png',
+    category: 'Food/Drink'
+  },
+  13991: {
+    name: '100% Pure',
+    displayUrl: '100percentpure.de',
+    logoUrl: 'https://ui2.awin.com/merchant-logos/13991/logo.png',
+    category: 'Health/Beauty'
+  }
+};
+
 /** Advertiser-Namen (für Anzeige in der UI) */
 export const PROGRAM_NAMES: Record<number, string> = {
   103075: 'myfruits',
