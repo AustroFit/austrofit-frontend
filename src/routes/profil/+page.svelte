@@ -9,6 +9,7 @@
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
   let errorMsg = $state('');
+  let isNativePlatform = $state(false);
 
   // Profil
   let benutzername = $state('');
@@ -57,6 +58,11 @@
 
   // ── Load ──────────────────────────────────────────────────────────────────
   onMount(async () => {
+    try {
+      const { Capacitor } = await import('@capacitor/core');
+      isNativePlatform = Capacitor.isNativePlatform();
+    } catch { /* not available in browser */ }
+
     const token = await getValidAccessToken();
     if (!token) { goto('/login?next=/profil'); return; }
 
@@ -157,6 +163,12 @@
   }
 
   // ── Account löschen ───────────────────────────────────────────────────────
+  function openDeleteDialog() {
+    showDeleteDialog = true;
+    deleteConfirmInput = '';
+    deleteError = '';
+  }
+
   async function deleteAccount() {
     if (!deleteConfirmed || deleting) return;
     deleting = true;
@@ -304,40 +316,62 @@
 
       <!-- ── 2. Health-Verbindung ───────────────────────────────────────────── -->
       <section class="rounded-[var(--radius-card)] border border-black/10 bg-white p-6 shadow-sm">
-        <h2 class="mb-1 text-base font-semibold text-heading">Health-Verbindung</h2>
+        <div class="mb-1 flex items-center gap-2">
+          <h2 class="text-base font-semibold text-heading">Health-Verbindung</h2>
+          {#if !isNativePlatform}
+            <span class="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+              Kommt bald
+            </span>
+          {/if}
+        </div>
         <p class="mb-4 text-sm text-gray-500">
-          Wir nutzen deine Gesundheitsdaten ausschließlich zur Punkte-Berechnung.
-          Keine Weitergabe an Dritte.
+          {#if isNativePlatform}
+            Wir nutzen deine Gesundheitsdaten ausschließlich zur Punkte-Berechnung.
+            Keine Weitergabe an Dritte.
+          {:else}
+            Automatisches Schritt-Tracking ist in der AustroFit Android App verfügbar –
+            sie erscheint in Kürze im Play Store.
+          {/if}
         </p>
 
         <div class="flex items-center justify-between gap-4 rounded-xl bg-gray-50 p-4">
           <div class="flex items-center gap-3">
             <div
               class="flex h-10 w-10 items-center justify-center rounded-full text-xl
-                {healthConnected ? 'bg-primary/10' : 'bg-gray-200'}"
+                {healthConnected && isNativePlatform ? 'bg-primary/10' : 'bg-gray-200'}"
             >
-              {healthConnected ? '🟢' : '⚪'}
+              {healthConnected && isNativePlatform ? '🟢' : '⚪'}
             </div>
             <div>
               <div class="text-sm font-semibold">
-                {healthConnected ? 'Verbunden' : 'Nicht verbunden'}
+                {#if isNativePlatform}
+                  {healthConnected ? 'Verbunden' : 'Nicht verbunden'}
+                {:else}
+                  Nicht verfügbar
+                {/if}
               </div>
               <div class="text-xs text-gray-400">
-                {healthConnected
-                  ? 'Schritte werden automatisch synchronisiert'
-                  : 'Google Health Connect / Apple HealthKit'}
+                {#if isNativePlatform}
+                  {healthConnected
+                    ? 'Schritte werden automatisch synchronisiert'
+                    : 'Google Health Connect / Apple HealthKit'}
+                {:else}
+                  Nur in der nativen App verfügbar
+                {/if}
               </div>
             </div>
           </div>
-          <button
-            onclick={toggleHealth}
-            class="shrink-0 rounded-xl border px-4 py-2 text-sm font-medium transition-colors
-              {healthConnected
-                ? 'border-error/30 bg-error/5 text-error hover:bg-error/10'
-                : 'border-black/15 hover:bg-black/5'}"
-          >
-            {healthConnected ? 'Trennen' : 'Verbinden'}
-          </button>
+          {#if isNativePlatform}
+            <button
+              onclick={toggleHealth}
+              class="shrink-0 rounded-xl border px-4 py-2 text-sm font-medium transition-colors
+                {healthConnected
+                  ? 'border-error/30 bg-error/5 text-error hover:bg-error/10'
+                  : 'border-black/15 hover:bg-black/5'}"
+            >
+              {healthConnected ? 'Trennen' : 'Verbinden'}
+            </button>
+          {/if}
         </div>
 
         <!-- Testmodus Toggle (vorerst deaktiviert) -->
@@ -404,7 +438,8 @@
           </a>
 
           <button
-            onclick={() => { showDeleteDialog = true; deleteConfirmInput = ''; deleteError = ''; }}
+            type="button"
+            onclick={openDeleteDialog}
             class="flex items-center justify-between rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm font-medium text-error transition-colors hover:bg-error/10"
           >
             <span>Account löschen</span>
@@ -456,12 +491,14 @@
 
       <div class="flex gap-3">
         <button
+          type="button"
           onclick={() => (showDeleteDialog = false)}
           class="flex-1 rounded-xl border border-black/15 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50"
         >
           Abbrechen
         </button>
         <button
+          type="button"
           onclick={deleteAccount}
           disabled={!deleteConfirmed || deleting}
           class="flex-1 rounded-xl bg-error py-2.5 text-sm font-semibold text-white transition disabled:opacity-40"

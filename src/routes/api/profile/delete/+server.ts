@@ -2,7 +2,8 @@
 // DSGVO-konformes Account-Löschen:
 // 1. points_ledger-Einträge löschen
 // 2. quiz_attempts-Einträge löschen
-// 3. User-Account löschen
+// 3. reward_redemptions-Einträge löschen
+// 4. User-Account löschen
 import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
@@ -59,6 +60,23 @@ export async function DELETE({
       const ids: string[] = (at.data ?? []).map((e: { id: string }) => e.id);
       if (ids.length > 0) {
         await fetch(`${PUBLIC_CMSURL}/items/quiz_attempts`, {
+          method: 'DELETE',
+          headers: adminHeaders,
+          body: JSON.stringify(ids)
+        });
+      }
+    }
+
+    // 3b) Alle reward_redemptions des Users löschen
+    const redemptionsRes = await fetch(
+      `${PUBLIC_CMSURL}/items/reward_redemptions?filter[user][_eq]=${userId}&fields=id&limit=500`,
+      { headers: adminHeaders }
+    );
+    if (redemptionsRes.ok) {
+      const rd = await redemptionsRes.json();
+      const ids: string[] = (rd.data ?? []).map((e: { id: string }) => e.id);
+      if (ids.length > 0) {
+        await fetch(`${PUBLIC_CMSURL}/items/reward_redemptions`, {
           method: 'DELETE',
           headers: adminHeaders,
           body: JSON.stringify(ids)
