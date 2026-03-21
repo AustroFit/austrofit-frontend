@@ -5,6 +5,7 @@
   import { browser } from '$app/environment';
   import { getAccessToken } from '$lib/utils/auth';
   import { calculatePoints } from '$lib/utils/streak';
+  import { track } from '$lib/utils/mixpanel';
 
   interface Props {
     userId: string;
@@ -119,6 +120,12 @@
       } else {
         entries[i].existingPoints = body.punkte;
         entries[i].success = true;
+        if (body.milestone_goal_awarded) {
+          track('challenge_completed', { challenge_id: 'first-steps', challenge_type: 'first_goal' });
+        }
+        if (body.milestone_streak3_awarded) {
+          track('challenge_completed', { challenge_id: 'first-streak-3', challenge_type: 'milestone' });
+        }
         onSave?.();
       }
     } catch {

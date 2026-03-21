@@ -1,6 +1,7 @@
 <!-- src/lib/components/partner/EinloesungsModal.svelte -->
 <!-- Bestätigungs-Modal vor der Einlösung + Gutschein-Screen nach Erfolg -->
 <script lang="ts">
+  import { onMount } from 'svelte';
   import GutscheinScreen from './GutscheinScreen.svelte';
   import type { Gutschein } from './GutscheinScreen.svelte';
   import { getAccessToken } from '$lib/utils/auth';
@@ -28,6 +29,16 @@
   }
 
   const { reward, partner, userPoints, onclose, onredeemed }: Props = $props();
+
+  onMount(() => {
+    track('reward_viewed', {
+      reward_id: reward.id,
+      reward_titel: reward.titel,
+      punkte_kosten: reward.punkte_kosten,
+      partner_id: partner.id,
+      partner_name: partner.name
+    });
+  });
 
   let loading = $state(false);
   let error = $state('');

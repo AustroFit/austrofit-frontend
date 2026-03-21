@@ -112,6 +112,15 @@
     return list;
   });
 
+  // Track onboarding completion once all system challenges are done
+  let onboardingTracked = false;
+  $effect(() => {
+    if (!loading && openSystemChallenges.length === 0 && userId && !onboardingTracked) {
+      onboardingTracked = true;
+      track('onboarding_completed', { user_id: userId });
+    }
+  });
+
   // Recent activity
   let recentEntries = $state<LedgerEntry[]>([]);
 
