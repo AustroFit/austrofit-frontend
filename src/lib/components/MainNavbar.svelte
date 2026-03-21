@@ -1,21 +1,30 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import MainNavItem from './MainNavItem.svelte';
-  import MobileNavItem from './MobileNavItem.svelte';
-  import { getMainNavClasses } from '$lib/design-system/classes';
-  import { getAccessToken, logout as authLogout } from '$lib/utils/auth';
-
-  const { navigation } = $props();
-  const styles = getMainNavClasses();
+  import { getAccessToken, logout as authAbmelden } from '$lib/utils/auth';
 
   let mobileMenuOpen = $state(false);
   let loggedIn = $state(false);
+  let navInitial = $state('');
 
   $effect(() => {
     page.url;
+    const wasLoggedIn = loggedIn;
     loggedIn = !!getAccessToken();
+    if (loggedIn && !wasLoggedIn) fetchNavInitial();
+    if (!loggedIn) navInitial = '';
   });
+
+  async function fetchNavInitial() {
+    try {
+      const token = getAccessToken();
+      const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        navInitial = data?.data?.first_name?.[0]?.toUpperCase() ?? '';
+      }
+    } catch { /* non-blocking */ }
+  }
 
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
@@ -26,113 +35,95 @@
   }
 
   function logout() {
-    authLogout();
+    authAbmelden();
     loggedIn = false;
+    navInitial = '';
     closeMobileMenu();
     goto('/');
   }
 
-  // Aktiver Link: currentPath prüfen
   const currentPath = $derived(page.url?.pathname ?? '');
 
   function isActive(href: string): boolean {
     return currentPath === href || (href !== '/' && currentPath.startsWith(href));
   }
+
+  const guestNav = [
+    { href: '/', label: 'Home' },
+    { href: '/partner-werden', label: 'Für Partner' },
+    { href: '/gesundheitswegweiser', label: 'Gesundheitswegweiser' },
+    { href: '/ueber-uns', label: 'Über uns' },
+  ];
+
+  const authNav = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/gesundheitswegweiser', label: 'Gesundheitswegweiser' },
+    { href: '/profil', label: 'Profil' },
+    { href: '/belohnung', label: 'Belohnungen' },
+  ];
 </script>
 
 <nav class="z-50 flex flex-row justify-center font-montserrat h-[75px] bg-light-grey shadow-sm">
-
   <div class="w-full max-w-[1140px] flex flex-row h-full px-4 lg:px-6">
 
+    <!-- Logo -->
     <div class="pr-6 lg:pr-10">
       <a href="/" class="flex h-full items-center">
-        <!-- Desktop: Logo mit Text -->
-        <img
-          src="/AF_Logo.png"
-          alt="AustroFit"
-          class="hidden md:block h-9 lg:h-10 w-auto"
-        />
-        <!-- Mobile: Favicon -->
-        <img
-          src="/AF_Favicon.png"
-          alt="AustroFit"
-          class="md:hidden h-10 w-auto"
-        />
+        <img src="/AF_Logo.png" alt="AustroFit" class="hidden md:block h-9 lg:h-10 w-auto" />
+        <img src="/AF_Favicon.png" alt="AustroFit" class="md:hidden h-10 w-auto" />
       </a>
     </div>
 
-    <div class=" flex flex-1 gap-2 justify-end items-center">
+    <div class="flex flex-1 gap-2 justify-end items-center">
+
+      <!-- Desktop nav links -->
       <ul class="hidden lg:flex flex-row gap-6 items-center">
-        {#each navigation as item, index}
-          <li class={index >= navigation.length - 2 ? 'menu-right-edge' : ''}>
-            <MainNavItem {item} />
+        {#each (loggedIn ? authNav : guestNav) as item}
+          <li>
+            <a
+              href={item.href}
+              class="text-[15px] tracking-wide font-medium transition-colors py-2
+                {isActive(item.href) ? 'border-b-2 font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
+              style={isActive(item.href) ? 'color: var(--color-primary); border-color: var(--color-primary);' : ''}
+            >
+              {item.label}
+            </a>
           </li>
         {/each}
-        <li>
-          <a
-            href="/gesundheitswegweiser"
-            class="text-[15px] tracking-wide font-medium transition-colors py-2
-              {isActive('/gesundheitswegweiser')
-                ? 'border-b-2 font-semibold'
-                : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-            style={isActive('/gesundheitswegweiser') ? 'color:#4CAF50; border-color:#4CAF50;' : ''}
-          >
-            Gesundheitswegweiser
-          </a>
-        </li>
-        <li>
-          <a
-            href="/partner"
-            class="text-[15px] tracking-wide font-medium transition-colors py-2
-              {isActive('/partner')
-                ? 'border-b-2 font-semibold'
-                : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-            style={isActive('/partner') ? 'color:#4CAF50; border-color:#4CAF50;' : ''}
-          >
-            Partner
-          </a>
-        </li>
       </ul>
 
-      <!-- Auth links (desktop) -->
+      <!-- Desktop auth buttons -->
       {#if loggedIn}
-        <a
-          href="/dashboard"
-          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2
-            {isActive('/dashboard')
-              ? 'text-white border-transparent'
-              : 'border-primary text-primary hover:bg-primary hover:text-white'}"
-          style={isActive('/dashboard') ? 'background:#4CAF50; border-color:#4CAF50;' : ''}>
-          Dashboard
-        </a>
-        <a
-          href="/profil"
-          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2
-            {isActive('/profil')
-              ? 'text-white border-transparent'
-              : 'border-primary text-primary hover:bg-primary hover:text-white'}"
-          style={isActive('/profil') ? 'background:#4CAF50; border-color:#4CAF50;' : ''}>
-          Profil
-        </a>
         <button
           onclick={logout}
           class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-primary/40 text-primary/70 hover:border-primary hover:text-primary">
-          Logout
+          Abmelden
         </button>
       {:else}
-        <a
-          href="/login"
-          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-primary text-primary hover:bg-primary hover:text-white">
-          Login
-        </a>
         <a
           href="/registrierung"
           class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-primary bg-primary text-white hover:bg-primary-dark hover:border-primary-dark">
           Registrieren
         </a>
+        <a
+          href="/login"
+          class="hidden lg:inline-flex px-4 py-1 text-[15px] font-medium font-montserrat rounded-md whitespace-nowrap transition-colors border-2 border-primary text-primary hover:bg-primary hover:text-white">
+          Anmelden
+        </a>
       {/if}
 
-      <!-- Mobile hamburger button (rightmost) -->
+      <!-- Mobile profile icon (logged in only) -->
+      {#if loggedIn}
+        <a
+          href="/profil"
+          class="lg:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary hover:bg-primary/20 transition-colors"
+          aria-label="Zu meinem Profil"
+        >
+          {navInitial || '?'}
+        </a>
+      {/if}
+
+      <!-- Mobile hamburger -->
       <button
         class="lg:hidden bg-primary-light rounded-md p-2 cursor-pointer text-primary hover:bg-primary hover:text-white transition-colors"
         onclick={toggleMobileMenu}
@@ -152,10 +143,7 @@
 
     </div>
   </div>
-
-
 </nav>
-
 
 
 {#if mobileMenuOpen}
@@ -169,105 +157,45 @@
   <!-- Mobile menu panel -->
   <div class="fixed top-[75px] w-full max-w-[100vw] bg-white shadow-md z-50 overflow-y-auto lg:hidden">
     <nav class="py-4">
-      {#each navigation as item}
-        <MobileNavItem {item} onNavigate={closeMobileMenu} />
+      {#each (loggedIn ? authNav : guestNav) as item}
+        <div class="border-b border-gray-200">
+          <a
+            href={item.href}
+            onclick={closeMobileMenu}
+            class="pl-6 pr-4 flex-1 py-3 block font-medium transition-colors hover:bg-light-grey/50
+              {isActive(item.href) ? 'font-semibold' : 'text-dark-kvb-blue'}"
+            style={isActive(item.href) ? 'color: var(--color-primary);' : ''}
+          >
+            {item.label}
+          </a>
+        </div>
       {/each}
 
-      <!-- Gesundheitswegweiser (mobile) -->
-      <a
-        href="/gesundheitswegweiser"
-        onclick={closeMobileMenu}
-        class="block py-2 px-4 font-medium transition-colors border-t border-black/10 mt-1 pt-3
-          {isActive('/gesundheitswegweiser') ? 'font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-        style={isActive('/gesundheitswegweiser') ? 'color:#4CAF50;' : ''}
-      >
-        Gesundheitswegweiser
-      </a>
-
-      <!-- Partner (mobile) -->
-      <a
-        href="/partner"
-        onclick={closeMobileMenu}
-        class="block py-2 px-4 font-medium transition-colors border-t border-black/10 mt-1 pt-3
-          {isActive('/partner') ? 'font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
-        style={isActive('/partner') ? 'color:#4CAF50;' : ''}
-      >
-        Partner
-      </a>
-
-      <!-- Auth links (mobile) -->
-      <div class="border-t border-black/10 mt-2 pt-2 px-4 flex flex-col gap-2">
-        {#if loggedIn}
-          <a
-            href="/dashboard"
-            onclick={closeMobileMenu}
-            class="block py-2 px-3 rounded-md font-medium transition-colors
-              {isActive('/dashboard') ? 'font-semibold text-primary' : 'text-primary/80 hover:bg-primary/10'}"
-          >
-            Dashboard
-          </a>
-          <a
-            href="/profil"
-            onclick={closeMobileMenu}
-            class="block py-2 px-3 rounded-md font-medium transition-colors
-              {isActive('/profil') ? 'font-semibold text-primary' : 'text-primary/80 hover:bg-primary/10'}"
-          >
-            Profil
-          </a>
+      <!-- Mobile auth actions -->
+      {#if loggedIn}
+        <div class="border-b border-gray-200">
           <button
             onclick={logout}
-            class="text-left py-2 px-3 rounded-md font-medium text-primary/50 hover:text-primary hover:bg-primary/10 transition-colors">
-            Logout
+            class="pl-6 pr-4 w-full text-left py-3 font-medium text-dark-kvb-blue/60 hover:bg-light-grey/50 hover:text-dark-kvb-blue transition-colors">
+            Abmelden
           </button>
-        {:else}
-          <a
-            href="/login"
-            onclick={closeMobileMenu}
-            class="block py-2 px-3 rounded-md font-medium text-primary hover:bg-primary/10 transition-colors">
-            Login
-          </a>
+        </div>
+      {:else}
+        <div class="flex gap-3 px-6 py-3">
           <a
             href="/registrierung"
             onclick={closeMobileMenu}
-            class="block py-2 px-3 rounded-md font-medium bg-primary text-white rounded-md text-center hover:bg-primary-dark transition-colors">
+            class="flex-1 py-2 font-medium bg-primary text-white text-center rounded-md hover:bg-primary-dark transition-colors text-sm">
             Registrieren
           </a>
-        {/if}
-      </div>
+          <a
+            href="/login"
+            onclick={closeMobileMenu}
+            class="flex-1 py-2 font-medium border-2 border-primary text-primary text-center rounded-md hover:bg-primary hover:text-white transition-colors text-sm">
+            Anmelden
+          </a>
+        </div>
+      {/if}
     </nav>
   </div>
 {/if}
-
-
-<noscript>
-  <style>
-    .mobile-menu-nojs {
-      display: block !important;
-    }
-  </style>
-</noscript>
-
-<!-- Fallback menu (hidden when JS works) -->
-<div class="hidden mobile-menu-nojs lg:hidden">
-  <ul class="flex flex-col gap-2 p-4 bg-white mt-2">
-    {#each navigation as item}
-      <li>
-        <a href="/{item.page?.slug || item.url}" class="block py-2 text-dark-blue-1">
-          {item.title}
-        </a>
-        <!-- Flatten children -->
-        {#if item.children}
-          <ul class="pl-4">
-            {#each item.children as child}
-              <li>
-                <a href="/{child.page?.slug || child.url}" class="block py-1 text-sm">
-                  {child.title}
-                </a>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </li>
-    {/each}
-  </ul>
-</div>

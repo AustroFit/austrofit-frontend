@@ -3,9 +3,8 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-  import { getAccessToken } from '$lib/utils/auth';
+  import { getValidAccessToken } from '$lib/utils/auth';
   import { track, identifyUser } from '$lib/utils/mixpanel';
-  import { getLevelInfo, LEVEL_DEFS } from '$lib/utils/level';
   import { calculatePoints } from '$lib/utils/streak';
   import { getBadgeDefs } from '$lib/utils/badges';
   import type { BadgeDef } from '$lib/utils/badges';
@@ -15,11 +14,12 @@
   import type { LedgerEntry } from '$lib/components/profil/BuchungsZeile.svelte';
   import HealthPermissionPrompt from '$lib/components/dashboard/HealthPermissionPrompt.svelte';
   import PWAInstallBanner from '$lib/components/dashboard/PWAInstallBanner.svelte';
-  import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
   import SyncToast from '$lib/components/SyncToast.svelte';
   import SchrittSyncButton from '$lib/components/SchrittSyncButton.svelte';
+  import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import type { SyncResult } from '$lib/services/stepSync';
+  import { formatDateMonthOnly } from '$lib/utils/date';
 
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -32,10 +32,6 @@
   let earnedPoints = $state(0);
   let longestStreak = $state(0);
 
-  // First-visit bonus badge (shown for 7 days after registration, based on ledger)
-  let showOnboardingBadge = $state(false);
-  const ONBOARDING_POINTS = 20;
-
   // Steps / day goal
   let stepsToday = $state(0);
   const STEP_GOAL = 7000;
@@ -45,18 +41,76 @@
 
   // Streak
   let streakDays = $state(0);
+  let quizStreakDays = $state(0);
 
-  // Level
-  const levelInfo = $derived(getLevelInfo(earnedPoints));
+  // Streak next milestones
+  const nextStepMilestone = $derived(Math.ceil((streakDays + 1) / 7) * 7);
+  const daysToNextStepBonus = $derived(nextStepMilestone - streakDays);
+  const nextQuizMilestone = $derived(Math.ceil((quizStreakDays + 1) / 7) * 7);
+  const daysToNextQuizMilestone = $derived(nextQuizMilestone - quizStreakDays);
+
+  // Health
+  let healthConnected = $state(false);
+  let testMode = $state(false);
 
   // Badges
   let quizPassCount = $state(0);
   let hasSchritte = $state(false);
+  let schrittDays = $state(0);
   let hasEinloesung = $state(false);
 
   const badges = $derived<BadgeDef[]>(
-    getBadgeDefs({ hasSchritte, quizPassCount, longestStreak, earnedPoints, hasEinloesung })
+    getBadgeDefs({ hasSchritte, schrittDays, quizPassCount, longestStreak, earnedPoints, hasEinloesung })
   );
+
+  // Dashboard badges: earned in reverse order (newest milestone first), then first unearned
+  const dashboardBadges = $derived.by<BadgeDef[]>(() => {
+    const earned = [...badges].filter(b => b.earned).reverse();
+    const next = badges.find(b => !b.earned);
+    return next ? [...earned, next] : earned;
+  });
+
+  // System challenges (onboarding) – only show incomplete ones
+  interface SystemChallenge {
+    id: string;
+    icon: string;
+    titel: string;
+    beschreibung: string;
+    href?: string;
+    actionType?: 'health';
+  }
+
+  const openSystemChallenges = $derived.by<SystemChallenge[]>(() => {
+    const list: SystemChallenge[] = [];
+    if (quizPassCount < 1) {
+      list.push({
+        id: 'first-quiz',
+        icon: '📚',
+        titel: 'Erstes Quiz absolvieren',
+        beschreibung: 'Lerne im Gesundheitswegweiser und sammle erste Punkte',
+        href: '/gesundheitswegweiser'
+      });
+    }
+    if (!hasSchritte) {
+      list.push({
+        id: 'first-steps',
+        icon: '🏃',
+        titel: 'Erste Schritte tracken',
+        beschreibung: 'Zeichne deinen ersten Schritt-Tag auf und verdiene Punkte',
+        actionType: 'health'
+      });
+    }
+    if (!hasEinloesung) {
+      list.push({
+        id: 'first-reward',
+        icon: '🎁',
+        titel: 'Erste Belohnung einlösen',
+        beschreibung: 'Löse eine Belohnung bei einem unserer Partner ein',
+        href: '/belohnung'
+      });
+    }
+    return list;
+  });
 
   // Recent activity
   let recentEntries = $state<LedgerEntry[]>([]);
@@ -69,7 +123,7 @@
   }
   let openQuizzes = $state<OpenQuiz[]>([]);
 
-  // Challenge & offer
+  // Challenge (Directus)
   interface Challenge {
     id: number;
     titel: string;
@@ -77,20 +131,10 @@
     punkte_wert: number | null;
     aktiv_bis: string | null;
   }
-  interface Angebot {
-    id: number;
-    titel: string;
-    punkte_kosten: number | null;
-    gueltig_bis: string | null;
-    partner_id: { name: string; kategorie: string | null } | null;
-  }
-
   let challenge = $state<Challenge | null>(null);
-  let angebot = $state<Angebot | null>(null);
 
   // Overlays / panels
   let showHealthPrompt = $state(false);
-  let showTestMode = $state(false);
   let showPWABanner = $state(false);
 
   // Sync state
@@ -99,11 +143,6 @@
   let isNativePlatform = $state(false);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function formatDate(iso: string | null) {
-    if (!iso) return '';
-    return new Date(iso).toLocaleDateString('de-AT', { day: 'numeric', month: 'long' });
-  }
-
   async function loadStepsFromHealth() {
     try {
       const { getStepsForDate } = await import('$lib/services/health');
@@ -116,12 +155,12 @@
 
   async function refreshDashboardData() {
     if (!userId) return;
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     const authHeader = { Authorization: `Bearer ${token}` };
     const [ledgerRes, earnedRes, entriesRes, profileRes] = await Promise.all([
-      fetch(`/api/ledger-total?${qs({ user: userId })}`),
-      fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`),
-      fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`),
+      fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
+      fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
+      fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader }),
       fetch('/api/profile', { headers: authHeader })
     ]);
     if (ledgerRes.ok) totalPoints = Number((await ledgerRes.json()).total ?? 0);
@@ -129,8 +168,9 @@
     if (entriesRes.ok) recentEntries = (await entriesRes.json()).data ?? [];
     if (profileRes.ok) {
       const profileData = await profileRes.json();
-      streakDays    = Number(profileData?.data?.streak_days    ?? 0);
-      longestStreak = Number(profileData?.data?.longest_streak ?? 0);
+      streakDays     = Number(profileData?.data?.streak_days     ?? 0);
+      quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
+      longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
     }
     await loadStepsFromHealth();
   }
@@ -139,13 +179,13 @@
     showSyncToast = false;
   }
 
-  function onSchrittSyncComplete(result: SyncResult) {
+  function onSchrittSyncComplete(_result: SyncResult) {
     void refreshDashboardData();
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────
   onMount(async () => {
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     if (!token) {
       goto('/login');
       return;
@@ -166,7 +206,6 @@
       firstName = me?.data?.first_name ?? '';
       if (!userId) { goto('/login'); return; }
 
-      // Analytics: Re-identify bei Rückkehr-Sessions + Dashboard-View tracken
       identifyUser(userId);
       const firstVisit = !localStorage.getItem('austrofit_dashboard_visited');
       if (firstVisit) localStorage.setItem('austrofit_dashboard_visited', '1');
@@ -174,63 +213,45 @@
 
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        streakDays    = Number(profileData?.data?.streak_days    ?? 0);
-        longestStreak = Number(profileData?.data?.longest_streak ?? 0);
+        streakDays     = Number(profileData?.data?.streak_days     ?? 0);
+        quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
+        longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
       }
 
-      // 2) Punkte + Badge-Quelldaten + Letzte Aktivität parallel
-      const [ledgerRes, earnedRes, challengeRes, angebotRes, quizzesRes,
-             eduRes, schrittRes, einloeseRes, entriesRes, onboardingRes] = await Promise.all([
-        fetch(`/api/ledger-total?${qs({ user: userId })}`),
-        fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`),
+      // 2) Parallel requests
+      const [ledgerRes, earnedRes, challengeRes, quizzesRes, badgesRes, entriesRes] = await Promise.all([
+        fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
+        fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
         fetch(`/api/challenges?${qs({
           'filter[status][_eq]': 'published',
           'filter[aktiv_bis][_gte]': '$NOW',
           fields: 'id,titel,beschreibung,punkte_wert,aktiv_bis',
           limit: '1',
-          sort: '-date_created'
-        })}`),
-        fetch(`/api/angebote?${qs({
-          'filter[status][_eq]': 'published',
-          'filter[gueltig_bis][_gte]': '$NOW',
-          fields: 'id,titel,punkte_kosten,gueltig_bis,partner_id.name,partner_id.kategorie',
-          limit: '1',
-          sort: '-date_created'
+          sort: '-aktiv_bis'
         })}`),
         fetch(`/api/quizzes?${qs({
           'filter[status][_in]': 'published,in_review',
           fields: 'id,article_id.title,article_id.slug',
           limit: '100'
         })}`),
-        fetch(`/api/ledger-entries?${qs({ user: userId, source_type: 'education', limit: '1' })}`),
-        fetch(`/api/ledger-entries?${qs({ user: userId, source_type: 'schritte',  limit: '1' })}`),
-        fetch(`/api/ledger-entries?${qs({ user: userId, source_type: 'einloesung',limit: '1' })}`),
-        fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`),
-        fetch(`/api/ledger-entries?${qs({ user: userId, source_type: 'onboarding', limit: '1' })}`)
+        fetch(`/api/badges-summary?${qs({ user: userId })}`, { headers: authHeader }),
+        fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader })
       ]);
 
-      if (ledgerRes.ok)   totalPoints  = Number((await ledgerRes.json()).total  ?? 0);
-      if (earnedRes.ok)   earnedPoints = Number((await earnedRes.json()).total  ?? 0);
+      if (ledgerRes.ok)  totalPoints  = Number((await ledgerRes.json()).total  ?? 0);
+      if (earnedRes.ok)  earnedPoints = Number((await earnedRes.json()).total  ?? 0);
       if (challengeRes.ok) {
         const cj = await challengeRes.json();
         challenge = cj?.data?.[0] ?? null;
       }
-      if (angebotRes.ok) {
-        const aj = await angebotRes.json();
-        angebot = aj?.data?.[0] ?? null;
+      if (badgesRes.ok) {
+        const bd = await badgesRes.json();
+        quizPassCount = bd.quizPassCount ?? 0;
+        hasSchritte   = bd.hasSchritte   ?? false;
+        schrittDays   = bd.schrittDays   ?? 0;
+        hasEinloesung = bd.hasEinloesung ?? false;
       }
-      if (eduRes.ok)      quizPassCount = Number((await eduRes.json()).total    ?? 0);
-      if (schrittRes.ok)  hasSchritte   = Number((await schrittRes.json()).total ?? 0) > 0;
-      if (einloeseRes.ok) hasEinloesung = Number((await einloeseRes.json()).total ?? 0) > 0;
-      if (entriesRes.ok)  recentEntries = (await entriesRes.json()).data ?? [];
-      if (onboardingRes.ok) {
-        const oj = await onboardingRes.json();
-        const onboardingEntry = oj?.data?.[0];
-        if (onboardingEntry) {
-          const ts = new Date(onboardingEntry.occurred_at ?? onboardingEntry.created_at ?? 0).getTime();
-          showOnboardingBadge = Date.now() - ts < 7 * 24 * 60 * 60 * 1000;
-        }
-      }
+      if (entriesRes.ok) recentEntries = (await entriesRes.json()).data ?? [];
 
       // 3) Offene Quizze
       if (quizzesRes.ok) {
@@ -264,17 +285,13 @@
     if (!browser) return;
 
     // ── Health / steps logic ──────────────────────────────────────────────
-    const testMode = localStorage.getItem('austrofit_test_mode') === 'true';
-
-    if (testMode) {
-      showTestMode = true;
-    } else {
-      const healthCached = localStorage.getItem('austrofit_health_permission');
-      if (healthCached === 'granted') {
-        loadStepsFromHealth();
-      } else if (healthCached !== 'later' && healthCached !== 'denied') {
-        showHealthPrompt = true;
-      }
+    const healthCached = localStorage.getItem('austrofit_health_permission');
+    healthConnected = healthCached === 'granted';
+    testMode = localStorage.getItem('austrofit_test_mode') === 'true';
+    if (healthCached === 'granted') {
+      loadStepsFromHealth();
+    } else if (healthCached !== 'later' && healthCached !== 'denied') {
+      showHealthPrompt = true;
     }
 
     // ── Detect native platform ────────────────────────────────────────────
@@ -284,12 +301,10 @@
     } catch { /* Capacitor not available in browser */ }
 
     // ── Trigger A: automatic step sync ───────────────────────────────────
-    if (isNativePlatform && !testMode) {
-      // Check if service worker requested a background sync
+    if (isNativePlatform) {
       const hasPending = await checkPendingSyncFlag().catch(() => false);
       if (hasPending) {
         await clearPendingSyncFlag().catch(() => {});
-        // Sync only today (SW-triggered, ignores 15-min throttle)
         syncSteps({ days: 1, mode: 'automatic' })
           .then((r) => {
             if (r.punkte_total > 0) { syncToastPunkte = r.punkte_total; showSyncToast = true; }
@@ -297,7 +312,6 @@
           })
           .catch((e) => console.warn('[dashboard] SW-triggered sync failed:', e));
       } else if (shouldSync()) {
-        // Regular throttled sync – last 7 days
         syncSteps({ days: 7, mode: 'automatic' })
           .then((r) => {
             if (r.punkte_total > 0) { syncToastPunkte = r.punkte_total; showSyncToast = true; }
@@ -309,16 +323,10 @@
   });
 
   // ── Health prompt callbacks ───────────────────────────────────────────────
-
   function onPermissionGranted() {
     showHealthPrompt = false;
+    healthConnected = true;
     loadStepsFromHealth();
-    maybeShowPWABanner();
-  }
-
-  function onTestModeSelected() {
-    showTestMode = true;
-    showHealthPrompt = false;
     maybeShowPWABanner();
   }
 
@@ -347,7 +355,7 @@
 
   {:else if errorMsg}
     <div class="mx-auto max-w-lg px-4 py-16">
-      <div class="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-800">
+      <div class="rounded-[var(--radius-card)] border border-error/30 bg-error/5 p-6 text-sm text-error">
         {errorMsg}
       </div>
     </div>
@@ -355,33 +363,35 @@
   {:else}
 
     <!-- ── Page header ───────────────────────────────────────────────────── -->
-    <div class="text-white" style="background:#4CAF50;">
+    <div class="bg-darkblue text-white">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-16">
-        <p class="text-sm font-medium opacity-80">
-          {new Date().toLocaleDateString('de-AT', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long'
-          })}
-        </p>
-        <h1 class="mt-1 text-3xl font-bold" style="font-family: 'Jost', sans-serif;">
-          {#if firstName}Hallo, {firstName}! 👋{:else}Willkommen! 👋{/if}
-        </h1>
-        <p class="mt-1 text-sm opacity-80">Bereit, heute aktiv zu werden?</p>
+        <div>
+          <p class="text-sm font-medium opacity-80">
+            {new Date().toLocaleDateString('de-AT', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long'
+            })}
+          </p>
+          <h1 class="mt-1 text-3xl font-bold font-heading">
+            {#if firstName}Servus, {firstName}!{:else}Willkommen!{/if}
+          </h1>
+          <p class="mt-1 text-sm opacity-80">Bereit, heute aktiv zu werden?</p>
+        </div>
       </div>
     </div>
 
     <!-- ── Cards (overlap the header) ───────────────────────────────────── -->
     <div class="mx-auto max-w-2xl px-4 -mt-10 flex flex-col gap-4">
 
-      <!-- Punkte & Level card -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
+      <!-- 1. Punkte & Level -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
           Punkte &amp; Level
         </div>
         <div class="flex items-start justify-between gap-4">
           <div>
-            <div class="text-5xl font-bold leading-none" style="font-family: 'Jost', sans-serif; color:#4CAF50;">
+            <div class="text-5xl font-bold leading-none font-heading text-primary">
               {totalPoints.toLocaleString('de-AT')}
             </div>
             <div class="mt-1 text-sm text-gray-500">
@@ -390,177 +400,253 @@
                 <span class="text-gray-400">· {earnedPoints.toLocaleString('de-AT')} verdient</span>
               {/if}
             </div>
-            <div class="mt-2 flex items-baseline gap-2">
-              <span class="font-semibold">Level {levelInfo.current.level}</span>
-              <span class="text-sm text-gray-500">{levelInfo.current.name}</span>
-            </div>
           </div>
-
-          {#if showOnboardingBadge}
-            <div class="shrink-0 rounded-2xl p-4 text-center" style="background:#4CAF501A;">
-              <div class="text-2xl font-bold" style="color:#4CAF50;">+{ONBOARDING_POINTS}</div>
-              <div class="text-xs font-semibold mt-0.5" style="color:#4CAF50;">Willkommensbonus</div>
-            </div>
-          {/if}
+          <a
+            href="/belohnung"
+            class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+          >
+            🎁 Belohnungen
+          </a>
         </div>
 
         <div class="mt-4">
           <LevelFortschritt punkte={earnedPoints} />
         </div>
 
-        <div class="mt-4 pt-4 border-t border-black/5">
+        <div class="mt-4 pt-4 border-t border-black/5 flex items-center gap-4">
           <a
-            href="/profil/punkte"
+            href="/profil/level-roadmap"
             class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
-            Punkte-Detail &amp; Badges ansehen →
+            Level-Roadmap →
+          </a>
+          <a
+            href="/profil/aktivitaeten"
+            class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Aktivitäten →
           </a>
         </div>
       </div>
 
-      <!-- Daily step goal -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
+      <!-- 2. Tagesziel Schritte -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="flex items-center justify-between gap-4 mb-3">
-          <div>
-            <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">
-              Tagesziel Schritte
-              {#if showTestMode}
-                <span class="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700 normal-case font-semibold">Test</span>
-              {/if}
-            </div>
-            {#if stepsToday >= STEP_GOAL}
-              <div class="mt-1 font-semibold text-lg text-emerald-600">
-                {stepsToday.toLocaleString('de-AT')} Schritte ✓
-              </div>
-              {#if bonusSteps > 0}
-                <div class="text-xs text-gray-500 mt-0.5">
-                  +{bonusSteps.toLocaleString('de-AT')} Bonusschritte · {todayPoints}P heute
-                </div>
-              {/if}
-            {:else}
-              <div class="mt-1 font-semibold text-lg">
-                {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
-              </div>
-            {/if}
+          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Tagesziel Schritte
           </div>
           <div class="text-3xl">👟</div>
         </div>
 
-        <!-- Progress bar -->
-        <div class="h-3 w-full rounded-full bg-gray-100 overflow-hidden">
-          <div
-            class="h-full rounded-full transition-all duration-500"
-            style="width:{stepPercent}%; background:#4CAF50;"
-          ></div>
-        </div>
-        <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-          <span>{stepPercent}% erreicht</span>
-          <span>
-            {#if stepPercent >= 100}
-              🎉 Tagesziel erreicht!
-            {:else if showTestMode}
-              Trage unten deine Schritte ein
-            {:else}
-              {(STEP_GOAL - stepsToday).toLocaleString('de-AT')} Schritte bis zum Ziel
-            {/if}
-          </span>
-        </div>
-
-        {#if !showTestMode && stepsToday === 0}
-          <p class="mt-3 text-xs text-gray-400">
-            Schritte werden nach Verbindung mit Google Health Connect / Apple HealthKit
-            automatisch synchronisiert.
-          </p>
-        {/if}
-
-        {#if isNativePlatform && !showTestMode}
-          <div class="mt-4 pt-4 border-t border-black/5">
-            <SchrittSyncButton onSyncComplete={onSchrittSyncComplete} />
-          </div>
-        {/if}
-      </div>
-
-      <!-- Test mode: manual step entry card -->
-      {#if showTestMode}
-        <div class="rounded-2xl bg-white border border-amber-200 shadow-sm p-6">
+        {#if testMode}
+          <!-- Test mode – manual entry -->
           <ManuelleSchrittEingabe {userId} onSave={refreshDashboardData} />
-        </div>
-      {/if}
-
-      <!-- Streak -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
-        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Streak</div>
-        {#if streakDays > 0}
-          <div class="flex items-center gap-3">
-            <div class="text-4xl">🔥</div>
-            <div>
-              <div class="text-2xl font-bold">{streakDays} Tage</div>
-              <div class="text-sm text-gray-500">in Folge aktiv – weiter so!</div>
-            </div>
+        {:else if !healthConnected}
+          <!-- Health not connected -->
+          <div class="rounded-xl bg-primary/5 border border-primary/20 p-4">
+            <p class="text-sm text-body leading-relaxed mb-3">
+              Verbinde dich mit Google Health Connect oder Apple HealthKit, um deine täglichen
+              Schritte automatisch zu tracken und Punkte zu verdienen.
+            </p>
+            <button
+              onclick={() => (showHealthPrompt = true)}
+              class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+            >
+              👟 Schritt-Tracking verbinden
+            </button>
           </div>
-          {#if longestStreak > 0}
-            <div class="mt-3 text-sm text-gray-400">
-              Längster Streak: <span class="font-semibold text-gray-600">{longestStreak} Tage</span>
+        {:else}
+          <!-- Health connected – show progress -->
+          {#if stepsToday >= STEP_GOAL}
+            <div class="font-semibold text-lg text-primary">
+              {stepsToday.toLocaleString('de-AT')} Schritte ✓
+            </div>
+            {#if bonusSteps > 0}
+              <div class="text-xs text-gray-500 mt-0.5">
+                +{bonusSteps.toLocaleString('de-AT')} Bonusschritte · {todayPoints}P heute
+              </div>
+            {/if}
+          {:else}
+            <div class="font-semibold text-lg">
+              {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
             </div>
           {/if}
-        {:else}
-          <div class="flex items-center gap-3">
-            <div class="text-3xl opacity-30">🔥</div>
-            <div>
-              <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
-              <div class="text-sm text-gray-400">Starte heute deinen ersten Tag!</div>
+
+          <!-- Progress bar -->
+          <div class="mt-3 h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-500 bg-primary"
+              style="width:{stepPercent}%;"
+            ></div>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+            <span>{stepPercent}% erreicht</span>
+            <span>
+              {#if stepPercent >= 100}
+                🎉 Tagesziel erreicht!
+              {:else}
+                {(STEP_GOAL - stepsToday).toLocaleString('de-AT')} Schritte bis zum Ziel
+              {/if}
+            </span>
+          </div>
+
+          {#if isNativePlatform}
+            <div class="mt-4 pt-4 border-t border-black/5">
+              <SchrittSyncButton onSyncComplete={onSchrittSyncComplete} />
             </div>
+          {/if}
+        {/if}
+      </div>
+
+      <!-- 3. Aktive Challenges (Hybrid) -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
+        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+          Aktive Challenges
+        </div>
+
+        {#if openSystemChallenges.length > 0 || challenge}
+          <div class="flex flex-col gap-3">
+            <!-- System-Challenges (Onboarding) -->
+            {#each openSystemChallenges as sc (sc.id)}
+              <div class="flex items-start gap-3 rounded-xl border border-black/8 bg-gray-50 px-4 py-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg">
+                  {sc.icon}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm leading-snug">{sc.titel}</div>
+                  <div class="text-xs text-gray-500 mt-0.5">{sc.beschreibung}</div>
+                </div>
+                {#if sc.actionType === 'health'}
+                  <button
+                    onclick={() => (showHealthPrompt = true)}
+                    class="shrink-0 rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    Verbinden
+                  </button>
+                {:else if sc.href}
+                  <a
+                    href={sc.href}
+                    class="shrink-0 rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    Starten →
+                  </a>
+                {/if}
+              </div>
+            {/each}
+
+            <!-- Directus-Challenge -->
+            {#if challenge}
+              <div class="flex items-start gap-3 rounded-xl border border-black/8 bg-gray-50 px-4 py-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-lg">
+                  🏆
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm leading-snug">{challenge.titel}</div>
+                  {#if challenge.beschreibung}
+                    <div class="text-xs text-gray-500 mt-0.5">{challenge.beschreibung}</div>
+                  {/if}
+                  <div class="mt-2 flex flex-wrap items-center gap-2">
+                    {#if challenge.punkte_wert}
+                      <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary">
+                        +{challenge.punkte_wert} Punkte
+                      </span>
+                    {/if}
+                    {#if challenge.aktiv_bis}
+                      <span class="text-xs text-gray-400">bis {formatDateMonthOnly(challenge.aktiv_bis)}</span>
+                    {/if}
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <div class="rounded-xl border border-dashed border-gray-200 py-6 text-center text-sm text-gray-400">
+            Alle Challenges erledigt – großartig! 🎉
           </div>
         {/if}
       </div>
 
-      <!-- Badges -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
-        <div class="mb-3 flex items-center justify-between">
-          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">Deine Badges</div>
-          <a href="/profil/punkte#badges" class="text-xs text-gray-500 underline hover:text-gray-700">
-            Alle Badges →
-          </a>
-        </div>
-        <div class="grid grid-cols-5 gap-2">
-          {#each badges as badge (badge.id)}
-            <div class="flex flex-col items-center gap-1 text-center">
-              <div
-                class="flex h-12 w-12 items-center justify-center rounded-xl text-2xl
-                  {badge.earned ? '' : 'opacity-25 grayscale'}"
-                style={badge.earned ? 'background:#4CAF501A;' : 'background:#f3f4f6;'}
-              >
-                {badge.icon}
-              </div>
-              <div class="text-xs font-medium leading-tight {badge.earned ? '' : 'text-gray-400'}">
-                {badge.name}
-              </div>
+      <!-- 4. Streak (2 Reihen) -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
+        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Streak</div>
+        <div class="flex flex-col gap-4">
+
+          <!-- Schritte-Streak -->
+          <div class="flex items-center gap-3">
+            <div class="text-3xl {streakDays > 0 ? '' : 'opacity-25'}">🔥</div>
+            <div class="flex-1">
+              <div class="text-xs font-medium text-gray-400 mb-0.5">Schritte-Streak</div>
+              {#if streakDays > 0}
+                <div class="text-xl font-bold">{streakDays} {streakDays === 1 ? 'Tag' : 'Tage'} in Folge</div>
+                <div class="mt-0.5 text-xs text-gray-500">
+                  Noch {daysToNextStepBonus} {daysToNextStepBonus === 1 ? 'Tag' : 'Tage'} bis +60P Bonus
+                </div>
+              {:else}
+                <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
+                <div class="text-xs text-gray-400">Erreich heute 4.000 Schritte!</div>
+              {/if}
             </div>
-          {/each}
+          </div>
+
+          <div class="border-t border-black/5"></div>
+
+          <!-- Quiz-Streak -->
+          <div class="flex items-center gap-3">
+            <div class="text-3xl {quizStreakDays > 0 ? '' : 'opacity-25'}">📚</div>
+            <div class="flex-1">
+              <div class="text-xs font-medium text-gray-400 mb-0.5">Quiz-Streak</div>
+              {#if quizStreakDays > 0}
+                <div class="text-xl font-bold">{quizStreakDays} {quizStreakDays === 1 ? 'Tag' : 'Tage'} in Folge</div>
+                <div class="mt-0.5 text-xs text-gray-500">
+                  Noch {daysToNextQuizMilestone} {daysToNextQuizMilestone === 1 ? 'Tag' : 'Tage'} bis zum nächsten Meilenstein
+                </div>
+              {:else}
+                <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
+                <div class="text-xs text-gray-400">Mache heute ein Quiz!</div>
+              {/if}
+            </div>
+          </div>
+
         </div>
+
+        {#if longestStreak > 0}
+          <div class="mt-4 pt-4 border-t border-black/5 text-sm text-gray-400">
+            Längster Schritte-Streak: <span class="font-semibold text-gray-600">{longestStreak} Tage</span>
+          </div>
+        {/if}
       </div>
 
-      <!-- Letzte Aktivität -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
-        <div class="mb-1 flex items-center justify-between">
-          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">Letzte Aktivität</div>
-          <a href="/profil/punkte" class="text-xs text-gray-500 underline hover:text-gray-700">
-            Alle Buchungen →
+      <!-- 5. Auszeichnungen (1 Reihe) -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
+        <div class="mb-3 flex items-center justify-between">
+          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">Auszeichnungen</div>
+          <a href="/profil/auszeichnungen" class="text-xs text-gray-500 underline hover:text-gray-700">
+            alle anzeigen →
           </a>
         </div>
-        {#if recentEntries.length > 0}
-          <div class="divide-y divide-black/5">
-            {#each recentEntries as entry (entry.id)}
-              <BuchungsZeile buchung={entry} />
+        {#if dashboardBadges.length === 0}
+          <div class="py-4 text-center text-sm text-gray-400">Noch keine Auszeichnungen.</div>
+        {:else}
+          <div class="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
+            {#each dashboardBadges as badge (badge.id)}
+              <div class="flex w-[4.5rem] shrink-0 flex-col items-center gap-1 text-center">
+                <div
+                  class="flex h-12 w-12 items-center justify-center rounded-xl text-2xl
+                    {badge.earned ? 'bg-primary/10' : 'bg-gray-100 opacity-40 grayscale'}"
+                >
+                  {badge.icon}
+                </div>
+                <div class="text-[10px] font-medium leading-tight {badge.earned ? '' : 'text-gray-400'}">
+                  {badge.earned ? badge.name : 'Nächstes Ziel'}
+                </div>
+              </div>
             {/each}
           </div>
-        {:else}
-          <div class="py-6 text-center text-sm text-gray-400">Noch keine Aktivität.</div>
         {/if}
       </div>
 
-      <!-- Offene Quizze -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
+      <!-- 6. Offene Quizze -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">Offene Quizze</div>
           <a href="/gesundheitswegweiser" class="text-xs text-gray-500 underline hover:text-gray-700">
@@ -587,132 +673,34 @@
         {/if}
       </div>
 
-      <!-- Empfohlene Challenge -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
-        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
-          Challenge des Tages
+      <!-- 7. Letzte Aktivität (ganz unten) -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
+        <div class="mb-1 flex items-center justify-between">
+          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">Letzte Aktivität</div>
+          <a href="/profil/aktivitaeten" class="text-xs text-gray-500 underline hover:text-gray-700">
+            Alle Aktivitäten →
+          </a>
         </div>
-
-        {#if challenge}
-          <div class="flex items-start gap-4">
-            <div
-              class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl"
-              style="background:#4CAF501A;"
-            >
-              🏆
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold leading-snug">{challenge.titel}</div>
-              {#if challenge.beschreibung}
-                <div class="mt-1 text-sm text-gray-500 leading-relaxed">
-                  {challenge.beschreibung}
-                </div>
-              {/if}
-              <div class="mt-3 flex flex-wrap items-center gap-3">
-                {#if challenge.punkte_wert}
-                  <span
-                    class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
-                    style="background:#4CAF501A; color:#4CAF50;"
-                  >
-                    +{challenge.punkte_wert} Punkte
-                  </span>
-                {/if}
-                {#if challenge.aktiv_bis}
-                  <span class="text-xs text-gray-400">Bis {formatDate(challenge.aktiv_bis)}</span>
-                {/if}
-              </div>
-            </div>
+        {#if recentEntries.length > 0}
+          <div class="divide-y divide-black/5">
+            {#each recentEntries as entry (entry.id)}
+              <BuchungsZeile buchung={entry} />
+            {/each}
           </div>
         {:else}
-          <div
-            class="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-400"
-          >
-            Keine aktive Challenge – schau bald wieder vorbei!
-          </div>
+          <div class="py-6 text-center text-sm text-gray-400">Noch keine Aktivität.</div>
         {/if}
-      </div>
-
-      <!-- Partner offer preview -->
-      <div class="rounded-2xl bg-white border border-black/10 shadow-sm p-6">
-        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
-          Partnerangebot
-        </div>
-
-        {#if angebot}
-          <div class="flex items-start gap-4">
-            <div
-              class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-xl"
-            >
-              🎁
-            </div>
-            <div class="flex-1 min-w-0">
-              {#if angebot.partner_id?.name}
-                <div class="text-xs text-gray-400 mb-1">{angebot.partner_id.name}</div>
-              {/if}
-              <div class="font-semibold leading-snug">{angebot.titel}</div>
-              <div class="mt-3 flex flex-wrap items-center gap-3">
-                {#if angebot.punkte_kosten}
-                  <span
-                    class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700"
-                  >
-                    {angebot.punkte_kosten} Punkte
-                  </span>
-                {/if}
-                {#if angebot.gueltig_bis}
-                  <span class="text-xs text-gray-400">
-                    Gültig bis {formatDate(angebot.gueltig_bis)}
-                  </span>
-                {/if}
-              </div>
-              <div class="mt-3">
-                <a
-                  href="/partner"
-                  class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900"
-                >
-                  Alle Angebote ansehen →
-                </a>
-              </div>
-            </div>
-          </div>
-        {:else}
-          <div
-            class="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-400"
-          >
-            Noch keine Partnerangebote verfügbar.
-          </div>
-        {/if}
-      </div>
-
-      <!-- Quick links -->
-      <div class="grid grid-cols-2 gap-3">
-        <a
-          href="/gesundheitswegweiser"
-          class="rounded-2xl bg-white border border-black/10 shadow-sm p-5 flex flex-col gap-2 hover:shadow-md transition-shadow"
-        >
-          <div class="text-2xl">📚</div>
-          <div class="font-semibold text-sm">Gesundheitswissen</div>
-          <div class="text-xs text-gray-500">Artikel lesen &amp; Punkte sammeln</div>
-        </a>
-        <a
-          href="/profil/punkte"
-          class="rounded-2xl bg-white border border-black/10 shadow-sm p-5 flex flex-col gap-2 hover:shadow-md transition-shadow"
-        >
-          <div class="text-2xl">🏅</div>
-          <div class="font-semibold text-sm">Punkte &amp; Badges</div>
-          <div class="text-xs text-gray-500">Vollständige Historie</div>
-        </a>
       </div>
 
     </div>
   {/if}
 </main>
 
-<!-- Overlays (bottom sheet, z-indexed above content) -->
+<!-- Overlays -->
 {#if !loading && !errorMsg}
   {#if showHealthPrompt}
     <HealthPermissionPrompt
       {onPermissionGranted}
-      {onTestModeSelected}
       onDismiss={onHealthDismiss}
     />
   {:else if showPWABanner}
@@ -720,5 +708,5 @@
   {/if}
 {/if}
 
-<!-- Sync toast (independent of loading state) -->
+<!-- Sync toast -->
 <SyncToast punkte={syncToastPunkte} show={showSyncToast} onHide={handleSyncToastHide} />

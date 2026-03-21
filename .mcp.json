@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "directus": {
+      "command": "node",
+      "args": ["--env-file=.env", "scripts/mcp-directus.mjs"],
+      "cwd": "c:\\Users\\gnong\\GitHub\\austrofit-frontend"
+    }
+  }
+}

@@ -13,7 +13,7 @@
   const { userId, onSave }: Props = $props();
 
   const STEP_GOAL = 7000;
-  const DAYS = 7;
+  const DAYS = 8;
 
   interface DayEntry {
     date: string; // YYYY-MM-DD
@@ -186,7 +186,7 @@
   <!-- Header -->
   <div class="mb-3 flex items-center gap-2">
     <span class="text-sm font-semibold">🧪 Schritt-Testmodus</span>
-    <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+    <span class="rounded-full bg-secondary/20 px-2 py-0.5 text-xs font-semibold text-secondary">
       Test
     </span>
   </div>
@@ -200,14 +200,14 @@
       <div
         class="rounded-xl border px-4 py-3
           {entry.existingPoints !== null
-            ? 'border-emerald-200 bg-emerald-50'
+            ? 'border-primary/30 bg-primary/5'
             : 'border-black/10 bg-white'}"
       >
         {#if entry.existingPoints !== null}
           <!-- Already entered -->
           <div class="flex items-center justify-between gap-3">
             <span class="text-sm font-medium text-gray-700">{entry.label}</span>
-            <span class="text-xs font-semibold text-emerald-600">
+            <span class="text-xs font-semibold text-primary">
               ✅ {entry.existingPoints}P vergeben
             </span>
           </div>
@@ -216,7 +216,7 @@
           <div class="flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700">{entry.label}</span>
-              <span class="text-xs font-bold" style="color:#4CAF50;">
+              <span class="text-xs font-bold text-primary">
                 → {calculatePoints(entry.steps)}P
               </span>
             </div>
@@ -248,17 +248,16 @@
               <button
                 onclick={() => saveDay(i)}
                 disabled={entry.saving}
-                class="shrink-0 rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition disabled:opacity-60"
-                style="background:#4CAF50;"
+                class="shrink-0 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-white transition disabled:opacity-60"
               >
                 {entry.saving ? '…' : 'Speichern'}
               </button>
             </div>
             {#if entry.error}
-              <p class="text-xs text-red-600">{entry.error}</p>
+              <p class="text-xs text-error">{entry.error}</p>
             {/if}
             {#if entry.success}
-              <p class="text-xs text-emerald-600">✓ Gespeichert!</p>
+              <p class="text-xs text-primary">✓ Gespeichert!</p>
             {/if}
           </div>
         {/if}
@@ -270,7 +269,7 @@
   {#if missingCount > 0}
     <div class="mt-4 border-t border-black/5 pt-4">
       {#if bulkSuccess}
-        <p class="mb-2 text-xs text-emerald-600">✓ Alle fehlenden Tage wurden eingetragen!</p>
+        <p class="mb-2 text-xs text-primary">✓ Alle fehlenden Tage wurden eingetragen!</p>
       {/if}
       <button
         onclick={saveAll}

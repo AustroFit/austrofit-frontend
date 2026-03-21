@@ -37,6 +37,9 @@ export async function POST({
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
     return json({ error: 'Ungültiges Datum (YYYY-MM-DD erwartet)' }, { status: 400 });
   }
+  if (isNaN(new Date(date + 'T00:00:00Z').getTime())) {
+    return json({ error: 'Ungültiges Datum' }, { status: 400 });
+  }
   const today = new Date().toISOString().split('T')[0];
   const minDate = new Date();
   minDate.setDate(minDate.getDate() - 30);
@@ -67,6 +70,7 @@ export async function POST({
       mode: 'manual',
       cmsUrl: PUBLIC_CMSURL,
       adminToken: PRIVATE_CMS_STATIC_TOKEN,
+      userToken,
       fetchFn: fetch
     });
 

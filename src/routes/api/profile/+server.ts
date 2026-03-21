@@ -11,12 +11,13 @@
 import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
+import { extractBearerToken } from '$lib/server/auth';
 
 const USER_FIELDS = 'id,first_name,last_name,email,date_created,avatar';
-const PROFILE_FIELDS = 'id,streak_days,longest_streak,health_connected,onboarding_completed';
+const PROFILE_FIELDS = 'id,streak_days,longest_streak,quiz_streak_days,health_connected,onboarding_completed';
 
 export async function GET({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) {
-  const token = (request.headers.get('authorization') ?? '').replace('Bearer ', '');
+  const token = extractBearerToken(request) ?? '';
   if (!token) return json({ error: 'unauthorized' }, { status: 401 });
 
   // 1) Basisdaten aus directus_users
@@ -49,6 +50,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
       ...user,
       streak_days: profile.streak_days ?? 0,
       longest_streak: profile.longest_streak ?? 0,
+      quiz_streak_days: profile.quiz_streak_days ?? 0,
       health_connected: profile.health_connected ?? false,
       onboarding_completed: profile.onboarding_completed ?? false
     }
@@ -56,7 +58,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
 }
 
 export async function PATCH({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) {
-  const token = (request.headers.get('authorization') ?? '').replace('Bearer ', '');
+  const token = extractBearerToken(request) ?? '';
   if (!token) return json({ error: 'unauthorized' }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));

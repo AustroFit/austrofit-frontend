@@ -3,6 +3,7 @@ import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { qs } from '$lib/utils/qs';
 import { resolveUserId } from '$lib/server/auth';
+import { updateQuizStreak } from '$lib/utils/streak';
 
 export const POST = async ({ request, fetch }) => {
   try {
@@ -132,6 +133,16 @@ export const POST = async ({ request, fetch }) => {
 
       claimed++;
       results.push({ attempt_id: a.id, ledger_id: ledgerId });
+    }
+
+    // Quiz-Streak aktualisieren (non-blocking)
+    if (claimed > 0) {
+      updateQuizStreak(user_id, {
+        cmsUrl: PUBLIC_CMSURL,
+        token: PRIVATE_CMS_STATIC_TOKEN,
+        userToken: access_token,
+        fetchFn: fetch
+      }).catch((e) => console.warn('[claim] quiz streak update failed:', e));
     }
 
     return json({ claimed, results });

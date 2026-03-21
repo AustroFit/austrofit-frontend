@@ -20,11 +20,14 @@ export interface LevelInfo {
 }
 
 export const LEVEL_DEFS: LevelDef[] = [
-  { level: 1, min: 0,    max: 199,   name: 'Einsteiger' },
-  { level: 2, min: 200,  max: 499,   name: 'Aktiver' },
-  { level: 3, min: 500,  max: 999,   name: 'Gesundheitsprofi' },
-  { level: 4, min: 1000, max: 2499,  name: 'Vitalexperte' },
-  { level: 5, min: 2500, max: 99999, name: 'AustroFit Champion' },
+  { level: 1, min: 0,     max: 499,      name: 'Hügelläufer' },
+  { level: 2, min: 500,   max: 1499,     name: 'Waldläufer' },
+  { level: 3, min: 1500,  max: 3999,     name: 'Bergsteiger' },
+  { level: 4, min: 4000,  max: 7999,     name: 'Almwanderer' },
+  { level: 5, min: 8000,  max: 15999,    name: 'Gipfelstürmer' },
+  { level: 6, min: 16000, max: 31999,    name: 'Alpenläufer' },
+  { level: 7, min: 32000, max: 64999,    name: 'Adlerblick' },
+  { level: 8, min: 65000, max: 99999999, name: 'AustroFit Legend' },
 ];
 
 export function getLevelInfo(punkte: number): LevelInfo {

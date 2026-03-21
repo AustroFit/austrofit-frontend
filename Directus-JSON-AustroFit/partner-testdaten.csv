@@ -1,0 +1,7 @@
+name,kategorie,region,adresse,esg_zertifiziert
+SportCity Wien,"[""fitnessstudio""]",wien,"Mariahilfer Straße 45, 1060 Wien",false
+AlpenSport Innsbruck,"[""sportgeraete"",""sportbekleidung""]",tirol,"Maria-Theresien-Straße 12, 6020 Innsbruck",false
+Therme Wien,"[""wellness""]",wien,"Kurbadstraße 14, 1100 Wien",true
+Gesundheits-Apotheke Graz,"[""apotheke""]",steiermark,"Herrengasse 3, 8010 Graz",false
+NaturVital Austria,"[""nahrungsergaenzung"",""bio-lebensmittel""]",wien,"Naschmarkt Stand 22, 1040 Wien",true
+Vitalfit Salzburg,"[""fitnessstudio"",""privat-sport""]",salzburg,"Paris-Lodron-Straße 8, 5020 Salzburg",false

@@ -16,27 +16,23 @@
 {#if size === 'large'}
   <div class="flex flex-col items-center gap-2 py-4">
     <div
-      class="text-6xl font-bold leading-none"
-      style="font-family: 'Jost', sans-serif; color:#4CAF50;"
+      class="text-6xl font-bold leading-none text-primary font-heading"
     >
       {punkte.toLocaleString('de-AT')}
     </div>
     <div class="text-sm uppercase tracking-widest text-gray-500">AustroFit-Punkte</div>
-    <div
-      class="mt-1 rounded-full px-4 py-1 text-sm font-semibold text-white"
-      style="background:#4CAF50;"
-    >
+    <div class="mt-1 rounded-full bg-primary px-4 py-1 text-sm font-semibold text-white">
       Level {info.current.level} – {info.current.name}
     </div>
   </div>
 {:else}
   <div class="flex items-center gap-3">
-    <div class="text-3xl font-bold" style="font-family: 'Jost', sans-serif;">
+    <div class="text-3xl font-bold font-heading">
       {punkte.toLocaleString('de-AT')}
     </div>
     <div>
       <div class="text-xs text-gray-500">Punkte</div>
-      <div class="text-xs font-semibold" style="color:#4CAF50;">
+      <div class="text-xs font-semibold text-primary">
         Lv.{info.current.level} {info.current.name}
       </div>
     </div>

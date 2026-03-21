@@ -14,15 +14,16 @@
   /* ── PRIMÄRFARBE: Frisches Mittelgrün ──────────────────────────
    * Hauptfarbe für Buttons, Links, CTAs, aktive Zustände.
    * ──────────────────────────────────────────────────────────── */
-  --color-primary:       #4CAF50;   /* bg-primary / text-primary          */
+  --color-primary:       #1B7A44;   /* bg-primary / text-primary          */
   --color-primary-dark:  #2E7D32;   /* bg-primary-dark  – Hover, gedrückt */
-  --color-primary-light: #C8E6C9;   /* bg-primary-light – Chips, Badges   */
+  --color-primary-light: #D4EDE3;   /* bg-primary-light – Chips, Badges   */
 
   /* ── SEKUNDÄRFARBE: Gold ───────────────────────────────────────
    * Gamification: Punkte, Level-Badges, Streak-Highlights.
    * ──────────────────────────────────────────────────────────── */
-  --color-secondary: #F59E0B;       /* bg-secondary / text-secondary      */
-  --color-gold:      #F59E0B;       /* bg-gold – semantischer Alias       */
+  --color-secondary:      #F59E0B;   /* bg-secondary / text-secondary      */
+  --color-secondary-dark: #92400E;  /* text-secondary-dark – Ablauf-Text  */
+  --color-gold:           #F59E0B;  /* bg-gold – semantischer Alias       */
 
   /* ── FEHLER / WARNUNG ──────────────────────────────────────────
    * NUR für Error-States, Validierungsfehler, Warnmeldungen.
@@ -93,5 +94,16 @@
   --color-gray-700: #1E3A20;   /* text-gray-700 → body sehr dunkel              */
   --color-gray-800: #142815;   /* text-gray-800 → fast Heading                  */
   --color-gray-900: #0F1F0F;   /* text-gray-900 → heading                       */
+
+  /* ── Österreich-Akzent ─────────────────────────────────
+   * Coral – Challenge-Badges, subtile AT-Identität.
+   * ──────────────────────────────────────────────────── */
+  --color-austria:   #E8593C;   /* bg-austria / text-austria                  */
+
+  /* ── App-Radius ─────────────────────────────────────────
+   * Runde Cards für App-Feeling.
+   * ──────────────────────────────────────────────────── */
+  --radius-card:     1.25rem;   /* 20px – runde Cards                         */
+  --radius-pill:     999px;     /* Pill-Buttons, Tags                         */
 
 }

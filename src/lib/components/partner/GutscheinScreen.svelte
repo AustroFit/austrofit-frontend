@@ -57,15 +57,14 @@
 <div class="flex flex-col items-center gap-6 p-2">
   <!-- Erfolgs-Animation -->
   <div
-    class="flex h-16 w-16 items-center justify-center rounded-full text-3xl transition-transform duration-500
+    class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-light text-3xl transition-transform duration-500
       {showAnim ? 'scale-100' : 'scale-0'}"
-    style="background:#dcfce7;"
   >
     🎉
   </div>
 
   <div class="text-center">
-    <h3 class="text-lg font-bold text-gray-900" style="font-family:'Syne',sans-serif;">
+    <h3 class="text-lg font-bold font-heading text-heading">
       Gutschein aktiviert!
     </h3>
     <p class="mt-1 text-sm text-gray-500">{gutschein.reward_titel}</p>
@@ -84,7 +83,7 @@
   </div>
 
   <!-- Anleitung -->
-  <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+  <div class="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
     Zeige diesen Code im Geschäft vor oder gib ihn online ein.
   </div>
 
@@ -101,11 +100,10 @@
   <!-- Buttons -->
   <div class="flex w-full flex-col gap-2">
     <a
-      href="/profil/gutscheine"
-      class="block w-full rounded-xl py-2.5 text-center text-sm font-semibold text-white transition"
-      style="background:#4CAF50;"
+      href="/belohnung"
+      class="block w-full rounded-xl bg-primary py-2.5 text-center text-sm font-semibold text-white transition"
     >
-      Meine Gutscheine ansehen
+      Zu meinen Belohnungen
     </a>
     <button
       onclick={onclose}

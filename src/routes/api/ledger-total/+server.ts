@@ -3,10 +3,17 @@
 import { json } from '@sveltejs/kit';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { PUBLIC_CMSURL } from '$env/static/public';
+import { extractBearerToken, resolveUserId } from '$lib/server/auth';
 
-export async function GET({ url, fetch }: { url: URL; fetch: typeof globalThis.fetch }) {
+export async function GET({ url, request, fetch }: { url: URL; request: Request; fetch: typeof globalThis.fetch }) {
   const userId = url.searchParams.get('user');
   if (!userId) return json({ total: 0 });
+
+  // Auth: sicherstellen dass der Token zum angefragten User gehört
+  const token = extractBearerToken(request);
+  if (!token) return json({ error: 'unauthorized' }, { status: 401 });
+  const callerUserId = await resolveUserId(token, PUBLIC_CMSURL, fetch);
+  if (!callerUserId || callerUserId !== userId) return json({ error: 'forbidden' }, { status: 403 });
 
   const positiveOnly = url.searchParams.get('positive_only') === 'true';
   const filter = positiveOnly

@@ -16,8 +16,8 @@
 </script>
 
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { browser } from '$app/environment';
+  import { formatDateNumeric, daysUntilExpiry as calcDaysUntil } from '$lib/utils/date';
+  import QRCodeCanvas from '$lib/components/QRCodeCanvas.svelte';
 
   interface Props {
     gutschein: GutscheinData;
@@ -27,18 +27,15 @@
 
   const { gutschein, variant, onclick }: Props = $props();
 
-  let canvasEl = $state<HTMLCanvasElement | null>(null);
   let copied = $state(false);
 
   const isAktiv = $derived(variant === 'aktiv');
 
-  const ablaeuftFormatted = $derived(
-    new Date(gutschein.ablaeuft_am).toLocaleDateString('de-AT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    })
-  );
+  const ablaeuftFormatted = $derived(formatDateNumeric(gutschein.ablaeuft_am));
+  const daysUntilExpiry = $derived(calcDaysUntil(gutschein.ablaeuft_am));
+
+  const isExpiringSoon = $derived(isAktiv && daysUntilExpiry <= 7 && daysUntilExpiry > 0);
+  const isExpiredToday = $derived(isAktiv && daysUntilExpiry <= 0);
 
   const partnerInitial = $derived(
     gutschein.partner_name ? gutschein.partner_name[0].toUpperCase() : '?'
@@ -54,71 +51,63 @@
       // Fallback: ignore silently
     }
   }
-
-  onMount(async () => {
-    if (!browser || !canvasEl || variant === 'abgelaufen') return;
-    try {
-      const QRCode = await import('qrcode');
-      await QRCode.toCanvas(canvasEl, gutschein.code, {
-        width: 120,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' }
-      });
-    } catch {
-      // QR rendering failed – code text bleibt sichtbar
-    }
-  });
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 <div
-  class="relative overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition-shadow
+  class="relative overflow-hidden rounded-[var(--radius-card)] border border-black/10 bg-white shadow-sm transition-shadow
     {isAktiv ? 'cursor-pointer hover:shadow-md' : ''}"
   onclick={isAktiv ? onclick : undefined}
 >
+  <!-- Ablauf-Warnung (Banner oben) -->
+  {#if isExpiredToday}
+    <div class="bg-error/10 px-4 py-2 text-xs font-semibold text-error text-center">
+      Heute abgelaufen
+    </div>
+  {:else if isExpiringSoon}
+    <div class="bg-secondary/15 px-4 py-2 text-xs font-semibold text-center text-secondary-dark">
+      Läuft in {daysUntilExpiry} {daysUntilExpiry === 1 ? 'Tag' : 'Tagen'} ab
+    </div>
+  {/if}
+
   <!-- Inner content (mit Fade für verwendet/abgelaufen) -->
   <div class="p-4 {!isAktiv ? 'opacity-50' : ''}">
 
     <!-- Partner-Header -->
     <div class="mb-3 flex items-center gap-3">
-      <div
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-        style="background:#4CAF50;"
-      >
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
         {partnerInitial}
       </div>
       <div class="min-w-0 flex-1">
-        <div class="truncate text-sm font-semibold text-gray-900">
+        <div class="truncate text-sm font-semibold text-heading">
           {gutschein.partner_name || 'Partner'}
         </div>
-        <div class="truncate text-xs text-gray-500">{gutschein.reward_titel}</div>
+        <div class="truncate text-xs text-body">{gutschein.reward_titel}</div>
       </div>
+      <!-- Punkte-Badge -->
+      {#if gutschein.punkte_kosten}
+        <div class="shrink-0 rounded-full bg-secondary/15 px-2.5 py-1 text-xs font-semibold text-secondary">
+          {gutschein.punkte_kosten} Pt
+        </div>
+      {/if}
     </div>
 
     <!-- QR-Code (120px) -->
     <div class="mb-3 flex justify-center">
       {#if variant === 'abgelaufen'}
-        <!-- Platzhalter statt echtem QR für Abgelaufene -->
-        <div
-          class="flex h-[120px] w-[120px] items-center justify-center rounded-lg bg-gray-100 text-4xl"
-          style="filter: grayscale(1);"
-        >
+        <div class="flex h-[120px] w-[120px] items-center justify-center rounded-lg bg-gray-100 text-4xl" style="filter: grayscale(1);">
           🎟️
         </div>
       {:else}
-        <canvas
-          bind:this={canvasEl}
-          width="120"
-          height="120"
-          class="rounded-lg bg-white"
-          style={variant === 'verwendet' ? 'filter: grayscale(0.8);' : ''}
-        ></canvas>
+        <div style={variant === 'verwendet' ? 'filter: grayscale(0.8);' : ''}>
+          <QRCodeCanvas value={gutschein.code} size={120} />
+        </div>
       {/if}
     </div>
 
     <!-- Code + Kopieren-Button -->
-    <div class="mb-3 flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
-      <code class="min-w-0 flex-1 truncate font-mono text-sm font-bold tracking-wider text-gray-900">
+    <div class="mb-3 flex items-center gap-2 rounded-lg bg-light-grey px-3 py-2">
+      <code class="min-w-0 flex-1 truncate font-mono text-sm font-bold tracking-wider text-heading">
         {gutschein.code}
       </code>
       {#if isAktiv}
@@ -126,7 +115,7 @@
           onclick={copyCode}
           class="shrink-0 rounded-md border px-2 py-1 text-xs font-medium transition-colors
             {copied
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-600'
+              ? 'border-primary/30 bg-primary-light text-primary'
               : 'border-black/15 bg-white hover:bg-gray-50'}"
         >
           {copied ? '✓ Kopiert!' : 'Kopieren'}
@@ -135,11 +124,11 @@
     </div>
 
     <!-- Footer -->
-    <div class="flex items-center justify-between text-xs text-gray-500">
+    <div class="flex items-center justify-between text-xs text-body">
       <span>Gültig bis {ablaeuftFormatted}</span>
       {#if gutschein.eingeloest_am}
         <span class="text-gray-400">
-          Eingelöst {new Date(gutschein.eingeloest_am).toLocaleDateString('de-AT')}
+          Eingelöst {formatDateNumeric(gutschein.eingeloest_am)}
         </span>
       {/if}
     </div>

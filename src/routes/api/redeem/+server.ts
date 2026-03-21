@@ -35,7 +35,7 @@ export async function POST({ request, fetch }: { request: Request; fetch: typeof
 
   // 2) Reward laden und validieren (Read-Token hat Lesezugriff auf rewards)
   const rewardRes = await fetch(
-    `${PUBLIC_CMSURL}/items/rewards/${reward_id}?fields=id,title,description,points_cost,active,coupon_code,partner_name`,
+    `${PUBLIC_CMSURL}/items/rewards/${reward_id}?fields=id,title,description,points_cost,active,coupon_code,partner_id.name`,
     { headers: readHeaders }
   );
   if (!rewardRes.ok) return json({ error: 'Angebot nicht gefunden' }, { status: 404 });
@@ -127,7 +127,8 @@ export async function POST({ request, fetch }: { request: Request; fetch: typeof
       code,
       ablaeuft_am,
       reward_titel: reward.title,
-      punkte_kosten: reward.points_cost
+      punkte_kosten: reward.points_cost,
+      partner_name: reward?.partner_id?.name ?? ''
     }
   });
 }

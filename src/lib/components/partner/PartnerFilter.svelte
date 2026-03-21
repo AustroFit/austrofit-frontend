@@ -12,10 +12,15 @@
 
   const kategorien = [
     { value: '', label: 'Alle' },
-    { value: 'fitness', label: 'Fitness' },
-    { value: 'ernaehrung', label: 'Ernährung & Bio' },
-    { value: 'apotheke', label: 'Apotheke & Gesundheit' },
-    { value: 'wellness', label: 'Wellness' }
+    { value: 'fitnessstudio', label: 'Fitnessstudio' },
+    { value: 'sportgeraete', label: 'Sportgeräte' },
+    { value: 'sportbekleidung', label: 'Sportbekleidung' },
+    { value: 'privat-sport', label: 'Private Sportangebote' },
+    { value: 'wellness', label: 'Wellness & Therme' },
+    { value: 'apotheke', label: 'Apotheken' },
+    { value: 'nahrungsergaenzung', label: 'Nahrungsergänzungsmittel' },
+    { value: 'bio-lebensmittel', label: 'BIO-Lebensmittel' },
+    { value: 'pflegeprodukte', label: 'Pflegeprodukte' }
   ];
 
   const regionen = [
@@ -43,10 +48,9 @@
     {#each kategorien as k}
       <button
         onclick={() => setKategorie(k.value)}
-        class="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
-        style={kategorie === k.value
-          ? 'background:#4CAF50; color:white; border-color:#4CAF50;'
-          : 'background:white; color:#374151; border-color:#d1d5db;'}
+        class="rounded-[var(--radius-pill)] border px-4 py-1.5 text-sm font-medium transition-colors {kategorie === k.value
+          ? 'bg-primary border-primary text-white'
+          : 'bg-white border-gray-200 text-body hover:border-primary hover:text-primary'}"
       >
         {k.label}
       </button>
@@ -58,7 +62,7 @@
     <select
       value={region}
       onchange={(e) => setRegion((e.currentTarget as HTMLSelectElement).value)}
-      class="rounded-xl border border-black/15 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-400"
+      class="rounded-[var(--radius-pill)] border border-gray-200 bg-white px-3 py-2 text-sm text-body outline-none transition focus:border-primary"
     >
       {#each regionen as r}
         <option value={r.value}>{r.label}</option>
@@ -68,13 +72,13 @@
     <!-- ESG-Toggle -->
     <button
       onclick={toggleEsg}
-      class="flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors
-        {esg ? 'border-green-600 bg-green-50 text-green-700' : 'border-black/15 bg-white text-gray-600 hover:bg-gray-50'}"
+      class="flex items-center gap-2 rounded-[var(--radius-pill)] border px-4 py-2 text-sm font-medium transition-colors
+        {esg ? 'border-primary bg-primary-light text-primary' : 'border-gray-200 bg-white text-body hover:border-primary hover:text-primary'}"
     >
-      <span style="color:#16a34a;">🌱</span>
+      🌱
       Nur nachhaltige Partner
       {#if esg}
-        <span class="ml-1 text-xs text-green-600">✓</span>
+        <span class="ml-1 text-xs text-primary">✓</span>
       {/if}
     </button>
   </div>

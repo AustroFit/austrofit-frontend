@@ -30,11 +30,11 @@
 
   <!-- Error/Success Messages - positioned below form -->
   {#if hasSuccess}
-    <div class="success-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mt-4">
+    <div class="success-message bg-primary/5 border border-primary/20 text-primary px-4 py-3 rounded-lg mt-4">
       {formData.success_message || "Formular erfolgreich gesendet."}
     </div>
   {:else if hasError}
-    <div class="error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
+    <div class="error-message bg-error/5 border border-error/30 text-error px-4 py-3 rounded-lg mt-4">
       {formResponse.error}
     </div>
   {/if}

@@ -3,7 +3,7 @@
 <main class="min-h-[calc(100vh-75px)] bg-gray-50 py-12 px-4">
   <div class="mx-auto max-w-2xl">
 
-    <h1 class="mb-2 text-3xl font-bold text-gray-900" style="font-family:'Syne',sans-serif;">
+    <h1 class="mb-2 text-3xl font-bold font-heading text-heading">
       Datenschutzerklärung
     </h1>
     <p class="mb-8 text-sm text-gray-400">Stand: März 2026 · gemäß DSGVO</p>
@@ -17,7 +17,7 @@
       </p>
       <address class="mt-3 not-italic text-sm text-gray-700">
         AustroFit<br />
-        Johannes Gnong<br />
+        Johannes H. Gnong<br />
         Sollingergasse 8-12/5/10<br />
         1190 Wien, Österreich<br />
         E-Mail: <a href="mailto:kontakt@austrofit.at" class="underline">kontakt@austrofit.at</a>

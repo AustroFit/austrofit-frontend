@@ -24,7 +24,7 @@ meta:
     payments: "Stripe oder lexoffice (geplant ab Direktpartnerschaften)"
   status:
     bildungsmodul: "FERTIG – Artikel, Quizze, Quiz-Attempts, anonym+authentifiziert"
-    punktesystem: "FERTIG – points_ledger, Streak, Level (5 Stufen), Badges (5), Claim-Flow"
+    punktesystem: "FERTIG – points_ledger, Streak inkl. Streak-Tag-Bonus (+20P/Tag ab Tag 1), Level (5 Stufen), Badges (5), Claim-Flow"
     bewegungstracking: "TEILWEISE – Android Health Connect FERTIG (@capgo/capacitor-health v8.2.17); iOS + Laufen/Radfahren Phase 2"
     rewards_direktpartner_code: "CODE FERTIG – Technischer Flow: redeem, QR-Code Gutscheine, 90-Tage-Verfall, /partner Marketplace"
     rewards_direktpartner_business: "OFFEN – Keine echten Partner-Verträge; kein Partner-Onboarding; kein B2B-Dashboard"
@@ -141,21 +141,43 @@ punkteformel:
         punkte: 40
 
   streak_boni:
-    implementiert: "Teilweise – nur Schritt-Streak (täglicher Bonus geplant, wöchentlicher Milestone implementiert)"
+    implementiert: "Schritte vollständig – Streak-Tag-Bonus (+20P) + Wochen-Bonus (+60P) + Milestones"
     implementierungsdatei: "src/lib/utils/streak.ts + src/lib/server/stepsService.ts"
+    logik_hinweis: >
+      Tag 0 = erster Tag mit ≥7.000 Schritten → startet den Streak, kein Bonus.
+      Tag 1+ = jeder weitere aufeinanderfolgende ≥7k-Tag → +20P Streak-Tag-Bonus.
+      streak_days zählt alle aufeinanderfolgenden ≥7k-Tage ab Tag 0 (inkl.).
     regeln:
       - modul: "schritte"
-        typ: "streak_woche_milestone"
-        bedingung: "streak_days % 7 === 0 (d.h. Tag 7, 14, 21, …)"
-        punkte: 60
-        implementiert: true
-        beispiel: "7-Tage-Streak = +60 P, 14-Tage-Streak = +60 P, ..."
-      - modul: "schritte"
         typ: "streak_tag_bonus"
-        bedingung: "Min. 7.000 Schritte an aufeinanderfolgenden Tagen"
-        punkte: 20  # ½ × 40
-        implementiert: false
-        geplant: "Phase 2"
+        bedingung: "streak_days > 1 (ab dem 2. aufeinanderfolgenden ≥7k-Tag)"
+        punkte: 20
+        source_type: "streak_tag"
+        source_ref: "YYYY-MM-DD"
+        implementiert: true
+        beispiel: "Tag 0=0P, Tag 1=+20P, Tag 2=+20P, ..."
+      - modul: "schritte"
+        typ: "streak_woche_milestone"
+        bedingung: "(streak_days - 1) % 7 === 0 && streak_days > 1 (nach jeweils 7 Bonus-Tagen: streak_days 8, 15, 22, …)"
+        punkte: 60
+        source_type: "streak"
+        source_ref: "streak-{N}d-{datum}"
+        implementiert: true
+        beispiel: "7 Streak-Bonus-Tage (Gesamttag 8) = +60P, 14 Bonus-Tage (Gesamttag 15) = +60P, ..."
+      - modul: "schritte"
+        typ: "milestone_first_goal"
+        bedingung: "Erstes Mal ≥7.000 Schritte – einmalig"
+        punkte: 50
+        source_type: "milestone"
+        source_ref: "milestone-first_goal"
+        implementiert: true
+      - modul: "schritte"
+        typ: "milestone_first_streak_3"
+        bedingung: "streak_days === 4 (= 3 Streak-Bonus-Tage nach dem Starttag) – einmalig"
+        punkte: 80
+        source_type: "milestone"
+        source_ref: "milestone-first_streak_3"
+        implementiert: true
       - modul: "bewegung"
         typ: "streak_woche"
         bedingung: "Zweite (+ jede folgende) Woche in Serie ≥ 150 min"
@@ -343,7 +365,7 @@ directus_collections:
       id:           { typ: uuid, auto: true }
       user:         { typ: m2o, referenz: directus_users, required: true }
       points_delta: { typ: integer, beschreibung: "Positiv = Gutschrift, Negativ = Abzug" }
-      source_type:  { typ: string, optionen: [quiz, schritte, bewegung, streak, redemption, manual, bonus, claim] }
+      source_type:  { typ: string, optionen: [schritte, streak_tag, streak, milestone, education, einloesung, awin_commission, awin_storno, awin_unlock] }
       source_ref:   { typ: string, beschreibung: "Referenz-ID (Quiz-ID, Datum bei Schritten, Redemption-ID, etc.)" }
       occurred_at:  { typ: datetime, auto: true }
     api_routes:
@@ -614,7 +636,8 @@ phase_2_roadmap:
     beschreibung: "Ersetze Flat-Rate 10P durch 10 + floor((schritte-4001)/500)*5"
     hinweis: "Nur für neue Einträge – niemals retroaktiv"
   - feature: "Täglicher Streak-Bonus (+20P/Tag)"
-    beschreibung: "Zusätzlich zum wöchentlichen Milestone-Bonus"
+    beschreibung: "FERTIG (März 2026) – streak_tag_bonus ab dem 2. aufeinanderfolgenden ≥7k-Tag implementiert"
+    status: "IMPLEMENTIERT"
   - feature: "Bewegungs-Tracking (Laufen + Radfahren)"
     beschreibung: "Wöchentliche Aggregation, WHO-Ziel 150 min/Woche"
     voraussetzung: "Android Health Connect native Build FERTIG – Erweiterung auf workout_types nötig"

@@ -192,24 +192,29 @@ async function main() {
     console.warn(`⚠️  CSV konnte nicht geladen werden: ${e.message}`);
   }
 
-  // Schritt 2: Alle AWIN-Programme in einem Call (21.000+)
-  console.log("📡 Lade alle AWIN-Programme (1 API-Call)...");
-  const allProgrammes = await fetchJSON(
-    `${BASE}/publishers/${PUBLISHER_ID}/programmes?relationship=joined`
-  );
-  const joinedIds = new Set((allProgrammes ?? []).map((p) => p.id));
-  console.log(`   → ${joinedIds.size} gejoinede Programme\n`);
+  // Schritt 2: Alle Relationship-Typen abrufen
+  const relationshipTypes = ["joined", "pending", "rejected", "notjoined"];
+  const byRelationship = {};
 
-  // Schritt 3: Alle verfügbaren Programme (für ID-Lookup)
-  await sleep(3500);
-  console.log("📡 Lade alle verfügbaren Programme (notjoined)...");
-  const notJoined = await fetchJSON(
-    `${BASE}/publishers/${PUBLISHER_ID}/programmes?relationship=notjoined`
-  );
+  for (const rel of relationshipTypes) {
+    await sleep(rel === "joined" ? 0 : 2000);
+    console.log(`📡 Lade Programme (${rel})...`);
+    const data = await fetchJSON(
+      `${BASE}/publishers/${PUBLISHER_ID}/programmes?relationship=${rel}`
+    );
+    byRelationship[rel] = Array.isArray(data) ? data : [];
+    console.log(`   → ${byRelationship[rel].length} Programme`);
+  }
+
+  const joinedIds = new Set(byRelationship.joined.map((p) => p.id));
+  const pendingIds = new Set(byRelationship.pending.map((p) => p.id));
+  const rejectedIds = new Set(byRelationship.rejected.map((p) => p.id));
+
+  // ID-Lookup aus allen Typen zusammenbauen
   const availableById = Object.fromEntries(
-    [...allProgrammes, ...(notJoined ?? [])].map((p) => [p.id, p])
+    Object.values(byRelationship).flat().map((p) => [p.id, p])
   );
-  console.log(`   → ${Object.keys(availableById).length} Programme total im System\n`);
+  console.log(`\n   → ${Object.keys(availableById).length} Programme total im System\n`);
 
   // Schritt 4: Unsere Advertiser filtern & anreichern
   const results = [];
@@ -224,11 +229,17 @@ async function main() {
       continue;
     }
 
-    const isJoined = joinedIds.has(id);
+    const membershipStatus = joinedIds.has(id)
+      ? "joined"
+      : pendingIds.has(id)
+      ? "pending"
+      : rejectedIds.has(id)
+      ? "rejected"
+      : "notjoined";
 
     // Promotions nur für gejoinede Programme abrufen
     let promotions = [];
-    if (isJoined) {
+    if (membershipStatus === "joined") {
       console.log(`  🔍 Hole Promotions für ${label}...`);
       promotions = await getPromotions(id);
     }
@@ -242,7 +253,7 @@ async function main() {
       programmeName: prog.name ?? label,
       kategorie,
       // Aus API
-      membershipStatus: isJoined ? "joined" : "notjoined",
+      membershipStatus,
       displayUrl: prog.displayUrl,
       logoUrl: prog.logoUrl,
       clickThroughUrl: prog.clickThroughUrl,
@@ -288,18 +299,22 @@ async function main() {
   for (const [kat, items] of Object.entries(byKat)) {
     console.log(`\n🏷  ${kat} (${items.length})`);
     for (const r of items.sort((a, b) => b.awinIndex - a.awinIndex)) {
-      const status = r.membershipStatus === "joined" ? "🟢 JOINED" : "⚪ beitreten";
+      const statusIcon =
+        r.membershipStatus === "joined"   ? "🟢 JOINED  " :
+        r.membershipStatus === "pending"  ? "🕐 PENDING " :
+        r.membershipStatus === "rejected" ? "🔴 REJECTED" :
+                                            "⚪ beitreten";
       const comm = r.commissionMax > 0 ? `💰 ${r.commissionMin}–${r.commissionMax}%` : "";
       const vouchers =
         r.activePromotions > 0
           ? `🎟 ${r.activePromotions} Gutschein(e)`
           : r.membershipStatus === "joined"
           ? "(keine Gutscheine)"
-          : "→ nach Join";
+          : "";
       const pay =
         r.paymentStatus === "green" ? "🟢" : r.paymentStatus === "amber" ? "🟡" : "❓";
       console.log(
-        `   ${status} ${pay} ${r.programmeName}  ${comm}  EPC:${r.epc}  CR:${r.conversionRate}%  ${vouchers}`
+        `   ${statusIcon} ${pay} ${r.programmeName}  ${comm}  EPC:${r.epc}  CR:${r.conversionRate}%  ${vouchers}`
       );
     }
   }
@@ -316,6 +331,8 @@ async function main() {
     summary: {
       total: results.length,
       joined: results.filter((r) => r.membershipStatus === "joined").length,
+      pending: results.filter((r) => r.membershipStatus === "pending").length,
+      rejected: results.filter((r) => r.membershipStatus === "rejected").length,
       notjoined: results.filter((r) => r.membershipStatus === "notjoined").length,
       withVouchers: results.filter((r) => r.activePromotions > 0).length,
       notFoundInAwin: notFound.length,
@@ -332,9 +349,12 @@ async function main() {
 
   console.log("\n" + "=".repeat(60));
   console.log(`✅ ${results.length} Partner verarbeitet`);
-  console.log(`🟢 ${output.summary.joined} bereits joined`);
-  console.log(`⚪ ${output.summary.notjoined} müssen noch beitreten`);
+  console.log(`🟢 ${output.summary.joined} joined`);
+  console.log(`🕐 ${output.summary.pending} pending (warten auf Genehmigung)`);
+  console.log(`🔴 ${output.summary.rejected} rejected`);
+  console.log(`⚪ ${output.summary.notjoined} noch nicht beworben`);
   console.log(`🎟  ${output.summary.withVouchers} haben aktive Gutschein-Codes`);
+  if (notFound.length > 0) console.log(`❓ ${notFound.length} nicht im AWIN-System gefunden`);
   console.log(`📄 Gespeichert: Directus-JSON-AustroFit/awin-partner-data.json`);
 }
 

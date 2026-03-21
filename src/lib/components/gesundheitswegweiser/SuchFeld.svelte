@@ -35,8 +35,8 @@
     placeholder="Artikel suchen …"
     bind:value
     oninput={handleInput}
-    class="w-full rounded-full border border-gray-200 bg-white py-2 pl-10 pr-9 text-sm
-      focus:border-gray-400 focus:outline-none"
+    class="w-full rounded-[var(--radius-pill)] border border-gray-200 bg-white py-2 pl-10 pr-9 text-sm
+      focus:border-primary focus:outline-none"
     aria-label="Artikel suchen"
   />
 

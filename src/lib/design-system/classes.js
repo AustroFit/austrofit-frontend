@@ -364,33 +364,24 @@ export const designClasses = {
   },
 
   footer: {
-    section: 'relative overflow-hidden',
+    section: 'relative overflow-hidden bg-darkblue text-white',
     container: 'container mx-auto px-4 pt-16 pb-4 max-w-[1140px]',
-    grid: 'grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16', // ← Changed to 12-column grid
-    
-    // Column sizes (adjust as needed)
-    column1: 'md:col-span-5', // ← Wider for description + button
-    column2: 'md:col-span-3', // ← Medium for nav
-    column3: 'md:col-span-4', // ← Slightly wider for contact
-    
+
     columnContent: 'space-y-6',
-    description: 'text-base leading-relaxed',
-    
-    nav: 'space-y-3',
-    navLink: 'block  hover:text-light-green-1 transition-colors',
-    
+    description: 'text-base leading-relaxed text-white/90',
+
     contactSection: 'space-y-3',
-    contactTitle: 'font-medium',
-    contactLink: 'block hover:text-light-green-1 transition-colors underline',
-    
+    contactTitle: 'font-medium text-white',
+    contactLink: 'block hover:text-white transition-colors underline text-primary-light',
+
     // Legal nav - horizontal strip
     legalNavStrip: 'border-t border-white/20 pt-8 mt-12',
     legalNav: 'flex flex-wrap gap-6 justify-center',
-    legalLink: 'text-sm hover: transition-colors',
-    
+    legalLink: 'text-sm transition-colors text-primary-light hover:text-white',
+
     // Copyright strip
     copyrightStrip: 'border-t border-white/20 pt-4 mt-8',
-    copyright: 'text-sm text-center'
+    copyright: 'text-sm text-center text-white/60'
   }
 };
 

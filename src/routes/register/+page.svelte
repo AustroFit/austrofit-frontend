@@ -32,7 +32,7 @@
   <div class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-black/10 p-8">
 
     <div class="mb-8 text-center">
-      <h1 class="text-2xl font-bold font-montserrat text-dark-blue-1">Konto erstellen</h1>
+      <h1 class="text-2xl font-bold font-heading text-heading">Konto erstellen</h1>
       <p class="mt-1 text-sm text-black/50">Registriere dich, um Punkte zu sammeln und deinen Fortschritt zu verfolgen.</p>
     </div>
 
@@ -87,7 +87,7 @@
       </label>
 
       {#if error}
-        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div class="rounded-lg border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
           {error}
         </div>
       {/if}
@@ -95,7 +95,7 @@
       <button
         type="submit"
         disabled={loading}
-        class="mt-2 w-full rounded-lg bg-dark-blue-1 px-6 py-3 text-sm font-semibold font-montserrat text-white transition-colors hover:bg-dark-blue-1/90 disabled:opacity-60 disabled:cursor-not-allowed"
+        class="mt-2 w-full rounded-xl bg-primary px-6 py-3 text-sm font-semibold font-heading text-white transition-colors hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? 'Wird geladen…' : 'Konto erstellen'}
       </button>

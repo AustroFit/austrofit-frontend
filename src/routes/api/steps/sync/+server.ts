@@ -38,6 +38,9 @@ export async function POST({
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
     return json({ error: 'Ungültiges Datum (YYYY-MM-DD erwartet)' }, { status: 400 });
   }
+  if (isNaN(new Date(date + 'T00:00:00Z').getTime())) {
+    return json({ error: 'Ungültiges Datum' }, { status: 400 });
+  }
   const today = new Date().toISOString().split('T')[0];
   const minDate = new Date();
   minDate.setDate(minDate.getDate() - 30);
@@ -86,7 +89,8 @@ export async function POST({
           ledger_id: flowData?.ledger_id ?? null,
           neue_streak_days: flowData?.neue_streak_days ?? 0,
           longest_streak: flowData?.longest_streak ?? 0,
-          streak_bonus_awarded: flowData?.streak_bonus_awarded ?? false
+          streak_bonus_awarded: flowData?.streak_bonus_awarded ?? false,
+          streak_tag_bonus_awarded: flowData?.streak_tag_bonus_awarded ?? false
         });
       }
     } catch (e) {
@@ -104,6 +108,7 @@ export async function POST({
       mode: mode === 'manual' ? 'manual' : 'automatic',
       cmsUrl: PUBLIC_CMSURL,
       adminToken: PRIVATE_CMS_STATIC_TOKEN,
+      userToken,
       fetchFn: fetch
     });
 

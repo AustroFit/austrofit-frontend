@@ -1,5 +1,18 @@
 // src/lib/server/awin.ts
 // AWIN Publisher API v2 – Server-only (enthält Secrets)
+// Hinweis: Die AWIN Publisher-REST-API hat keinen öffentlichen Promotions-Endpoint.
+// Codes werden manuell in src/lib/data/awinManualPromotions.ts gepflegt.
+
+import { getActivePromotions } from '$lib/data/awinManualPromotions';
+
+/** Promotion-Objekt das an den Client gesendet wird (KEIN code-Feld) */
+export interface AwinPromotionPublic {
+  id: string;
+  type: string;
+  description: string;
+  endDate: string | null;
+  pointsCost: number;
+}
 
 export interface AwinProgram {
   id: number;
@@ -10,6 +23,8 @@ export interface AwinProgram {
   description: string | null;
   category: string | null;
   currencyCode: string;
+  /** Nur Programme mit mindestens einer aktiven Promotion werden zurückgegeben */
+  promotions: AwinPromotionPublic[];
 }
 
 const AWIN_API_BASE = 'https://api.awin.com';
@@ -58,9 +73,39 @@ export async function fetchAwinPrograms(
       displayUrl: p.displayUrl ?? p.url ?? '',
       description: p.description ?? null,
       category: p.primarySector?.name ?? null,
-      currencyCode: p.currencyCode ?? 'EUR'
+      currencyCode: p.currencyCode ?? 'EUR',
+      promotions: []
     })
   );
+}
+
+/**
+ * Genehmigte Programme abrufen + manuelle Promotions hinzufügen.
+ * Gibt NUR Programme zurück, die mindestens einen aktiven Rabattcode haben.
+ * Code selbst wird NICHT mitgesendet (nur über /api/awin/unlock-code abrufbar).
+ */
+export async function fetchAwinProgramsWithPromotions(
+  apiToken: string,
+  publisherId: string,
+  fetchFn: typeof globalThis.fetch = fetch
+): Promise<AwinProgram[]> {
+  const programs = await fetchAwinPrograms(apiToken, publisherId, fetchFn);
+  if (programs.length === 0) return [];
+
+  return programs
+    .map((p) => {
+      const activePromos = getActivePromotions(p.id);
+      const publicPromos: AwinPromotionPublic[] = activePromos.map((promo) => ({
+        id: promo.id,
+        type: promo.type,
+        description: promo.description,
+        endDate: promo.endDate,
+        pointsCost: promo.pointsCost
+        // code wird absichtlich NICHT mitgesendet
+      }));
+      return { ...p, promotions: publicPromos };
+    })
+    .filter((p) => p.promotions.length > 0);
 }
 
 /**

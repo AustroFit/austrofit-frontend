@@ -77,27 +77,24 @@
     const token = getAccessToken();
     const willAutoClaim = hasPendingClaim() && !!token;
 
-    // A) Ergebnis nach Redirect wiederherstellen (nur wenn kein Auto-Claim ansteht)
-    if (!willAutoClaim) {
-      const last = loadLastResult();
-      if (
-        last?.quizId === (quizId ?? quiz?.id) &&
-        last?.anonymousId === anonymousId &&
-        last?.scoreSnapshot
-      ) {
-        submitted = true;
-        scoreSnapshot = last.scoreSnapshot;
-        wrongCountSnapshot = last.wrongCountSnapshot ?? wrongCountSnapshot;
-      }
+    // A) Ergebnis immer wiederherstellen – auch wenn Auto-Claim ansteht,
+    //    damit der User nach Register/Login sofort sein Ergebnis sieht.
+    const last = loadLastResult();
+    if (
+      last?.quizId === (quizId ?? quiz?.id) &&
+      last?.anonymousId === anonymousId &&
+      last?.scoreSnapshot
+    ) {
+      submitted = true;
+      scoreSnapshot = last.scoreSnapshot;
+      wrongCountSnapshot = last.wrongCountSnapshot ?? wrongCountSnapshot;
     }
 
-    // B) Wenn User nach Register/Login zurückkommt → automatisch claimen + Quiz zurücksetzen
+    // B) Wenn User nach Register/Login zurückkommt → automatisch claimen
     if (willAutoClaim) {
-      const ok = await claimAnonymousPoints();
-      if (ok) {
-        clearPendingClaim();
-        localStorage.removeItem(LAST_RESULT_KEY);
-      }
+      await claimPoints(); // setzt claimLoading, räumt PENDING_CLAIM_KEY auf
+      clearPendingClaim();
+      // LAST_RESULT_KEY NICHT entfernen – Ergebnis bleibt sichtbar
     }
 
     // C) Quiz-Status vom Server laden (für eingeloggte User)
@@ -112,6 +109,13 @@
           if (myStatus) {
             quizStatus = myStatus.status;
             quizRepeatableAt = myStatus.repeatable_at ?? null;
+
+            // Repeatable: Attempt-Key löschen damit beim nächsten Versuch ein neuer Attempt erstellt werden kann
+            if (myStatus.status === 'repeatable') {
+              const resolvedQuizId = quizId ?? quiz?.id ?? null;
+              const attemptKey = `austrofit_attempt_created:${anonymousId}:${resolvedQuizId ?? 'noquiz'}`;
+              if (typeof window !== 'undefined') localStorage.removeItem(attemptKey);
+            }
           }
         }
       } catch (e) {
@@ -164,7 +168,8 @@
   // Config
   const PASS_PERCENT_DEFAULT = 100;
   const requiredPercent = Number.isFinite(passPercent) ? passPercent : PASS_PERCENT_DEFAULT;
-  const learnMoreUrl = ctaUrl ?? '/austrofit';
+  const learnMoreUrl = ctaUrl ?? '/';
+  const eligiblePoints = meta?.eligible_points ?? meta?.points ?? 40;
 
   // State
   let submitted = $state(false);
@@ -540,7 +545,7 @@
 
   async function createAttemptIfNeeded() {
     try {
-      // einfache "Duplikatbremse" pro anonymousId+quizId
+      // Duplikatbremse: Key nur setzen wenn Attempt WIRKLICH erstellt wurde
       const resolvedQuizId = quizId ?? quiz?.id ?? null;
       const key = `austrofit_attempt_created:${anonymousId}:${resolvedQuizId ?? 'noquiz'}`;
       if (typeof window !== 'undefined' && localStorage.getItem(key) === '1') return;
@@ -553,7 +558,7 @@
         meta?.points ??
         40;
 
-      await fetch('/api/quiz-attempts', {
+      const res = await fetch('/api/quiz-attempts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -568,7 +573,13 @@
         })
       });
 
-      if (typeof window !== 'undefined') localStorage.setItem(key, '1');
+      // Key nur setzen wenn Attempt tatsächlich angelegt wurde (kein Cooldown-Skip, kein Fehler)
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (!data?.skipped) {
+          if (typeof window !== 'undefined') localStorage.setItem(key, '1');
+        }
+      }
     } catch (e) {
       console.error('createAttemptIfNeeded failed', e);
     }
@@ -591,17 +602,17 @@
   
 </script>
 
-<section class="mt-10 rounded-2xl border border-black/10 bg-white p-5 md:p-7 shadow-sm">
+<section class="mt-10 rounded-[var(--radius-card)] border border-black/10 bg-white p-5 md:p-7 shadow-sm">
   <!-- Header -->
   <div class="flex items-start justify-between gap-4">
     <div>
       <h2 class="text-xl md:text-2xl font-semibold">Quiz</h2>
       {#if quizStatus === 'passed'}
-        <div class="mt-1 text-xs text-emerald-700 font-medium">
+        <div class="mt-1 text-xs text-primary font-medium">
           ✅ Bestanden · wieder verfügbar {quizRepeatableAt ? `ab ${new Date(quizRepeatableAt).toLocaleDateString('de-AT', { day: 'numeric', month: 'long' })}` : ''}
         </div>
       {:else if quizStatus === 'repeatable'}
-        <div class="mt-1 text-xs text-blue-700 font-medium">
+        <div class="mt-1 text-xs text-primary font-medium">
           🔓 Wieder verfügbar – neue Punkte möglich!
         </div>
       {/if}
@@ -639,7 +650,7 @@
   </div>
 
   {#if banner}
-    <div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm">
+    <div class="mt-4 rounded-lg border border-error/30 bg-error/10 p-3 text-sm">
       {banner}
     </div>
   {/if}
@@ -676,11 +687,11 @@
 
         <div class="shrink-0 flex items-center gap-2">
           {#if displayScore.passed}
-            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-900 success-pill">
+            <span class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-sm text-heading success-pill">
               <span class="check-pop">✅</span> Bestanden
             </span>
           {:else}
-            <span class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-900">
+            <span class="inline-flex items-center gap-2 rounded-full border border-error/30 bg-error/5 px-3 py-1 text-sm text-error">
               ❌ Nicht bestanden
             </span>
           {/if}
@@ -692,15 +703,23 @@
           {#if displayScore.passed}
             <div class="mt-4 flex flex-wrap gap-2">
               {#if !isLoggedIn}
+                <div class="w-full rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm">
+                  <p class="font-semibold text-heading">
+                    🎉 Du hast {eligiblePoints} Punkte verdient!
+                  </p>
+                  <p class="mt-1 text-body/80">
+                    Melde dich an, um sie zu sichern und gegen Belohnungen bei unseren Partneranbietern einzulösen – kostenlos und ohne Verpflichtung.
+                  </p>
+                </div>
                 <button
-                  class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
                   type="button"
                   onclick={() => {
                     setPendingClaim();
                     goto(`/registrierung?next=${encodeURIComponent(getNextUrl())}`);
                   }}
                 >
-                  Registrieren &amp; Punkte sichern
+                  Jetzt anmelden &amp; Punkte sichern
                 </button>
 
                 <button
@@ -711,32 +730,32 @@
                     goto(`/login?next=${encodeURIComponent(getNextUrl())}`);
                   }}
                 >
-                  Login
+                  Ich habe bereits ein Konto
                 </button>
               {:else}
-                <button
-                  class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                  type="button"
-                  disabled={!pendingClaim || claimLoading}
-                  onclick={claimPoints}
-                  title={!pendingClaim ? 'Keine offenen Punkte zum Abholen' : ''}
-                >
-                  {claimLoading ? 'Punkte werden gebucht…' : 'Punkte abholen'}
-                </button>
-
-                {#if claimMsg}
-                  <div class="w-full text-sm opacity-80">{claimMsg}</div>
+                {#if claimLoading}
+                  <p class="text-sm opacity-80">Punkte werden gutgeschrieben…</p>
+                {:else}
+                  <p class="text-sm font-medium text-primary">✅ Punkte wurden automatisch gutgeschrieben.</p>
+                  {#if claimMsg && claimMsg !== 'Punkte gutgeschrieben ✅'}
+                    <p class="w-full text-sm opacity-80">{claimMsg}</p>
+                  {/if}
+                  <a
+                    href="/belohnung"
+                    class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+                  >
+                    Zu den Belohnungen →
+                  </a>
                 {/if}
               {/if}
             </div>
           {/if}
         <div class="mt-1 opacity-90">
-          Punkte gibt’s nur bei <strong>vollständig bestandenem Quiz</strong>.
-          Aktuell brauchst du <strong>{requiredPercent}% richtige Antworten</strong>.
+          Punkte werden nur bei <strong>vollständig bestandenem Quiz</strong> ({requiredPercent}% richtig) vergeben.
         </div>
         <div class="mt-2">
           <a
-            class={`underline font-medium ${displayScore.passed ? 'text-emerald-900' : ''}`}
+            class={`underline font-medium ${displayScore.passed ? 'text-primary' : ''}`}
             href={learnMoreUrl}
           >
             Mehr zu Punkten &amp; Vorteilen
@@ -782,35 +801,39 @@
     </div>
   {/if}
 
-  <!-- Nach dem Bestehen: Zusammenfassung aller Fragen -->
+  <!-- Nach dem Bestehen: Ergebnisse aller Fragen (eingeklappt) -->
   {#if submitted && displayScore?.passed}
-    <div class="mt-6 flex flex-col gap-3">
-      <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Zusammenfassung</h3>
-      {#each quiz.questions as q, i}
-        {@const correct = isCorrect(q, i)}
-        <div class="rounded-xl border p-4 {correct ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}">
-          <div class="flex items-start gap-2">
-            <span class="shrink-0 text-base">{correct ? '✅' : '❌'}</span>
-            <div class="flex-1 min-w-0">
-              <p class="font-semibold text-sm leading-snug">{i + 1}. {q.question}</p>
-              <p class="mt-1 text-xs text-gray-600">
-                Deine Antwort: <span class="font-medium">{getChosenAnswerText(q, i)}</span>
-              </p>
-              {#if !correct}
-                <p class="mt-0.5 text-xs text-emerald-700">
-                  Richtig: <span class="font-medium">{getCorrectAnswerText(q)}</span>
+    <details class="mt-6">
+      <summary class="cursor-pointer select-none text-sm font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 transition-colors">
+        Ergebnisse
+      </summary>
+      <div class="mt-3 flex flex-col gap-3">
+        {#each quiz.questions as q, i}
+          {@const correct = isCorrect(q, i)}
+          <div class="rounded-xl border p-4 {correct ? 'border-primary/30 bg-primary/5' : 'border-error/30 bg-error/5'}">
+            <div class="flex items-start gap-2">
+              <span class="shrink-0 text-base">{correct ? '✅' : '❌'}</span>
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm leading-snug">{i + 1}. {q.question}</p>
+                <p class="mt-1 text-xs text-gray-600">
+                  Deine Antwort: <span class="font-medium">{getChosenAnswerText(q, i)}</span>
                 </p>
-              {/if}
-              {#if q.explanation}
-                <p class="mt-2 text-xs text-gray-600 border-t border-black/10 pt-2 leading-relaxed">
-                  {q.explanation}
-                </p>
-              {/if}
+                {#if !correct}
+                  <p class="mt-0.5 text-xs text-primary">
+                    Richtig: <span class="font-medium">{getCorrectAnswerText(q)}</span>
+                  </p>
+                {/if}
+                {#if q.explanation}
+                  <p class="mt-2 text-xs text-gray-600 border-t border-black/10 pt-2 leading-relaxed">
+                    {q.explanation}
+                  </p>
+                {/if}
+              </div>
             </div>
           </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    </details>
 
   <!-- Single Question Card (nur wenn nicht bestanden) -->
   {:else if totalAll && currentQuestion}
@@ -896,7 +919,7 @@
       <div class="flex items-center gap-2">
         {#if showSubmitButton}
           <button
-            class="rounded-lg bg-black text-white px-5 py-2 text-sm font-medium hover:opacity-90"
+            class="rounded-lg bg-primary text-white px-5 py-2 text-sm font-semibold hover:bg-primary-dark transition-colors"
             type="button"
             onclick={onSubmit}
           >
@@ -906,7 +929,7 @@
 
         {#if showRepeatSubmitButton}
           <button
-            class="rounded-lg bg-black text-white px-5 py-2 text-sm font-medium hover:opacity-90"
+            class="rounded-lg bg-primary text-white px-5 py-2 text-sm font-semibold hover:bg-primary-dark transition-colors"
             type="button"
             onclick={onRepeatSubmit}
           >

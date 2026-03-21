@@ -1,18 +1,45 @@
 import { PUBLIC_CMSURL } from '$env/static/public';
-import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
-
-const ONBOARDING_POINTS = 20;
+import { DIRECTUS_READ_TOKEN } from '$env/static/private';
 
 export async function POST({ request, fetch }) {
-  const payload = await request.json();
-  const email: string = payload.email ?? '';
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Ungültige Anfrage' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  }
 
-  // 1) Registrierung bei Directus
-  const upstream = await fetch(`${PUBLIC_CMSURL}/users/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  // E-Mail-Existenz vorab prüfen (Directus gibt bei Duplikat sonst 204 zurück)
+  const email = (payload as Record<string, unknown>)?.email;
+  if (email) {
+    try {
+      const checkRes = await fetch(
+        `${PUBLIC_CMSURL}/users?filter[email][_eq]=${encodeURIComponent(String(email))}&limit=1&fields=id`,
+        { headers: { Authorization: `Bearer ${DIRECTUS_READ_TOKEN}` } }
+      );
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        if (checkData?.data?.length > 0) {
+          return new Response(
+            JSON.stringify({ errors: [{ message: 'Diese E-Mail-Adresse ist bereits registriert.', extensions: { code: 'EMAIL_EXISTS' } }] }),
+            { status: 409, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    } catch { /* non-blocking – im Fehlerfall normal weiterregistrieren */ }
+  }
+
+  // Registrierung bei Directus
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${PUBLIC_CMSURL}/users/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch {
+    return new Response(JSON.stringify({ error: 'Service nicht erreichbar' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+  }
 
   // Bei echtem Fehler sofort zurückgeben (204 = Erfolg in Directus-Standardkonfiguration)
   if (!upstream.ok) {
@@ -23,55 +50,7 @@ export async function POST({ request, fetch }) {
     });
   }
 
-  // 2) Onboarding-Bonus buchen – Fehler hier blockieren nicht die Registrierung
-  if (email) {
-    try {
-      const adminHeaders = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}`
-      };
-
-      // User-ID via E-Mail ermitteln
-      const userRes = await fetch(
-        `${PUBLIC_CMSURL}/users?filter[email][_eq]=${encodeURIComponent(email)}&fields=id&limit=1`,
-        { headers: adminHeaders }
-      );
-
-      if (userRes.ok) {
-        const userJson = await userRes.json();
-        const userId: string | undefined = userJson?.data?.[0]?.id;
-
-        if (userId) {
-          // Idempotenz: Eintrag nur anlegen wenn noch keiner existiert
-          const existRes = await fetch(
-            `${PUBLIC_CMSURL}/items/points_ledger?filter[user][_eq]=${userId}&filter[source_type][_eq]=onboarding&limit=1&fields=id`,
-            { headers: adminHeaders }
-          );
-          const existJson = existRes.ok ? await existRes.json() : null;
-          const alreadyExists = (existJson?.data?.length ?? 0) > 0;
-
-          if (!alreadyExists) {
-            await fetch(`${PUBLIC_CMSURL}/items/points_ledger`, {
-              method: 'POST',
-              headers: adminHeaders,
-              body: JSON.stringify({
-                user: userId,
-                points_delta: ONBOARDING_POINTS,
-                source_type: 'onboarding',
-                source_ref: `user:${userId}`,
-                rule_version: 'v1',
-                occurred_at: new Date().toISOString()
-              })
-            });
-          }
-        }
-      }
-    } catch {
-      // Bonus-Fehler dürfen Registrierung nicht blockieren
-    }
-  }
-
-  // 3) Erfolgs-Response – Directus liefert standardmäßig 204 (kein Body)
+  // Erfolgs-Response – Directus liefert standardmäßig 204 (kein Body)
   if (upstream.status === 204) {
     return new Response(null, { status: 204 });
   }

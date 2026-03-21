@@ -24,13 +24,13 @@
           {info.progress} / {info.needed} P bis Level {info.next.level}
         </span>
       {:else}
-        <span class="shrink-0 text-xs font-medium" style="color:#4CAF50;">Maximales Level 🏆</span>
+        <span class="shrink-0 text-xs font-medium text-primary">Maximales Level 🏆</span>
       {/if}
     </div>
     <div class="h-3 w-full overflow-hidden rounded-full bg-gray-100">
       <div
-        class="h-full rounded-full transition-all duration-500"
-        style="width:{info.percent}%; background:#4CAF50;"
+        class="h-full rounded-full bg-primary transition-all duration-500"
+        style="width:{info.percent}%;"
       ></div>
     </div>
     {#if info.next}
@@ -41,12 +41,12 @@
   </div>
 {:else}
   <div class="flex items-center gap-2">
-    <span class="shrink-0 text-xs font-bold" style="color:#4CAF50;">Lv.{info.current.level}</span>
+    <span class="shrink-0 text-xs font-bold text-primary">Lv.{info.current.level}</span>
     <div class="min-w-0 flex-1">
       <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
         <div
-          class="h-full rounded-full transition-all"
-          style="width:{info.percent}%; background:#4CAF50;"
+          class="h-full rounded-full bg-primary transition-all"
+          style="width:{info.percent}%;"
         ></div>
       </div>
     </div>

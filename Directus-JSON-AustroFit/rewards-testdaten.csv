@@ -1,0 +1,13 @@
+title,description,points_cost,active,partner_id,coupon_code,valid_until
+Monatsmitgliedschaft -20%,20% Rabatt auf eine Monatsmitgliedschaft für Neukunden,300,true,1,SPORT20,
+Kostenlose Probestunde,1 Stunde gratis testen – kein Vertrag nötig,50,true,1,PROBE24,
+10% auf alle Sportgeräte,10% Rabatt auf das gesamte Sortiment (ausgenommen Sale),150,true,2,ALPEN10,
+Sporttasche gratis ab 80€,Kostenlose Sporttasche bei Einkauf ab 80€,200,true,2,TASCHE24,
+Ganztages-Eintritt Therme,Tageskarte inkl. Sauna & Thermalbereich,400,true,3,THERME1T,
+2h Wellness-Bereich,2 Stunden exklusiver Wellness-Bereich für 1 Person,200,true,3,WELL2H,
+5€ Apotheken-Gutschein,5€ Einkaufsgutschein – einlösbar ab 20€ Einkaufswert,80,true,4,APO5EUR,
+Kostenlose Gesundheitsberatung,30 Minuten persönliche Beratung ohne Voranmeldung,30,true,4,BERATU24,
+Protein-Probierpaket,Gratis Probe-Set mit 3 Sorten Proteinpulver,100,true,5,PROTO3,
+10% auf Bio-Produkte,10% Rabatt auf alle Bio-Lebensmittel im Sortiment,120,true,5,BIO10PCT,
+Personal Training Schnupperstunde,1x 60 Min. Personal Training mit zertifiziertem Trainer,250,true,6,PT60MIN,
+Jahresmitgliedschaft -15%,15% Rabatt auf die Jahresmitgliedschaft – nur für AustroFit-User,500,true,6,JAHR15,

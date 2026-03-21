@@ -1,13 +1,23 @@
 import { PUBLIC_CMSURL } from '$env/static/public';
 
 export async function POST({ request }) {
-  const payload = await request.json();
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Ungültige Anfrage' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  }
 
-  const upstream = await fetch(`${PUBLIC_CMSURL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${PUBLIC_CMSURL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch {
+    return new Response(JSON.stringify({ error: 'Service nicht erreichbar' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+  }
 
   if (upstream.status === 204) {
     return new Response(null, { status: 204 });

@@ -96,7 +96,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
   if (rewardIds.length > 0) {
     const rwParams = new URLSearchParams({
       'filter[id][_in]': rewardIds.join(','),
-      fields: 'id,title,description,points_cost,coupon_code,partner_name',
+      fields: 'id,title,description,points_cost,coupon_code,partner_id.name',
       limit: String(rewardIds.length)
     });
 
@@ -141,7 +141,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
       reward_titel: reward?.title ?? 'Angebot',
       beschreibung: reward?.description ?? null,
       punkte_kosten: item.points_cost ?? reward?.points_cost ?? 0,
-      partner_name: reward?.partner_name ?? '',
+      partner_name: (reward as any)?.partner_id?.name ?? reward?.partner_name ?? '',
       erstellt_am: item.created_at,
       ablaeuft_am,
       eingeloest_am: item.status === 'used' ? item.created_at : null,

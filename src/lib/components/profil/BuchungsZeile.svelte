@@ -23,7 +23,8 @@
     schritte:   { icon: '👟', label: 'Tagesziel erreicht' },
     step:       { icon: '👟', label: 'Tagesziel erreicht' },
     streak:     { icon: '🔥', label: 'Streak-Bonus' },
-    einloesung: { icon: '🎫', label: 'Gutschein eingelöst' },
+    einloesung:  { icon: '🎫', label: 'Gutschein eingelöst' },
+    awin_unlock: { icon: '🔓', label: 'Online-Rabattcode freigeschaltet' },
   };
 
   const mapped = $derived(
@@ -31,16 +32,9 @@
   );
   const isPositive = $derived(buchung.points_delta >= 0);
 
-  function formatDate(iso: string | null): string {
-    if (!iso) return '';
-    return new Date(iso).toLocaleDateString('de-AT', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  }
+  import { formatDateShort } from '$lib/utils/date';
 
-  const date = $derived(formatDate(buchung.occurred_at ?? buchung.created_at));
+  const date = $derived(formatDateShort(buchung.occurred_at ?? buchung.created_at));
 </script>
 
 <div class="flex items-center gap-3 py-3">
@@ -56,7 +50,7 @@
     {/if}
   </div>
   <div
-    class="shrink-0 text-sm font-semibold {isPositive ? 'text-emerald-600' : 'text-red-600'}"
+    class="shrink-0 text-sm font-semibold {isPositive ? 'text-primary' : 'text-error'}"
   >
     {isPositive ? '+' : ''}{buchung.points_delta} P
   </div>

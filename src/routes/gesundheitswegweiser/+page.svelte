@@ -11,6 +11,10 @@
 
   let searchTerm = $state('');
   let shown = $state(PAGE_SIZE);
+  let isLoggedIn = $state(false);
+
+  /** @type {'all' | 'open' | 'completed' | 'soon'} */
+  let quizFilter = $state('all');
 
   /**
    * Quiz statuses keyed by quiz ID, fetched client-side for logged-in users.
@@ -19,7 +23,7 @@
   let quizStatuses = $state({});
 
   // Client-side filtered articles (search runs on the SSR-filtered set)
-  const filteredArticles = $derived(
+  const searchFiltered = $derived(
     searchTerm
       ? data.articles.filter(
           (a) =>
@@ -29,13 +33,33 @@
       : data.articles
   );
 
+  // Quiz-Status-Filter (nur eingeloggt)
+  const filteredArticles = $derived.by(() => {
+    if (!isLoggedIn || quizFilter === 'all') return searchFiltered;
+
+    return searchFiltered.filter((a) => {
+      const quiz = data.quizzesByArticleId[a.id] ?? null;
+      if (!quiz) return false; // kein Quiz → nur in "alle" sichtbar
+      const status = quizStatuses[quiz.id];
+      if (quizFilter === 'completed') {
+        return status?.status === 'passed' || status?.status === 'repeatable';
+      }
+      if (quizFilter === 'soon') {
+        // Bald verfügbar: Quiz bestanden, Cooldown noch aktiv (nicht repeatable)
+        return status?.status === 'passed';
+      }
+      // 'open': hat Quiz, aber nicht bestanden
+      return !status || status.status === 'open' || status.status === 'repeatable';
+    });
+  });
+
   const displayedArticles = $derived(filteredArticles.slice(0, shown));
   const hasMore = $derived(shown < filteredArticles.length);
 
   /** @param {string} term */
   function onSearch(term) {
     searchTerm = term;
-    shown = PAGE_SIZE; // reset pagination when search changes
+    shown = PAGE_SIZE;
   }
 
   function loadMore() {
@@ -60,6 +84,7 @@
   // After mount: fetch quiz completion statuses for logged-in users
   onMount(async () => {
     const token = getAccessToken();
+    isLoggedIn = !!token;
     if (!token) return;
 
     const quizIds = Object.values(data.quizzesByArticleId)
@@ -97,68 +122,86 @@
 </svelte:head>
 
 <!-- ─── Hero ──────────────────────────────────────────────────────────────── -->
-<div class="text-white" style="background: #4CAF50;">
-  <div class="mx-auto max-w-[1140px] px-4 py-10 md:py-14">
-    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-white/70">
-      Gesundheitswegweiser
-    </p>
-    <h1
-      class="text-3xl font-bold md:text-4xl"
-      style="font-family: var(--font-family-heading);"
-    >
+<section class="bg-darkblue text-white">
+  <div class="mx-auto max-w-[var(--max-width-standard)] px-[var(--spacing-container-x)] lg:px-[var(--spacing-container-x-lg)] py-10 lg:py-14">
+    {#if isLoggedIn}
+      <a
+        href="/dashboard"
+        class="mb-4 inline-flex items-center gap-1.5 text-sm opacity-70 hover:opacity-100 transition-opacity"
+      >
+        ← Dashboard
+      </a>
+    {/if}
+    <h1 class="font-heading text-3xl font-bold md:text-4xl leading-tight mb-4">
       Deine Gesundheitskompetenz. Dein Weg.
     </h1>
-    <p class="mt-2 max-w-xl text-base text-white/80">
-      Dein persönlicher Wegweiser zu verlässlichem Gesundheitswissen – alle Inhalte basieren
-      ausschließlich auf seriösen österreichischen Quellen nach den Qualitätskriterien der ÖGPK.
+    <p class="max-w-xl text-base text-white/70 leading-relaxed">
+      Dein persönlicher Wegweiser zu verlässlichem Gesundheitswissen. Alle Inhalte basieren
+      ausschließlich auf seriösen Gesundheitsquellen nach den Qualitätskriterien der ÖGPK.
     </p>
   </div>
-</div>
+</section>
 
-<!-- ─── Sticky filter bar ─────────────────────────────────────────────────── -->
-<div class="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
-  <div class="mx-auto max-w-[1140px] px-4 py-3">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-      <div class="min-w-0 flex-1">
-        <KategorieFilter blocks={data.availableBlocks} activeBlock={data.activeBlock} />
+<!-- ─── Content ───────────────────────────────────────────────────────────── -->
+<main class="mx-auto max-w-[var(--max-width-standard)] px-[var(--spacing-container-x)] lg:px-[var(--spacing-container-x-lg)] py-8">
+
+  <!-- Filter + Suche -->
+  <div class="mb-6 flex flex-col gap-4">
+    <SuchFeld {onSearch} />
+
+    <KategorieFilter blocks={data.availableBlocks} activeBlock={data.activeBlock} />
+
+    <!-- Quiz-Status-Toggle (nur eingeloggt) -->
+    {#if isLoggedIn}
+      <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {#each [{ key: 'all', label: 'Alle' }, { key: 'open', label: 'Quiz offen' }, { key: 'completed', label: 'Quiz gelöst' }, { key: 'soon', label: 'Bald verfügbar' }] as f (f.key)}
+          <button
+            onclick={() => { quizFilter = f.key; shown = PAGE_SIZE; }}
+            class="shrink-0 rounded-[var(--radius-pill)] border px-4 py-1.5 text-sm font-medium transition-colors
+              {quizFilter === f.key
+                ? 'bg-primary border-primary text-white'
+                : 'border-black/15 bg-white text-body hover:border-primary hover:text-primary'}"
+          >
+            {f.label}
+          </button>
+        {/each}
       </div>
-      <div class="w-full shrink-0 sm:w-60">
-        <SuchFeld {onSearch} />
-      </div>
-    </div>
+    {/if}
   </div>
-</div>
-
-<!-- ─── Article grid ──────────────────────────────────────────────────────── -->
-<main class="mx-auto max-w-[1140px] px-4 py-8">
 
   {#if filteredArticles.length === 0}
     <!-- Empty state -->
-    <div class="flex flex-col items-center py-20 text-center text-gray-400">
-      <svg class="mb-4 h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <div class="flex flex-col items-center py-20 text-center text-body/60">
+      <svg class="mb-4 h-12 w-12 text-body/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
-      <p class="text-base font-medium">Keine Artikel gefunden</p>
+      <p class="text-base font-medium text-heading">Keine Artikel gefunden</p>
       {#if searchTerm}
         <p class="mt-1 text-sm">Versuche einen anderen Suchbegriff.</p>
+      {:else if quizFilter !== 'all'}
+        <p class="mt-1 text-sm">Keine Artikel in dieser Kategorie.</p>
+        <button
+          onclick={() => (quizFilter = 'all')}
+          class="mt-3 text-sm text-primary hover:underline"
+        >Alle anzeigen</button>
       {/if}
     </div>
 
   {:else}
     <!-- Result count -->
-    <p class="mb-5 text-sm text-gray-400">
+    <p class="mb-4 text-sm text-body/60">
       {filteredArticles.length}
       {filteredArticles.length === 1 ? 'Artikel' : 'Artikel'}
       {data.activeBlock ? `· ${data.availableBlocks.find((b) => b.id === data.activeBlock)?.label ?? ''}` : ''}
     </p>
 
-    <!-- Grid -->
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Liste -->
+    <div class="flex flex-col gap-3">
       {#each displayedArticles as article (article.id)}
         {@const quiz = data.quizzesByArticleId[article.id] ?? null}
         {@const quizStatus = quiz ? (quizStatuses[quiz.id] ?? null) : null}
-        <ArtikelKarte {article} {quiz} {quizStatus} />
+        <ArtikelKarte {article} {quiz} {quizStatus} {isLoggedIn} />
       {/each}
     </div>
 
@@ -167,11 +210,11 @@
       <div class="mt-10 text-center">
         <button
           onclick={loadMore}
-          class="rounded-full border border-gray-300 px-8 py-2.5 text-sm font-medium text-gray-600
-            transition-colors hover:border-gray-400 hover:text-gray-900"
+          class="rounded-[var(--radius-pill)] border border-gray-300 px-8 py-2.5 text-sm font-medium text-body
+            transition-colors hover:border-primary hover:text-primary"
         >
           Mehr laden
-          <span class="text-gray-400">({filteredArticles.length - shown} weitere)</span>
+          <span class="text-body/60">({filteredArticles.length - shown} weitere)</span>
         </button>
       </div>
     {/if}

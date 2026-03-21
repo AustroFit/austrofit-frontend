@@ -113,7 +113,7 @@
       />
     {:else}
       <!-- Bestätigung -->
-      <h2 id="modal-title" class="mb-1 text-xl font-bold text-gray-900" style="font-family:'Syne',sans-serif;">
+      <h2 id="modal-title" class="mb-1 text-xl font-bold font-heading text-heading">
         Angebot einlösen
       </h2>
 
@@ -133,17 +133,17 @@
         </div>
         <div class="flex justify-between">
           <span class="text-gray-500">Kosten dieses Angebots</span>
-          <span class="font-semibold" style="color:#4CAF50;">−{reward.punkte_kosten}P</span>
+          <span class="font-semibold text-primary">−{reward.punkte_kosten}P</span>
         </div>
         <div class="my-1 border-t border-black/10"></div>
         <div class="flex justify-between font-semibold">
           <span>Danach verbleibend</span>
-          <span class={punkteDanach < 0 ? 'text-red-600' : ''}>{Math.max(0, punkteDanach)}P</span>
+          <span class={punkteDanach < 0 ? 'text-error' : ''}>{Math.max(0, punkteDanach)}P</span>
         </div>
       </div>
 
       {#if error}
-        <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div class="mb-4 rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
           <p>{error}</p>
           {#if error.includes('Netzwerkfehler')}
             <button
@@ -164,8 +164,8 @@
         <button
           onclick={einloesen}
           disabled={!hatGenugPunkte || loading}
-          class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
-          style={hatGenugPunkte ? 'background:#4CAF50;' : 'background:#6b7280;'}
+          class="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition disabled:opacity-50
+            {hatGenugPunkte ? 'bg-primary' : 'bg-gray-500'}"
         >
           {#if loading}
             Wird eingelöst…

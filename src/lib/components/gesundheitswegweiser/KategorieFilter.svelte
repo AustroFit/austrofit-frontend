@@ -16,15 +16,14 @@
   }
 </script>
 
-<div class="flex gap-2 overflow-x-auto pb-0.5" style="-ms-overflow-style:none; scrollbar-width:none;">
+<div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
   <!-- "Alle" chip -->
   <button
     onclick={() => select(null)}
-    class="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap
+    class="shrink-0 rounded-[var(--radius-pill)] border px-4 py-1.5 text-sm font-medium transition-colors
       {!activeBlock
-        ? 'border-transparent text-white'
-        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'}"
-    style={!activeBlock ? 'background: #4CAF50; border-color: #4CAF50;' : ''}
+        ? 'bg-primary border-primary text-white'
+        : 'border-black/15 bg-white text-body hover:border-primary hover:text-primary'}"
   >
     Alle
   </button>
@@ -32,19 +31,12 @@
   {#each blocks as block (block.id)}
     <button
       onclick={() => select(block.id)}
-      class="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap
+      class="shrink-0 rounded-[var(--radius-pill)] border px-4 py-1.5 text-sm font-medium transition-colors
         {activeBlock === block.id
-          ? 'border-transparent text-white'
-          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'}"
-      style={activeBlock === block.id ? 'background: #4CAF50; border-color: #4CAF50;' : ''}
+          ? 'bg-primary border-primary text-white'
+          : 'border-black/15 bg-white text-body hover:border-primary hover:text-primary'}"
     >
       {block.label}
     </button>
   {/each}
 </div>
-
-<style>
-  div::-webkit-scrollbar {
-    display: none;
-  }
-</style>

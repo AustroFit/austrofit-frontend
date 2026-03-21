@@ -3,7 +3,7 @@
 <main class="min-h-[calc(100vh-75px)] bg-gray-50 py-12 px-4">
   <div class="mx-auto max-w-2xl">
 
-    <h1 class="mb-8 text-3xl font-bold text-gray-900" style="font-family:'Syne',sans-serif;">
+    <h1 class="mb-8 text-3xl font-bold font-heading text-heading">
       Impressum
     </h1>
 

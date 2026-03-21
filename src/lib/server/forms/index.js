@@ -4,7 +4,6 @@ import { fail } from '@sveltejs/kit';
 
 // Import all form handlers
 import { handleRegularForm } from './regular-form';
-//import { handleNewsletterSignup } from './newsletter';
 
 export async function handleFormSubmit(request, fetch) {
   let formId;
@@ -51,10 +50,6 @@ export async function handleFormSubmit(request, fetch) {
     }
 
     switch (form.form_type) {
-      case "newsletter":
-        return await handleNewsletterSignup(formData, fetch, form, formId);
-      case "onboarding":
-        return await handleOnboardingSignup(formData, fetch, form, formId);
       case "default":
       default:
         return await handleRegularForm(formData, fetch, form, formId);

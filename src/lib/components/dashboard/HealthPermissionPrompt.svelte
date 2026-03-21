@@ -10,10 +10,9 @@
 
   interface Props {
     onPermissionGranted: () => void;
-    onTestModeSelected: () => void;
     onDismiss: () => void;
   }
-  const { onPermissionGranted, onTestModeSelected, onDismiss }: Props = $props();
+  const { onPermissionGranted, onDismiss }: Props = $props();
 
   type HealthState = 'checking' | 'unavailable' | 'unknown' | 'denied' | 'granted';
 
@@ -23,13 +22,6 @@
 
   onMount(async () => {
     if (!browser) return;
-
-    // Test mode already active?
-    if (localStorage.getItem('austrofit_test_mode') === 'true') {
-      healthState = 'granted';
-      onPermissionGranted();
-      return;
-    }
 
     // Native Capacitor build?
     let isNative = false;
@@ -76,12 +68,6 @@
     }
   }
 
-  function handleTestMode() {
-    if (browser) localStorage.setItem('austrofit_test_mode', 'true');
-    visible = false;
-    onTestModeSelected();
-  }
-
   function handleDismiss() {
     if (browser) localStorage.setItem('austrofit_health_permission', 'later');
     visible = false;
@@ -95,10 +81,7 @@
     <div class="mx-auto max-w-lg rounded-2xl bg-white p-5 shadow-xl border border-black/10">
       <div class="flex items-start gap-4">
         <!-- Icon -->
-        <div
-          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-2xl"
-          style="background:#4CAF501A;"
-        >
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-2xl bg-primary/10">
           {#if healthState === 'unavailable'}🌐{:else if healthState === 'denied'}⚠️{:else}👟{/if}
         </div>
 
@@ -107,8 +90,7 @@
           {#if healthState === 'unavailable'}
             <h3 class="font-semibold leading-snug">Schritt-Tracking nicht verfügbar</h3>
             <p class="mt-1 text-sm text-gray-500 leading-relaxed">
-              Health-Tracking benötigt die AustroFit App auf deinem Smartphone. Bis dahin kannst du
-              deine Schritte manuell eingeben.
+              Health-Tracking benötigt die AustroFit App auf deinem Smartphone.
             </p>
           {:else if healthState === 'denied'}
             <h3 class="font-semibold leading-snug">Zugriff verweigert</h3>
@@ -129,26 +111,12 @@
           <div class="mt-4 flex flex-wrap gap-2">
             {#if healthState === 'unavailable'}
               <button
-                onclick={handleTestMode}
-                class="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity"
-                style="background:#4CAF50;"
-              >
-                Schritte manuell eingeben
-              </button>
-              <button
                 onclick={handleDismiss}
                 class="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 Später
               </button>
             {:else if healthState === 'denied'}
-              <button
-                onclick={handleTestMode}
-                class="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-opacity"
-                style="background:#4CAF50;"
-              >
-                Trotzdem manuell eingeben
-              </button>
               <button
                 onclick={handleDismiss}
                 class="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
@@ -160,16 +128,9 @@
               <button
                 onclick={handleConnect}
                 disabled={requesting}
-                class="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
-                style="background:#4CAF50;"
+                class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 transition-opacity"
               >
                 {requesting ? 'Zugriff wird angefragt…' : 'Zugriff erlauben'}
-              </button>
-              <button
-                onclick={handleTestMode}
-                class="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                Manuell eingeben
               </button>
               <button
                 onclick={handleDismiss}
