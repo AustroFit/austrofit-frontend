@@ -3,7 +3,7 @@
 // Hinweis: Die AWIN Publisher-REST-API hat keinen öffentlichen Promotions-Endpoint.
 // Codes werden manuell in src/lib/data/awinManualPromotions.ts gepflegt.
 
-import { getActivePromotions } from '$lib/data/awinManualPromotions';
+import { getActivePromotions, MANUAL_PROMOTIONS, PROGRAM_NAMES } from '$lib/data/awinManualPromotions';
 
 /** Promotion-Objekt das an den Client gesendet wird (KEIN code-Feld) */
 export interface AwinPromotionPublic {
@@ -80,8 +80,9 @@ export async function fetchAwinPrograms(
 }
 
 /**
- * Genehmigte Programme abrufen + manuelle Promotions hinzufügen.
- * Gibt NUR Programme zurück, die mindestens einen aktiven Rabattcode haben.
+ * Manuelle Promotions als Programmliste servieren.
+ * Basis-Programmdaten (Name, URL, Logo) werden von der AWIN API ergänzt falls verfügbar –
+ * manuelle Promotions werden aber immer angezeigt, unabhängig vom Joined-Status.
  * Code selbst wird NICHT mitgesendet (nur über /api/awin/unlock-code abrufbar).
  */
 export async function fetchAwinProgramsWithPromotions(
@@ -89,23 +90,42 @@ export async function fetchAwinProgramsWithPromotions(
   publisherId: string,
   fetchFn: typeof globalThis.fetch = fetch
 ): Promise<AwinProgram[]> {
-  const programs = await fetchAwinPrograms(apiToken, publisherId, fetchFn);
-  if (programs.length === 0) return [];
+  // Joined-Programme von AWIN abrufen (optional – nur zur Datenanreicherung)
+  const joinedPrograms = await fetchAwinPrograms(apiToken, publisherId, fetchFn);
+  const joinedMap = new Map(joinedPrograms.map((p) => [p.id, p]));
 
-  return programs
-    .map((p) => {
-      const activePromos = getActivePromotions(p.id);
-      const publicPromos: AwinPromotionPublic[] = activePromos.map((promo) => ({
-        id: promo.id,
-        type: promo.type,
-        description: promo.description,
-        endDate: promo.endDate,
-        pointsCost: promo.pointsCost
-        // code wird absichtlich NICHT mitgesendet
-      }));
-      return { ...p, promotions: publicPromos };
-    })
-    .filter((p) => p.promotions.length > 0);
+  const result: AwinProgram[] = [];
+
+  for (const [advertiserIdStr, _promos] of Object.entries(MANUAL_PROMOTIONS)) {
+    const advertiserId = Number(advertiserIdStr);
+    const activePromos = getActivePromotions(advertiserId);
+    if (activePromos.length === 0) continue;
+
+    const publicPromos: AwinPromotionPublic[] = activePromos.map((promo) => ({
+      id: promo.id,
+      type: promo.type,
+      description: promo.description,
+      endDate: promo.endDate,
+      pointsCost: promo.pointsCost
+      // code wird absichtlich NICHT mitgesendet
+    }));
+
+    // Programmdaten aus AWIN-API nehmen falls vorhanden, sonst Fallback
+    const joined = joinedMap.get(advertiserId);
+    result.push({
+      id: advertiserId,
+      name: joined?.name ?? PROGRAM_NAMES[advertiserId] ?? String(advertiserId),
+      url: joined?.url ?? '',
+      logoUrl: joined?.logoUrl ?? null,
+      displayUrl: joined?.displayUrl ?? '',
+      description: joined?.description ?? null,
+      category: joined?.category ?? null,
+      currencyCode: joined?.currencyCode ?? 'EUR',
+      promotions: publicPromos
+    });
+  }
+
+  return result;
 }
 
 /**
