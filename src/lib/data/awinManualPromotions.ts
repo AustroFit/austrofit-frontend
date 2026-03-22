@@ -59,13 +59,13 @@ export const PROGRAM_META: Record<number, { name: string; displayUrl: string; lo
   103075: {
     name: 'myfruits',
     displayUrl: 'myfruits.eu',
-    logoUrl: 'https://ui2.awin.com/merchant-logos/103075/logo.png',
+    logoUrl: null,
     category: 'Food/Drink'
   },
   13991: {
     name: '100% Pure',
     displayUrl: '100percentpure.de',
-    logoUrl: 'https://ui2.awin.com/merchant-logos/13991/logo.png',
+    logoUrl: null,
     category: 'Health/Beauty'
   }
 };
