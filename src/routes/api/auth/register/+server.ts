@@ -1,4 +1,4 @@
-import { PUBLIC_CMSURL, PUBLIC_APP_URL } from '$env/static/public';
+import { PUBLIC_CMSURL } from '$env/static/public';
 import { env as dynPublicEnv } from '$env/dynamic/public';
 import { DIRECTUS_READ_TOKEN, DIRECTUS_WRITE_TOKEN } from '$env/static/private';
 import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
@@ -43,7 +43,7 @@ export async function POST({ request, fetch }) {
   // Registrierung bei Directus
   const registrationPayload =
     dynPublicEnv.PUBLIC_EMAIL_VERIFICATION === 'true'
-      ? { ...(payload as Record<string, unknown>), verification_url: `${PUBLIC_APP_URL}/auth/verify-email` }
+      ? { ...(payload as Record<string, unknown>), verification_url: `${dynPublicEnv.PUBLIC_APP_URL}/auth/verify-email` }
       : payload;
 
   let upstream: Response;
