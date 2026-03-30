@@ -2,18 +2,16 @@
   import { getBaseBlockClasses, getEmbedClasses } from "$lib/design-system/classes";
   
   const { block } = $props();
-  const blockData = block.item;
-  const theme = block.background || 'light';
+  const blockData = $derived(block.item);
+  const theme = $derived(block.background || 'light');
 
-  const {
-    embed_code,
-    min_height = 600,
-  } = blockData;
+  const embed_code = $derived(blockData.embed_code);
+  const min_height = $derived(blockData.min_height ?? 600);
 
-  const styles = getBaseBlockClasses('left', theme);
-  const embedClasses = getEmbedClasses('left', theme);
+  const styles = $derived(getBaseBlockClasses('left', theme));
+  const embedClasses = $derived(getEmbedClasses('left', theme));
 
-  const iframeContent = `
+  const iframeContent = $derived(`
     <!DOCTYPE html>
     <html>
     <head>
@@ -31,7 +29,7 @@
       ${embed_code}
     </body>
     </html>
-  `;
+  `);
 </script>
 
 <div class={styles.container}>

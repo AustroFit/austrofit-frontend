@@ -1,0 +1,9 @@
+workout_type,intensity,label
+running,intense,Laufen
+cycling,intense,Radfahren
+crossTraining,intense,Cross-Training
+walking,moderate,Gehen
+hiking,moderate,Wandern
+stairClimbing,moderate,Stiegensteigen
+elliptical,moderate,Crosstrainer
+other,moderate,Sonstiges

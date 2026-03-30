@@ -2,8 +2,8 @@
   import { getTeamCardClasses } from "$lib/design-system/classes";
   
   const { item, cardStyle = 'lightgrey', cardAlignment = 'left' } = $props();
-  const styles = getTeamCardClasses(cardStyle, cardAlignment);
-  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
+  const styles = $derived(getTeamCardClasses(cardStyle, cardAlignment));
+  const imageUrl = $derived(item.image ? `https://cms.austrofit.at/assets/${item.image}` : null);
 
 </script>
 

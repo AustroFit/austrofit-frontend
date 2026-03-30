@@ -1,0 +1,90 @@
+# Directus Collections: cardio_targets + workout_types
+# Erstellt: 2026-03-27
+# Zweck: Cardio-Konfiguration ohne Deploy ändern.
+#
+# ══════════════════════════════════════════════════
+# Collection 1: cardio_targets
+# ══════════════════════════════════════════════════
+# SETUP:
+#   - Name: cardio_targets
+#   - Primary Key Type: "Manually entered string"
+#   - Primary Key Name: activity_group
+
+cardio_targets:
+  fields:
+    - field: activity_group
+      type: string
+      note: "PK. Werte: 'adult' | 'senior' | 'pregnant' | 'chronic'"
+
+    - field: start_minutes
+      type: integer
+      required: true
+      note: "Äquivalent-Minuten ab denen Punkte vergeben werden (untere Schwelle)"
+
+    - field: full_minutes
+      type: integer
+      required: true
+      note: "Äquivalent-Minuten für 200P Basis (obere Schwelle). Darüber: +15P/10min"
+
+  initial_data:
+    - { activity_group: adult,    start_minutes: 50,  full_minutes: 150 }
+    - { activity_group: senior,   start_minutes: 50,  full_minutes: 150 }
+    - { activity_group: pregnant, start_minutes: 50,  full_minutes: 150 }
+    - { activity_group: chronic,  start_minutes: 35,  full_minutes: 100 }
+
+  note: >
+    Pregnant: Intense Trainingstypen (running, cycling) werden automatisch als
+    moderat (1×) gewertet – das ist in der Formel fest verankert, nicht hier.
+
+# ══════════════════════════════════════════════════
+# Collection 2: workout_types
+# ══════════════════════════════════════════════════
+# SETUP:
+#   - Name: workout_types
+#   - Primary Key Type: "Manually entered string"
+#   - Primary Key Name: workout_type
+
+workout_types:
+  fields:
+    - field: workout_type
+      type: string
+      note: "PK. Exakter Plugin-Typ aus @capgo/capacitor-health, z.B. 'running'"
+
+    - field: intensity
+      type: string
+      required: true
+      note: "Werte: 'intense' (×2) | 'moderate' (×1) | 'ignored' (×0)"
+      # Tipp: Dropdown-Interface mit Optionen intense / moderate / ignored
+
+    - field: label
+      type: string
+      note: "Anzeigename in Deutsch, z.B. 'Laufen'"
+
+  initial_data:
+    # Intense (×2, außer bei pregnant = ×1)
+    - { workout_type: running,       intensity: intense,  label: "Laufen" }
+    - { workout_type: cycling,       intensity: intense,  label: "Radfahren" }
+    - { workout_type: crossTraining, intensity: intense,  label: "Cross-Training" }
+    # Moderate (×1)
+    - { workout_type: walking,       intensity: moderate, label: "Gehen" }
+    - { workout_type: hiking,        intensity: moderate, label: "Wandern" }
+    - { workout_type: stairClimbing, intensity: moderate, label: "Stiegensteigen" }
+    - { workout_type: elliptical,    intensity: moderate, label: "Crosstrainer" }
+    - { workout_type: other,         intensity: moderate, label: "Sonstiges" }
+    # Neue Typen einfach hinzufügen → sofort live
+
+# POLICY-ZUGRIFF:
+# ---------------
+# PRIVATE_CMS_STATIC_TOKEN: Read (cardio_targets + workout_types)
+# DIRECTUS_READ_TOKEN: Read (wenn zukünftig client-seitig gebraucht)
+# Beide Collections in der Admin-Policy freischalten!
+
+# WORKFLOWS:
+# ----------
+# Neue Aktivitätsgruppe (z.B. 'youth'):
+#   1. cardio_targets: Neuen Eintrag anlegen
+#   2. Im Code: ActivityGroup-Typ erweitern (Deploy nötig)
+#
+# Neuer Workout-Typ (z.B. wenn Capacitor-Plugin erweitert wird):
+#   1. workout_types: Neuen Eintrag anlegen → sofort wirksam
+#   2. Kein Deploy nötig

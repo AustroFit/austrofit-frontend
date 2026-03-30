@@ -5,9 +5,9 @@
 
   const { item, collection, config} = $props();
 
-  const imageUrl = item.image
+  const imageUrl = $derived(item.image
     ? cmsAssetUrl(PUBLIC_CMSURL, item.image, { width: 1600, quality: 80, format: "webp" })
-    : null;
+    : null);
 
   const styles = getSinglePageClasses();
 </script>

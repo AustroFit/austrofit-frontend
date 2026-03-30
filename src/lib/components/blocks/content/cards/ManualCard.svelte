@@ -2,7 +2,7 @@
   import { getCardClasses } from "$lib/design-system/classes";
   const {cardData, cardAlignment, cardStyle, buttonStyle, buttonSize} = $props();
   //console.log(cardData);
-  const imageUrl = cardData.image ? `https://cms.austrofit.at/assets/${cardData.image}` : null;
+  const imageUrl = $derived(cardData.image ? `https://cms.austrofit.at/assets/${cardData.image}` : null);
   const styles = $derived(getCardClasses(cardAlignment, cardStyle, !!imageUrl));
 </script>
 

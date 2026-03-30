@@ -17,14 +17,14 @@
     return false;
   });
   
-  const hasChildren = item.children?.length > 0;
-  
+  const hasChildren = $derived(item.children?.length > 0);
+
   // Indentation based on nesting level
-  const paddingLeft = {
+  const paddingLeft = $derived({
     0: 'pl-6',
     1: 'pl-10',
     2: 'pl-14'
-  }[level] || 'pl-6';
+  }[level] || 'pl-6');
 </script>
 
 <div class="border-b border-gray-200 last:border-b-0">

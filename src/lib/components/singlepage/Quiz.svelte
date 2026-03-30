@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { getOrCreateAnonymousId } from '$lib/utils/anonymous';
-  import { getAccessToken } from '$lib/utils/auth';
+  import { getAccessToken, getValidAccessToken } from '$lib/utils/auth';
   import { track } from '$lib/utils/mixpanel';
 
   const { quiz, meta, ctaUrl, passPercent, quizId } = $props();
@@ -75,7 +75,6 @@
     pendingClaim = hasPendingClaim();
 
     const token = getAccessToken();
-    const willAutoClaim = hasPendingClaim() && !!token;
 
     // A) Ergebnis immer wiederherstellen – auch wenn Auto-Claim ansteht,
     //    damit der User nach Register/Login sofort sein Ergebnis sieht.
@@ -90,9 +89,10 @@
       wrongCountSnapshot = last.wrongCountSnapshot ?? wrongCountSnapshot;
     }
 
-    // B) Wenn User nach Register/Login zurückkommt → automatisch claimen
-    if (willAutoClaim) {
-      await claimPoints(); // setzt claimLoading, räumt PENDING_CLAIM_KEY auf
+    // B) Wenn User eingeloggt ist → immer claimen (deckt PENDING_CLAIM_KEY-Fälle
+    //    UND nachträgliche Claims bei zuvor fehlgeschlagenem Claim ab).
+    if (token) {
+      await claimPoints();
       clearPendingClaim();
       // LAST_RESULT_KEY NICHT entfernen – Ergebnis bleibt sichtbar
     }
@@ -126,7 +126,7 @@
 
 
   async function claimAnonymousPoints() {
-    const token = getAccessToken();
+    const token = await getValidAccessToken();
     if (!token) {
       claimMsg = 'Bitte zuerst einloggen/registrieren.';
       return false;
@@ -152,8 +152,9 @@
       console.error('Claim failed:', res.status, data);
       const msg = data?.message ?? data?.errors?.[0]?.message ?? `Claim fehlgeschlagen (${res.status})`;
       claimMsg = msg;
-      // Wenn keine offenen Claims mehr vorhanden → Button deaktivieren statt Loop
-      if (res.status === 401 || res.status === 404) {
+      // Bei 404 (User nicht gefunden) → pending claim entfernen
+      // Bei 401 (Token abgelaufen) → NICHT entfernen, damit der nächste Besuch es retried
+      if (res.status === 404) {
         clearPendingClaim();
       }
       return false;
@@ -167,9 +168,9 @@
 
   // Config
   const PASS_PERCENT_DEFAULT = 100;
-  const requiredPercent = Number.isFinite(passPercent) ? passPercent : PASS_PERCENT_DEFAULT;
-  const learnMoreUrl = ctaUrl ?? '/';
-  const eligiblePoints = meta?.eligible_points ?? meta?.points ?? 40;
+  const requiredPercent = $derived(Number.isFinite(passPercent) ? passPercent : PASS_PERCENT_DEFAULT);
+  const learnMoreUrl = $derived(ctaUrl ?? '/');
+  const eligiblePoints = $derived(meta?.eligible_points ?? meta?.points ?? 40);
 
   // State
   let submitted = $state(false);
@@ -193,8 +194,9 @@
   let repeatSubmitted = $state(false);
   let repeatScoreSnapshot = $state(null);
   let repeatWrongCountSnapshot = $state(null);
+  let reviewMode = $state(false);
 
-  const totalAll = quiz?.questions?.length ?? 0;
+  const totalAll = $derived(quiz?.questions?.length ?? 0);
 
   // --- Helpers ---
   function shuffleArray(arr) {
@@ -452,6 +454,7 @@
     }
 
     wrongOnly = true;
+    reviewMode = false;
 
     // Repeat ist ein eigener "Durchgang"
     repeatSubmitted = false;
@@ -501,6 +504,7 @@
 
   function showAll() {
     wrongOnly = false;
+    reviewMode = true;
     pos = 0;
     banner = '';
   }
@@ -541,6 +545,7 @@
     repeatSubmitted = false;
     repeatScoreSnapshot = null;
     repeatWrongCountSnapshot = null;
+    reviewMode = false;
   }
 
   async function createAttemptIfNeeded() {
@@ -658,121 +663,119 @@
   <!-- Score Summary -->
   {#if submitted && displayScore}
     <div class="mt-5 rounded-xl border border-black/10 p-4 md:p-5">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <div class="text-base md:text-lg font-semibold">Dein Ergebnis</div>
-          <div class="mt-1 text-sm opacity-80">
+      <div>
+        <div class="text-base md:text-lg font-semibold">Dein Ergebnis</div>
+        <div class="mt-1 flex items-center gap-2 flex-wrap">
+          <span class="text-sm opacity-80">
             {displayScore.correctCount} / {totalAll} richtig · <span class="font-semibold">{displayScore.percent}%</span>
-          </div>
-          {#if displayScore.passed && displayScore.percent === 100}
-            <div class="mt-2 text-sm font-medium">
-              🎉 Perfekt! Du hast das Quiz vollständig gemeistert.
-            </div>
-          {:else if displayScore.passed}
-            <div class="mt-2 text-sm font-medium">
-              ✅ Stark! Du hast das Quiz bestanden.
-            </div>
-          {:else}
-            <div class="mt-2 text-sm opacity-80">
-              Du bist nah dran – wiederhole nur die falschen Fragen, bis du 100% hast.
-            </div>
-          {/if}
-
-          {#if (displayWrongCount ?? 0) > 0}
-            <div class="mt-1 text-sm opacity-80">
-              Noch falsch: <span class="font-semibold">{displayWrongCount}</span>
-            </div>
-          {/if}
-        </div>
-
-        <div class="shrink-0 flex items-center gap-2">
+          </span>
           {#if displayScore.passed}
-            <span class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-sm text-heading success-pill">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-sm text-heading success-pill">
               <span class="check-pop">✅</span> Bestanden
             </span>
           {:else}
-            <span class="inline-flex items-center gap-2 rounded-full border border-error/30 bg-error/5 px-3 py-1 text-sm text-error">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-error/30 bg-error/5 px-3 py-1 text-sm text-error">
               ❌ Nicht bestanden
             </span>
           {/if}
         </div>
+
+        {#if displayScore.passed && displayScore.percent === 100}
+          <div class="mt-2 text-sm font-medium">
+            🎉 Perfekt! Du hast das Quiz vollständig gemeistert. <span class="text-primary">+{eligiblePoints} Punkte</span>
+          </div>
+        {:else if displayScore.passed}
+          <div class="mt-2 text-sm font-medium">
+            ✅ Stark! Du hast das Quiz bestanden. <span class="text-primary">+{eligiblePoints} Punkte</span>
+          </div>
+        {:else}
+          <div class="mt-2 text-sm opacity-80">
+            Du bist nah dran – wiederhole nur die falschen Fragen, bis du 100% hast.
+          </div>
+        {/if}
+
+        {#if (displayWrongCount ?? 0) > 0}
+          <div class="mt-2 flex items-center flex-wrap gap-2">
+            <span class="text-sm opacity-80">Noch falsch: <span class="font-semibold">{displayWrongCount}</span></span>
+            <button
+              class="rounded-lg border border-black/10 px-3 py-1 text-xs hover:bg-black/5"
+              type="button"
+              onclick={startWrongOnly}
+            >
+              Nur falsche Fragen wiederholen
+            </button>
+          </div>
+        {/if}
       </div>
 
       <div class="mt-4 rounded-lg bg-black/5 p-3 text-sm leading-relaxed">
-        <div class="font-semibold">AustroFit-Punkte</div>
-          {#if displayScore.passed}
-            <div class="mt-4 flex flex-wrap gap-2">
-              {#if !isLoggedIn}
-                <div class="w-full rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm">
-                  <p class="font-semibold text-heading">
-                    🎉 Du hast {eligiblePoints} Punkte verdient!
-                  </p>
-                  <p class="mt-1 text-body/80">
-                    Melde dich an, um sie zu sichern und gegen Belohnungen bei unseren Partneranbietern einzulösen – kostenlos und ohne Verpflichtung.
-                  </p>
-                </div>
-                <button
-                  class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
-                  type="button"
-                  onclick={() => {
-                    setPendingClaim();
-                    goto(`/registrierung?next=${encodeURIComponent(getNextUrl())}`);
-                  }}
-                >
-                  Jetzt anmelden &amp; Punkte sichern
-                </button>
+        {#if displayScore.passed}
+          <div class="flex flex-wrap gap-2">
+            {#if !isLoggedIn}
+              <div class="w-full rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm">
+                <p class="font-semibold text-heading">
+                  🎉 Du hast {eligiblePoints} Punkte verdient!
+                </p>
+                <p class="mt-1 text-body/80">
+                  Melde dich an, um sie zu sichern und gegen Belohnungen bei unseren Partneranbietern einzulösen – kostenlos und ohne Verpflichtung.
+                </p>
+              </div>
+              <button
+                class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
+                type="button"
+                onclick={() => {
+                  setPendingClaim();
+                  goto(`/registrierung?next=${encodeURIComponent(getNextUrl())}`);
+                }}
+              >
+                Jetzt anmelden &amp; Punkte sichern
+              </button>
 
-                <button
-                  class="rounded-lg border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
-                  type="button"
-                  onclick={() => {
-                    setPendingClaim();
-                    goto(`/login?next=${encodeURIComponent(getNextUrl())}`);
-                  }}
+              <button
+                class="rounded-lg border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
+                type="button"
+                onclick={() => {
+                  setPendingClaim();
+                  goto(`/login?next=${encodeURIComponent(getNextUrl())}`);
+                }}
+              >
+                Ich habe bereits ein Konto
+              </button>
+            {:else}
+              {#if claimLoading}
+                <p class="text-sm opacity-80">Punkte werden gutgeschrieben…</p>
+              {:else if !claimMsg || claimMsg === 'Punkte gutgeschrieben ✅'}
+                <p class="text-sm font-medium text-primary">✅ {eligiblePoints} Punkte wurden automatisch gutgeschrieben.</p>
+                <a
+                  href="/belohnung"
+                  class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
                 >
-                  Ich habe bereits ein Konto
-                </button>
+                  Zu den Belohnungen →
+                </a>
               {:else}
-                {#if claimLoading}
-                  <p class="text-sm opacity-80">Punkte werden gutgeschrieben…</p>
-                {:else}
-                  <p class="text-sm font-medium text-primary">✅ Punkte wurden automatisch gutgeschrieben.</p>
-                  {#if claimMsg && claimMsg !== 'Punkte gutgeschrieben ✅'}
-                    <p class="w-full text-sm opacity-80">{claimMsg}</p>
-                  {/if}
-                  <a
-                    href="/belohnung"
-                    class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
-                  >
-                    Zu den Belohnungen →
-                  </a>
-                {/if}
+                <p class="w-full text-sm opacity-80">{claimMsg}</p>
               {/if}
-            </div>
-          {/if}
-        <div class="mt-1 opacity-90">
-          Punkte werden nur bei <strong>vollständig bestandenem Quiz</strong> ({requiredPercent}% richtig) vergeben.
-        </div>
-        <div class="mt-2">
-          <a
-            class={`underline font-medium ${displayScore.passed ? 'text-primary' : ''}`}
-            href={learnMoreUrl}
-          >
-            Mehr zu Punkten &amp; Vorteilen
-          </a>
-        </div>
+            {/if}
+          </div>
+          <div class="mt-3">
+            <a class="underline font-medium text-primary" href={learnMoreUrl}>
+              Mehr zu Punkten &amp; Vorteilen
+            </a>
+          </div>
+        {:else}
+          <div class="opacity-90">
+            Punkte werden nur bei <strong>vollständig bestandenem Quiz</strong> ({requiredPercent}% richtig) vergeben.
+          </div>
+          <div class="mt-2">
+            <a class="underline font-medium" href={learnMoreUrl}>
+              Mehr zu Punkten &amp; Vorteilen
+            </a>
+          </div>
+        {/if}
       </div>
 
       {#if !displayScore.passed}
         <div class="mt-4 flex flex-wrap gap-2">
-          <button
-            class="rounded-lg border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
-            type="button"
-            onclick={startWrongOnly}
-          >
-            Nur falsche Fragen wiederholen
-          </button>
-
           <button
             class="rounded-lg border border-black/10 px-4 py-2 text-sm hover:bg-black/5"
             type="button"
@@ -784,7 +787,7 @@
 
         {#if wrongOnly && !repeatSubmitted}
           <div class="mt-2 text-xs opacity-70">
-            Übungsmodus: Ergebnis bleibt stabil, bis du „Antworten erneut prüfen“ klickst.
+            Übungsmodus: Ergebnis bleibt stabil, bis du „Antworten erneut prüfen" klickst.
           </div>
         {/if}
       {/if}
@@ -886,7 +889,7 @@
         {/if}
       </div>
 
-      {#if submitted && !wrongOnly && currentQuestion.explanation}
+      {#if submitted && !wrongOnly && !reviewMode && currentQuestion.explanation}
         <div class="mt-3 rounded-lg bg-black/5 p-3 text-sm">
           <div class="font-semibold">Erklärung</div>
           <div class="mt-1 opacity-90">{currentQuestion.explanation}</div>
@@ -906,14 +909,16 @@
           ← Zurück
         </button>
 
-        <button
-          class="rounded-lg border border-black/10 px-4 py-2 text-sm hover:bg-black/5 disabled:opacity-40 disabled:hover:bg-transparent"
-          type="button"
-          onclick={next}
-          disabled={!canGoNext}
-        >
-          Weiter →
-        </button>
+        {#if !showSubmitButton}
+          <button
+            class="rounded-lg border border-black/10 px-4 py-2 text-sm hover:bg-black/5 disabled:opacity-40 disabled:hover:bg-transparent"
+            type="button"
+            onclick={next}
+            disabled={!canGoNext}
+          >
+            Weiter →
+          </button>
+        {/if}
       </div>
 
       <div class="flex items-center gap-2">

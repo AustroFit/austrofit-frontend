@@ -1,9 +1,9 @@
 // src/routes/api/awin/unlock-code/+server.ts
-// POST: AWIN-Rabattcode mit Punkten freischalten.
+// POST: Online-Rabattcode mit Punkten freischalten.
 // Body: { promoId: string }
 // Ablauf:
 //   1. Auth prüfen
-//   2. Promo aus manuellen Daten laden
+//   2. Promo aus Directus laden (inkl. code)
 //   3. Prüfen ob User diesen Code bereits freigeschaltet hat (idempotent)
 //   4. Punktestand prüfen
 //   5. Punkte abziehen + Code zurückgeben
@@ -11,7 +11,6 @@ import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
-import { findPromoById } from '$lib/data/awinManualPromotions';
 
 export async function POST({ request, fetch }) {
   const token = extractBearerToken(request);
@@ -21,21 +20,37 @@ export async function POST({ request, fetch }) {
   const { promoId } = body as { promoId?: string };
   if (!promoId) return json({ error: 'promoId fehlt' }, { status: 400 });
 
-  const promo = findPromoById(promoId);
+  const adminHeaders = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}`
+  };
+
+  // Promo aus Directus laden (inkl. code)
+  const promoRes = await fetch(
+    `${PUBLIC_CMSURL}/items/online_promotions/${encodeURIComponent(promoId)}?fields=id,code,end_date,points_cost`,
+    { headers: adminHeaders }
+  );
+  if (promoRes.status === 403 || promoRes.status === 404) {
+    return json({ error: 'Unbekannte Promotion' }, { status: 404 });
+  }
+  if (!promoRes.ok) {
+    return json({ error: 'Fehler beim Laden der Promotion' }, { status: 500 });
+  }
+  const promo = (await promoRes.json()).data as {
+    id: string;
+    code: string;
+    end_date: string;
+    points_cost: number;
+  } | null;
   if (!promo) return json({ error: 'Unbekannte Promotion' }, { status: 404 });
 
   // Abgelaufen?
-  if (new Date(promo.endDate) <= new Date()) {
+  if (new Date(promo.end_date) <= new Date()) {
     return json({ error: 'Dieser Rabattcode ist abgelaufen' }, { status: 410 });
   }
 
   const userId = await resolveUserId(token, PUBLIC_CMSURL, fetch);
   if (!userId) return json({ error: 'Nicht eingeloggt' }, { status: 401 });
-
-  const adminHeaders = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}`
-  };
 
   // Bereits freigeschaltet? (idempotent – kein doppelter Abzug)
   const unlockRef = `awin_unlock:${promoId}`;
@@ -52,7 +67,6 @@ export async function POST({ request, fetch }) {
   if (dupRes.ok) {
     const dupBody = await dupRes.json();
     if ((dupBody.data ?? []).length > 0) {
-      // Bereits freigeschaltet → Code kostenlos zurückgeben
       return json({ code: promo.code, alreadyUnlocked: true });
     }
   }
@@ -68,9 +82,9 @@ export async function POST({ request, fetch }) {
   const ledgerBody = await ledgerRes.json();
   const totalPoints: number = Number(ledgerBody?.data?.[0]?.sum?.points_delta ?? 0);
 
-  if (totalPoints < promo.pointsCost) {
+  if (totalPoints < promo.points_cost) {
     return json(
-      { error: `Nicht genug Punkte. Du hast ${totalPoints}P, benötigst ${promo.pointsCost}P.`, totalPoints },
+      { error: `Nicht genug Punkte. Du hast ${totalPoints}P, benötigst ${promo.points_cost}P.`, totalPoints },
       { status: 400 }
     );
   }
@@ -81,7 +95,7 @@ export async function POST({ request, fetch }) {
     headers: adminHeaders,
     body: JSON.stringify({
       user: userId,
-      points_delta: -promo.pointsCost,
+      points_delta: -promo.points_cost,
       source_type: 'awin_unlock',
       source_ref: unlockRef,
       occurred_at: new Date().toISOString()
@@ -94,5 +108,5 @@ export async function POST({ request, fetch }) {
     return json({ error: 'Punkte konnten nicht abgezogen werden' }, { status: 500 });
   }
 
-  return json({ code: promo.code, alreadyUnlocked: false, pointsSpent: promo.pointsCost });
+  return json({ code: promo.code, alreadyUnlocked: false, pointsSpent: promo.points_cost });
 }

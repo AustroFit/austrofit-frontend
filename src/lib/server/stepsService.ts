@@ -1,7 +1,9 @@
 // src/lib/server/stepsService.ts
 // Shared server-side logic for recording step entries.
 // Used by /api/steps/manual and /api/steps/sync.
-import { calculatePoints, updateStreak } from '$lib/utils/streak';
+import { calculatePoints } from '$lib/utils/streak';
+import { updateStreak } from '$lib/server/streak';
+import { awardMilestoneIfNew } from '$lib/server/milestoneService';
 
 // Fraud cap: Blueprint Phase 1 Minimalschutz – max 20.000 Schritte pro Eintrag (≈ 20K/h Spike-Filter)
 const STEPS_FRAUD_CAP = 20_000;
@@ -13,10 +15,10 @@ export interface StepEntryResult {
   ledger_id: string | null;
   neue_streak_days: number;
   longest_streak: number;
-  streak_bonus_awarded: boolean;      // +60P Wochen-Bonus (alle 7 Streak-Tage)
-  streak_tag_bonus_awarded: boolean;  // +20P Tag-Bonus (pro Tag mit ≥7.000 Schritten im Streak)
-  milestone_goal_awarded: boolean;    // +50P erstes Tagesziel (7.000 Schritte), einmalig
-  milestone_streak3_awarded: boolean; // +80P erste 3-Tage-Streak, einmalig
+  streak_bonus_awarded: boolean;      // Wochen-Bonus (alle 7 Streak-Tage)
+  streak_tag_bonus_awarded: boolean;  // Tag-Bonus (pro Tag mit ≥7.000 Schritten im Streak)
+  milestone_step_awarded: boolean;    // first_step: erstes Tagesziel (7.000 Schritte), einmalig
+  milestone_streak4_awarded: boolean; // first_streak_4: erste 4-Tage-Streak, einmalig
   capped: boolean;               // true wenn Schrittzahl auf STEPS_FRAUD_CAP begrenzt wurde
 }
 
@@ -65,8 +67,8 @@ export async function recordStepEntry(params: {
         longest_streak: 0,
         streak_bonus_awarded: false,
         streak_tag_bonus_awarded: false,
-        milestone_goal_awarded: false,
-        milestone_streak3_awarded: false,
+        milestone_step_awarded: false,
+        milestone_streak4_awarded: false,
         capped: false
       };
     }
@@ -95,41 +97,41 @@ export async function recordStepEntry(params: {
   const lb = await ledgerRes.json();
   const ledger_id: string | null = lb?.data?.id ?? null;
 
-  // Milestone: Erstes Tagesziel (7.000 Schritte) – einmalig, +50P
-  let milestone_goal_awarded = false;
+  // Milestone: Erstes Tagesziel (7.000 Schritte) – einmalig, +40P
+  let milestone_step_awarded = false;
   if (steps >= 7000) {
-    const milestoneParams = new URLSearchParams({
-      'filter[user][_eq]': userId,
-      'filter[source_type][_eq]': 'milestone',
-      'filter[source_ref][_eq]': 'milestone-first_goal',
-      fields: 'id',
-      limit: '1'
-    });
     try {
-      const milestoneRes = await fetchFn(
-        `${cmsUrl}/items/points_ledger?${milestoneParams}`,
-        { headers: adminHeaders }
-      );
-      if (milestoneRes.ok) {
-        const milestoneBody = await milestoneRes.json();
-        if ((milestoneBody.data ?? []).length === 0) {
-          const awardRes = await fetchFn(`${cmsUrl}/items/points_ledger`, {
-            method: 'POST',
-            headers: adminHeaders,
-            body: JSON.stringify({
-              user: userId,
-              points_delta: 50,
-              source_type: 'milestone',
-              source_ref: 'milestone-first_goal',
-              occurred_at: new Date().toISOString()
-            })
-          });
-          milestone_goal_awarded = awardRes.ok;
-        }
-      }
+      milestone_step_awarded = await awardMilestoneIfNew({
+        userId, slug: 'first_step', cmsUrl, token: adminToken, fetchFn
+      });
     } catch {
       /* non-critical */
     }
+  }
+
+  // total_steps in user_profiles inkrementieren (non-critical)
+  try {
+    const profileParams = new URLSearchParams({
+      'filter[user][_eq]': userId,
+      fields: 'id,total_steps',
+      limit: '1'
+    });
+    const profileRes = await fetchFn(`${cmsUrl}/items/user_profiles?${profileParams}`, {
+      headers: adminHeaders
+    });
+    if (profileRes.ok) {
+      const pb = await profileRes.json();
+      const profile = pb.data?.[0];
+      if (profile?.id) {
+        await fetchFn(`${cmsUrl}/items/user_profiles/${profile.id}`, {
+          method: 'PATCH',
+          headers: adminHeaders,
+          body: JSON.stringify({ total_steps: Number(profile.total_steps ?? 0) + steps })
+        });
+      }
+    }
+  } catch {
+    /* non-critical */
   }
 
   // Update streak (non-blocking – error doesn't fail the request)
@@ -138,7 +140,7 @@ export async function recordStepEntry(params: {
     longest_streak: 0,
     streak_bonus_awarded: false,
     streak_tag_bonus_awarded: false,
-    milestone_streak3_awarded: false
+    milestone_streak4_awarded: false
   };
   try {
     streakResult = await updateStreak(userId, date, steps, {
@@ -160,8 +162,8 @@ export async function recordStepEntry(params: {
     longest_streak: streakResult.longest_streak,
     streak_bonus_awarded: streakResult.streak_bonus_awarded,
     streak_tag_bonus_awarded: streakResult.streak_tag_bonus_awarded,
-    milestone_goal_awarded,
-    milestone_streak3_awarded: streakResult.milestone_streak3_awarded,
+    milestone_step_awarded,
+    milestone_streak4_awarded: streakResult.milestone_streak4_awarded,
     capped
   };
 }

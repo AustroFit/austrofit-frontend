@@ -8,9 +8,14 @@
   let password = $state('');
   let error = $state('');
   let loading = $state(false);
+  let isUnverified = $state(false);
+  let resendLoading = $state(false);
+  let resendDone = $state(false);
 
   async function onLogin() {
     error = '';
+    isUnverified = false;
+    resendDone = false;
     loading = true;
     try {
       await login(email, password);
@@ -27,12 +32,46 @@
       } catch { /* non-blocking */ }
       track('user_logged_in', { method: 'email_password' });
 
+      // Init-Onboarding (idempotent): Booster + activity_group setzen
+      try {
+        const activityGroup = localStorage.getItem('austrofit_activity_group') ?? 'adult';
+        await fetch('/api/auth/init-onboarding', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getAccessToken()}`
+          },
+          body: JSON.stringify({ activity_group: activityGroup })
+        });
+        localStorage.removeItem('austrofit_activity_group');
+      } catch { /* non-blocking */ }
+
       const next = page.url.searchParams.get('next') ?? '/dashboard';
       await goto(next);
     } catch (e: any) {
-      error = e?.message ?? String(e);
+      const msg: string = e?.message ?? String(e);
+      if (msg.toLowerCase().includes('unverified') || msg.toLowerCase().includes('not verified')) {
+        isUnverified = true;
+      } else {
+        error = msg;
+      }
     } finally {
       loading = false;
+    }
+  }
+
+  async function resendVerification() {
+    resendLoading = true;
+    resendDone = false;
+    try {
+      await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      resendDone = true;
+    } finally {
+      resendLoading = false;
     }
   }
 </script>
@@ -74,6 +113,24 @@
           class="rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition-colors focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
         />
       </label>
+
+      {#if isUnverified}
+        <div class="rounded-xl border border-secondary/30 bg-secondary/5 px-4 py-3 text-sm text-secondary">
+          <p class="font-medium">Bitte bestätige zuerst deine E-Mail-Adresse.</p>
+          <p class="mt-1 text-xs text-gray-500">Kein Link erhalten?
+            {#if resendDone}
+              <span class="font-medium text-primary">E-Mail wurde gesendet.</span>
+            {:else}
+              <button
+                type="button"
+                onclick={resendVerification}
+                disabled={resendLoading}
+                class="font-medium text-primary underline underline-offset-2 hover:text-primary-dark disabled:opacity-50"
+              >{resendLoading ? 'Wird gesendet…' : 'Bestätigungsmail erneut senden'}</button>
+            {/if}
+          </p>
+        </div>
+      {/if}
 
       {#if error}
         <div class="rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">

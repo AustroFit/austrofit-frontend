@@ -2,9 +2,9 @@
   import { page } from "$app/state";
   
   let { data } = $props();
-  const onboardingEvents = data.onboardingEvents;
-  const volunteer = data.volunteer;
-  const justRegistered = page.url.searchParams.has("registered");
+  const onboardingEvents = $derived(data.onboardingEvents);
+  const volunteer = $derived(data.volunteer);
+  const justRegistered = $derived(page.url.searchParams.has("registered"));
   
   const formError = $derived(page.form?.error);
 </script>

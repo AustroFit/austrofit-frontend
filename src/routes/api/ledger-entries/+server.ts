@@ -29,8 +29,8 @@ export async function GET({ url, request, fetch }: { url: URL; request: Request;
   });
 
   if (sourceType === 'streak') {
-    // Beide Streak-Typen einschließen: täglicher Tag-Bonus (streak_tag) + Wochen-Bonus (streak)
-    params.set('filter[source_type][_in]', 'streak,streak_tag');
+    // Alle Streak-Typen einschließen: Wochen-Bonus (streak), Tages-Bonus (streak_tag), Quiz-Streak (streak_quiz)
+    params.set('filter[source_type][_in]', 'streak,streak_tag,streak_quiz');
   } else if (sourceType) {
     params.set('filter[source_type][_eq]', sourceType);
   }

@@ -3,11 +3,11 @@
   import { getCardGalleryClasses } from "$lib/design-system/classes";
   
   const { block } = $props();
-  const blockData = block.item;
-  const theme = block.background || 'light';
-  const alignment = blockData?.alignment || "left";
-  const cardAlignment = blockData?.card_alignment || "center";
-  const cardStyle = blockData?.card_style || 'lightgrey';
+  const blockData = $derived(block.item);
+  const theme = $derived(block.background || 'light');
+  const alignment = $derived(blockData?.alignment || "left");
+  const cardAlignment = $derived(blockData?.card_alignment || "center");
+  const cardStyle = $derived(blockData?.card_style || 'lightgrey');
   const styles = $derived(getCardGalleryClasses());
   //console.log(blockData)
 </script>

@@ -5,10 +5,10 @@
   let { block, children } = $props();
   
   // Check if this is a fullscreen hero
-  const isFullscreenHero = block.collection === 'block_hero' && block.item?.layout === 'image_full';
-  
+  const isFullscreenHero = $derived(block.collection === 'block_hero' && block.item?.layout === 'image_full');
+
   const styles = $derived(getBlockStyles(block));
-  const anchor = block?.anchor || '';
+  const anchor = $derived(block?.anchor || '');
 </script>
 
 {#if isFullscreenHero}

@@ -7,7 +7,7 @@
   import BuchungsZeile from '$lib/components/profil/BuchungsZeile.svelte';
   import type { LedgerEntry } from '$lib/components/profil/BuchungsZeile.svelte';
 
-  type FilterKey = 'all' | 'education' | 'schritte' | 'streak' | 'onboarding' | 'einloesung';
+  type FilterKey = 'all' | 'education' | 'schritte' | 'cardio' | 'streak' | 'onboarding' | 'einloesung';
 
   const PAGE_SIZE = 20;
 
@@ -27,6 +27,7 @@
     { key: 'all',        label: 'Alle' },
     { key: 'education',  label: '📚 Quizze' },
     { key: 'schritte',   label: '👟 Schritte' },
+    { key: 'cardio',     label: '🏃 Cardio' },
     { key: 'streak',     label: '🔥 Streak' },
     { key: 'onboarding', label: '🎁 Onboarding' },
     { key: 'einloesung', label: '🎫 Einlösung' }

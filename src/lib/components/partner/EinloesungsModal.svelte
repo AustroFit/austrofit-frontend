@@ -10,14 +10,14 @@
   interface Reward {
     id: string;
     titel: string;
-    beschreibung?: string;
+    beschreibung?: string | null;
     punkte_kosten: number;
   }
 
   interface Partner {
     id: string;
     name: string;
-    adresse?: string;
+    adresse?: string | null;
   }
 
   interface Props {

@@ -3,9 +3,9 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
-  import { register, login, getAccessToken } from '$lib/utils/auth';
-  import { track, identifyUser } from '$lib/utils/mixpanel';
-  import { pwaPrompt } from '$lib/stores/pwa';
+  import { register, login } from '$lib/utils/auth';
+  import { track } from '$lib/utils/mixpanel';
+  import { PUBLIC_EMAIL_VERIFICATION } from '$env/static/public';
 
   let email = $state('');
   let password = $state('');
@@ -13,11 +13,44 @@
   let error = $state('');
   let loading = $state(false);
   let showPassword = $state(false);
+  let resendLoading = $state(false);
+  let resendDone = $state(false);
 
   let step = $state(1);
-  let installing = $state(false);
-  let pwaTab = $state<'android' | 'ios'>('android');
+  let datenschutzAkzeptiert = $state(false);
   let isInstalled = $state(false);
+  let selectedGroup = $state('adult');
+
+  const ACTIVITY_GROUPS = [
+    {
+      value: 'adult',
+      label: 'Erwachsene',
+      sub: '18–64 Jahre',
+      desc: '150 Min. moderat oder 75 Min. intensiv pro Woche',
+      icon: '🚶'
+    },
+    {
+      value: 'senior',
+      label: 'Senioren',
+      sub: '65+',
+      desc: '150 Min. moderat pro Woche + Gleichgewichtsübungen',
+      icon: '🧘'
+    },
+    {
+      value: 'pregnant',
+      label: 'Schwangere',
+      sub: 'Moderat, kein Intensivtraining',
+      desc: 'Bis zu 150 Min. moderates Training pro Woche',
+      icon: '🤱'
+    },
+    {
+      value: 'chronic',
+      label: 'Chronisch krank',
+      sub: 'Reduziertes Wochenziel',
+      desc: 'Ca. 100 Min. moderates Training pro Woche',
+      icon: '💙'
+    }
+  ];
 
   type Strength = 'weak' | 'fair' | 'strong';
 
@@ -56,7 +89,6 @@
 
   onMount(() => {
     if (!browser) return;
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) pwaTab = 'ios';
     isInstalled = window.matchMedia('(display-mode: standalone)').matches;
   });
 
@@ -65,30 +97,16 @@
     loading = true;
     try {
       await register(email, password, firstName, '');
-      await login(email, password);
-
-      try {
-        const meRes = await fetch('/api/me', {
-          headers: { Authorization: `Bearer ${getAccessToken()}` }
-        });
-        if (meRes.ok) {
-          const me = await meRes.json();
-          if (me?.data?.id) identifyUser(me.data.id);
-        }
-      } catch { /* non-blocking */ }
+      if (PUBLIC_EMAIL_VERIFICATION !== 'true') {
+        await login(email, password);
+      }
 
       track('user_registered', {
         method: 'email_password',
         next_url: page.url.searchParams.get('next') ?? null
       });
 
-      const next = page.url.searchParams.get('next');
-      const hasRealNext = next && next !== '/dashboard';
-      if (hasRealNext || isInstalled) {
-        await goto(next!);
-      } else {
-        step = 2;
-      }
+      step = 2; // → Gruppenauswahl
     } catch (e: any) {
       if (e?.status === 409 || e?.code === 'EMAIL_EXISTS') {
         const next = page.url.searchParams.get('next') ?? '/dashboard';
@@ -101,26 +119,29 @@
     }
   }
 
-  async function installPWA() {
-    const prompt = $pwaPrompt as any;
-    if (!prompt) return;
-    installing = true;
-    try {
-      prompt.prompt();
-      const { outcome } = await prompt.userChoice;
-      if (outcome === 'accepted') {
-        pwaPrompt.set(null);
-        await goto('/dashboard');
-      }
-    } catch (e) {
-      console.warn('[PWA] Install prompt failed:', e);
-    } finally {
-      installing = false;
+  function confirmGroup() {
+    if (browser) localStorage.setItem('austrofit_activity_group', selectedGroup);
+    if (PUBLIC_EMAIL_VERIFICATION === 'true') {
+      step = 3;
+    } else {
+      const next = page.url.searchParams.get('next') ?? '/dashboard';
+      goto(next);
     }
   }
 
-  async function skipPWA() {
-    await goto('/dashboard');
+  async function resendVerification() {
+    resendLoading = true;
+    resendDone = false;
+    try {
+      await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      resendDone = true;
+    } finally {
+      resendLoading = false;
+    }
   }
 </script>
 
@@ -131,29 +152,32 @@
 
     <!-- Step Indicator -->
     <div class="flex items-center justify-center mb-6">
-      <div class="flex items-center gap-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold
+      <div class="flex items-center gap-1.5">
+        <div class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold
           {step > 1 ? 'bg-primary text-white' : 'bg-primary text-white'}">
           {#if step > 1}
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
-          {:else}
-            1
-          {/if}
+          {:else}1{/if}
         </div>
-        <span class="text-sm font-semibold text-primary">Konto erstellen</span>
+        <span class="text-xs font-semibold text-primary hidden sm:inline">Konto</span>
       </div>
 
-      <div class="w-8 h-0.5 mx-3 {step >= 2 ? 'bg-primary' : 'bg-gray-200'}"></div>
+      <div class="w-6 h-0.5 mx-2 {step >= 2 ? 'bg-primary' : 'bg-gray-200'}"></div>
 
-      <div class="flex items-center gap-2">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold
-          {step >= 2 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'}">
-          2
+      <div class="flex items-center gap-1.5">
+        <div class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold
+          {step > 2 ? 'bg-primary text-white' : step === 2 ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400'}">
+          {#if step > 2}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+          {:else}2{/if}
         </div>
-        <span class="text-sm font-semibold {step >= 2 ? 'text-primary' : 'text-gray-400'}">App installieren</span>
+        <span class="text-xs font-semibold {step >= 2 ? 'text-primary' : 'text-gray-400'} hidden sm:inline">Ziel</span>
       </div>
+
     </div>
 
     {#if step === 1}
@@ -244,9 +268,23 @@
           </div>
         {/if}
 
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            bind:checked={datenschutzAkzeptiert}
+            required
+            class="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-primary cursor-pointer"
+          />
+          <span class="text-sm text-gray-500 leading-snug">
+            Ich habe die
+            <a href="/datenschutz" class="text-primary underline underline-offset-2 hover:text-primary-dark" target="_blank" rel="noopener">Datenschutzerklärung</a>
+            gelesen und stimme der Verarbeitung meiner Daten zu.
+          </span>
+        </label>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !datenschutzAkzeptiert}
           class="mt-1 w-full rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? 'Konto wird erstellt…' : 'Jetzt registrieren & belohnt werden'}
@@ -263,104 +301,104 @@
         </a>
       </p>
 
-      <p class="mt-3 text-center text-xs text-gray-400">
-        Mit der Registrierung stimmst du unseren
-        <a href="/datenschutz" class="text-primary underline underline-offset-2 hover:text-primary-dark">Datenschutzbestimmungen</a> zu.
-      </p>
-
-    {:else}
-      <!-- ── Step 2: App installieren ── -->
+    {:else if step === 2}
+      <!-- ── Step 2: Bewegungsziel wählen ── -->
       <div class="mb-5 text-center">
-        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 8.25h3" />
-          </svg>
+        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-2xl">
+          🏃
         </div>
-        <h2 class="text-2xl font-bold font-heading">AustroFit am Homescreen</h2>
+        <h2 class="text-2xl font-bold font-heading">Dein Bewegungsziel</h2>
         <p class="mt-2 text-sm text-gray-500">
-          Füge AustroFit zu deinem Homescreen hinzu – wie eine echte App, ganz ohne App Store.
+          Wähle deine Gruppe – sie bestimmt dein persönliches Wochenziel.<br>
+          Du kannst das jederzeit in den Einstellungen ändern.
         </p>
       </div>
 
-      <!-- Vorteile -->
-      <ul class="mb-5 flex flex-col gap-3">
-        <li class="flex items-start gap-3 text-sm text-gray-600">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-primary mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-          </svg>
-          <span>Blitzschneller Zugriff direkt vom Homescreen</span>
-        </li>
-        <li class="flex items-start gap-3 text-sm text-gray-600">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-primary mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-          </svg>
-          <span>Immer automatisch auf dem neuesten Stand – keine manuellen Updates</span>
-        </li>
-        <li class="flex items-start gap-3 text-sm text-gray-600">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-primary mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-          </svg>
-          <span>Kein App-Download nötig – spart Speicherplatz auf deinem Gerät</span>
-        </li>
-      </ul>
-
-      <!-- Tabs Android / iOS -->
-      <div class="mb-4 flex rounded-xl border border-gray-200 overflow-hidden">
-        <button
-          type="button"
-          onclick={() => (pwaTab = 'android')}
-          class="flex-1 py-2.5 text-sm font-medium transition-colors
-            {pwaTab === 'android' ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}"
-        >
-          Android
-        </button>
-        <button
-          type="button"
-          onclick={() => (pwaTab = 'ios')}
-          class="flex-1 py-2.5 text-sm font-medium transition-colors
-            {pwaTab === 'ios' ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}"
-        >
-          iPhone / iOS
-        </button>
-      </div>
-
-      {#if pwaTab === 'android'}
-        {#if $pwaPrompt}
+      <div class="flex flex-col gap-2.5 mb-5">
+        {#each ACTIVITY_GROUPS as group}
           <button
-            onclick={installPWA}
-            disabled={installing}
-            class="w-full rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60 disabled:cursor-not-allowed mb-3"
+            type="button"
+            onclick={() => (selectedGroup = group.value)}
+            class="flex items-center gap-4 rounded-xl border-2 px-4 py-3.5 text-left transition-colors w-full
+              {selectedGroup === group.value
+                ? 'border-primary bg-primary/5'
+                : 'border-gray-200 hover:border-gray-300'}"
           >
-            {installing ? 'Wird hinzugefügt…' : 'Zum Homescreen hinzufügen'}
+            <span class="text-3xl shrink-0 leading-none">{group.icon}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-semibold text-sm text-heading">{group.label}</span>
+                <span class="text-xs text-primary/70 font-medium">{group.sub}</span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5 leading-snug">{group.desc}</p>
+            </div>
+            <div class="shrink-0">
+              {#if selectedGroup === group.value}
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+              {:else}
+                <div class="h-5 w-5 rounded-full border-2 border-gray-200"></div>
+              {/if}
+            </div>
           </button>
-        {:else}
-          <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 mb-3">
-            <p class="text-sm font-medium text-gray-700 mb-2">So geht's in Chrome:</p>
-            <ol class="text-sm text-gray-600 flex flex-col gap-1.5 list-decimal list-inside">
-              <li>Öffne das Menü <span class="font-bold">⋮</span> oben rechts in Chrome</li>
-              <li>Tippe auf <strong>„Zum Startbildschirm hinzufügen"</strong></li>
-              <li>Bestätige mit <strong>„Hinzufügen"</strong></li>
-            </ol>
-          </div>
-        {/if}
-      {:else}
-        <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 mb-3">
-          <p class="text-sm font-medium text-gray-700 mb-2">So geht's in Safari:</p>
-          <ol class="text-sm text-gray-600 flex flex-col gap-1.5 list-decimal list-inside">
-            <li>Tippe auf das <strong>Teilen-Symbol</strong> (Pfeil nach oben) in der Safari-Leiste</li>
-            <li>Wähle <strong>„Zum Home-Bildschirm"</strong></li>
-            <li>Tippe auf <strong>„Hinzufügen"</strong></li>
-          </ol>
-        </div>
-      {/if}
+        {/each}
+      </div>
 
       <button
         type="button"
-        onclick={skipPWA}
-        class="w-full rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+        onclick={confirmGroup}
+        class="w-full rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
       >
-        Später
+        Weiter
       </button>
+      <button
+        type="button"
+        onclick={() => { selectedGroup = 'adult'; confirmGroup(); }}
+        class="mt-2 w-full text-sm text-gray-400 hover:text-gray-600 transition-colors py-2"
+      >
+        Überspringen (Standard: Erwachsene)
+      </button>
+
+    {:else}
+      <!-- ── Step 3: E-Mail bestätigen ── -->
+      <div class="mb-5 text-center">
+        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold font-heading">Bestätige deine E-Mail</h2>
+        <p class="mt-2 text-sm text-gray-500">
+          Wir haben eine Bestätigungs-E-Mail an <strong>{email}</strong> geschickt.<br>
+          Klicke auf den Link in der E-Mail, um dein Konto zu aktivieren.
+        </p>
+      </div>
+
+      <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 mb-5">
+        <p class="text-sm font-medium text-gray-700 mb-1">Keine E-Mail erhalten?</p>
+        <p class="text-xs text-gray-500 mb-3">Prüfe deinen Spam-Ordner oder fordere eine neue Bestätigungs-E-Mail an.</p>
+
+        {#if resendDone}
+          <p class="text-sm text-primary font-medium">E-Mail wurde erneut gesendet.</p>
+        {:else}
+          <button
+            type="button"
+            onclick={resendVerification}
+            disabled={resendLoading}
+            class="text-sm font-medium text-primary underline underline-offset-2 hover:text-primary-dark disabled:opacity-50"
+          >
+            {resendLoading ? 'Wird gesendet…' : 'Bestätigungsmail erneut senden'}
+          </button>
+        {/if}
+      </div>
+
+      <a
+        href="/login"
+        class="block w-full rounded-xl border border-gray-200 px-6 py-3 text-center text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+      >
+        Zur Anmeldung
+      </a>
     {/if}
 
   </div>

@@ -67,6 +67,23 @@ export async function DELETE({
       }
     }
 
+    // 3a) Alle activity_logs des Users löschen (Cardio-Workout-History)
+    const activityLogsRes = await fetch(
+      `${PUBLIC_CMSURL}/items/activity_logs?filter[user_id][_eq]=${userId}&fields=id&limit=500`,
+      { headers: adminHeaders }
+    );
+    if (activityLogsRes.ok) {
+      const al = await activityLogsRes.json();
+      const ids: string[] = (al.data ?? []).map((e: { id: string }) => e.id);
+      if (ids.length > 0) {
+        await fetch(`${PUBLIC_CMSURL}/items/activity_logs`, {
+          method: 'DELETE',
+          headers: adminHeaders,
+          body: JSON.stringify(ids)
+        });
+      }
+    }
+
     // 3b) user_profiles des Users löschen (id = userId, eigener Token)
     await fetch(`${PUBLIC_CMSURL}/items/user_profiles/${userId}`, {
       method: 'DELETE',

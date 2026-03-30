@@ -2,6 +2,7 @@
 <!-- Kompakte oder große Anzeige von Punktestand + Level -->
 <script lang="ts">
   import { getLevelInfo } from '$lib/utils/level';
+  import { levelDefs } from '$lib/stores/levels';
 
   interface Props {
     punkte: number;
@@ -10,7 +11,7 @@
 
   let { punkte = 0, size = 'large' }: Props = $props();
 
-  const info = $derived(getLevelInfo(punkte));
+  const info = $derived(getLevelInfo(punkte, $levelDefs));
 </script>
 
 {#if size === 'large'}

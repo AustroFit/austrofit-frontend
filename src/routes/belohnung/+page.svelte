@@ -90,6 +90,7 @@
   let isNativePlatform = $state(false);
   let errorMsg = $state('');
   let awinPrograms = $state<AwinProgram[]>([]);
+  let tdPrograms = $state<AwinProgram[]>([]);
   let userPoints = $state(0);
   let isLoggedIn = $state(false);
 
@@ -97,6 +98,7 @@
   let verwendet = $state<GutscheinData[]>([]);
   let abgelaufen = $state<GutscheinData[]>([]);
   let onlineUnlocks = $state<AwinUnlockEntry[]>([]);
+  let tdOnlineUnlocks = $state<AwinUnlockEntry[]>([]);
 
   let activeTab = $state<Tab>('offen');
   let selectedGutschein = $state<GutscheinData | null>(null);
@@ -108,29 +110,35 @@
 
   // ── Derived ───────────────────────────────────────────────────────────
   const flatAwinOffers = $derived(
-    awinPrograms.flatMap((p) => p.promotions.map((promo) => ({ program: p, promo })))
+    awinPrograms.flatMap((p) => p.promotions.map((promo) => ({ program: p, promo, provider: 'awin' as const })))
   );
+  const flatTdOffers = $derived(
+    tdPrograms.flatMap((p) => p.promotions.map((promo) => ({ program: p, promo, provider: 'tradedoubler' as const })))
+  );
+  const flatAllOffers = $derived([...flatAwinOffers, ...flatTdOffers]);
 
   const awinKategorien = $derived.by(() => {
     const counts: Record<string, number> = {};
-    for (const { program } of flatAwinOffers) {
+    for (const { program } of flatAllOffers) {
       const cat = program.category ?? 'Sonstige';
       counts[cat] = (counts[cat] ?? 0) + 1;
     }
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   });
 
-  const programMap = $derived(new Map(awinPrograms.map((p) => [p.id, p])));
+  const programMap = $derived(new Map([...awinPrograms, ...tdPrograms].map((p) => [p.id, p])));
   const unlockedPromoIds = $derived(new Set(onlineUnlocks.map((u) => u.promoId)));
+  const unlockedTdPromoIds = $derived(new Set(tdOnlineUnlocks.map((u) => u.promoId)));
 
   const sortedAktiv = $derived(
     [...aktiv].sort((a, b) => new Date(a.ablaeuft_am).getTime() - new Date(b.ablaeuft_am).getTime())
   );
 
-  // Unified aktiv: Direktus active gutscheine + non-expired AWIN unlocks
+  // Unified aktiv: Direktus active gutscheine + non-expired AWIN/TD unlocks
   const aktivItemsAll = $derived([
     ...sortedAktiv.map((g) => ({ kind: 'gutschein' as const, data: g })),
-    ...onlineUnlocks.filter((u) => !u.isExpired).map((u) => ({ kind: 'awin' as const, data: u }))
+    ...onlineUnlocks.filter((u) => !u.isExpired).map((u) => ({ kind: 'awin' as const, data: u })),
+    ...tdOnlineUnlocks.filter((u) => !u.isExpired).map((u) => ({ kind: 'td' as const, data: u }))
   ]);
 
   // Aktiv filtered by category chip (Direktus items always show, AWIN filtered by program.category)
@@ -146,15 +154,22 @@
       : aktivItemsAll
   );
 
-  // Unified archiv: verwendet + abgelaufen Direktus + expired AWIN
+  // Unified archiv: verwendet + abgelaufen Direktus + expired AWIN/TD
   const archivItems = $derived([
     ...verwendet.map((g) => ({ kind: 'gutschein' as const, data: g, variant: 'verwendet' as const })),
     ...abgelaufen.map((g) => ({ kind: 'gutschein' as const, data: g, variant: 'abgelaufen' as const })),
-    ...onlineUnlocks.filter((u) => u.isExpired).map((u) => ({ kind: 'awin' as const, data: u }))
+    ...onlineUnlocks.filter((u) => u.isExpired).map((u) => ({ kind: 'awin' as const, data: u })),
+    ...tdOnlineUnlocks.filter((u) => u.isExpired).map((u) => ({ kind: 'td' as const, data: u }))
   ]);
 
-  // Offen: AWIN offers not yet unlocked by this user
-  const offeneOffers = $derived(flatAwinOffers.filter((o) => !unlockedPromoIds.has(o.promo.id)));
+  // Offen: AWIN + TD offers not yet unlocked by this user
+  const offeneOffers = $derived(
+    flatAllOffers.filter((o) =>
+      o.provider === 'tradedoubler'
+        ? !unlockedTdPromoIds.has(o.promo.id)
+        : !unlockedPromoIds.has(o.promo.id)
+    )
+  );
 
   const direktusKategorienSlugs = $derived(
     [...new Set(direktusAngebote.flatMap((a) => a.partner.kategorie))]
@@ -204,17 +219,24 @@
     const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
     try {
-      const [awinRes, partnerRes, profileRes, gutscheineRes, onlineRes] = await Promise.all([
+      const [awinRes, tdRes, partnerRes, gutscheineRes, onlineRes, tdOnlineRes, ledgerRes] = await Promise.all([
         fetch('/api/awin/programs'),
+        fetch('/api/tradedoubler/programs'),
         fetch('/api/partner'),
-        authHeader ? fetch('/api/profile', { headers: authHeader }) : Promise.resolve(null),
         authHeader ? fetch('/api/gutscheine', { headers: authHeader }) : Promise.resolve(null),
-        authHeader ? fetch('/api/awin/my-unlocks', { headers: authHeader }) : Promise.resolve(null)
+        authHeader ? fetch('/api/awin/my-unlocks', { headers: authHeader }) : Promise.resolve(null),
+        authHeader ? fetch('/api/tradedoubler/my-unlocks', { headers: authHeader }) : Promise.resolve(null),
+        authHeader ? fetch('/api/ledger-total?me=true', { headers: authHeader }) : Promise.resolve(null)
       ]);
 
       if (awinRes.ok) {
         const b = await awinRes.json();
         awinPrograms = b.data ?? [];
+      }
+
+      if (tdRes.ok) {
+        const b = await tdRes.json();
+        tdPrograms = b.data ?? [];
       }
 
       if (partnerRes.ok) {
@@ -228,16 +250,9 @@
         direktusAngebote = angebote;
       }
 
-      if (profileRes?.ok) {
-        const b = await profileRes.json();
-        const uid = b?.data?.id ?? '';
-        if (uid) {
-          const ledgerRes = await fetch(`/api/ledger-total?user=${uid}`, { headers: authHeader });
-          if (ledgerRes.ok) {
-            const l = await ledgerRes.json();
-            userPoints = l?.total ?? 0;
-          }
-        }
+      if (ledgerRes?.ok) {
+        const l = await ledgerRes.json();
+        userPoints = l?.total ?? 0;
       }
 
       if (gutscheineRes?.ok) {
@@ -251,6 +266,11 @@
         const d = await onlineRes.json();
         onlineUnlocks = d.data ?? [];
       }
+
+      if (tdOnlineRes?.ok) {
+        const d = await tdOnlineRes.json();
+        tdOnlineUnlocks = d.data ?? [];
+      }
     } catch (e: unknown) {
       errorMsg = e instanceof Error ? e.message : 'Fehler beim Laden.';
     } finally {
@@ -263,10 +283,35 @@
 
 <main class="min-h-[calc(100vh-75px)] bg-light-grey pb-24">
   {#if loading}
-    <div class="flex items-center justify-center py-32">
-      <div class="flex flex-col items-center gap-4">
-        <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-primary"></div>
-        <p class="text-sm text-body">Wird geladen…</p>
+    <!-- Skeleton: Hero + Tab-Bar + Karten-Platzhalter -->
+    <section class="bg-darkblue text-white">
+      <div class="mx-auto max-w-[var(--max-width-standard)] px-[var(--spacing-container-x)] lg:px-[var(--spacing-container-x-lg)] py-10 lg:py-14">
+        <div class="mb-4 h-4 w-24 rounded bg-white/20"></div>
+        <div class="mb-4 h-9 w-64 rounded bg-white/20"></div>
+        <div class="h-10 w-48 rounded-full bg-white/20"></div>
+      </div>
+    </section>
+    <div class="mx-auto max-w-[var(--max-width-standard)] px-[var(--spacing-container-x)] lg:px-[var(--spacing-container-x-lg)] py-8">
+      <!-- Tab-Bar Skeleton -->
+      <div class="mb-6 flex w-full rounded-[var(--radius-card)] border border-black/10 bg-white p-1 shadow-sm animate-pulse">
+        <div class="flex-1 h-9 rounded-xl bg-primary/20"></div>
+        <div class="flex-1 h-9 rounded-xl bg-gray-100 mx-1"></div>
+        <div class="flex-1 h-9 rounded-xl bg-gray-100"></div>
+      </div>
+      <!-- Karten-Skeleton -->
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-pulse">
+        {#each Array(6) as _}
+          <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-4">
+            <div class="mb-3 flex items-center gap-3">
+              <div class="h-12 w-12 rounded-xl bg-gray-200 shrink-0"></div>
+              <div class="flex-1">
+                <div class="h-3 w-24 rounded bg-gray-200 mb-2"></div>
+                <div class="h-2 w-32 rounded bg-gray-200"></div>
+              </div>
+            </div>
+            <div class="h-8 w-full rounded-xl bg-gray-200"></div>
+          </div>
+        {/each}
       </div>
     </div>
 
@@ -401,6 +446,8 @@
                   variant="aktiv"
                   onclick={() => (selectedGutschein = item.data)}
                 />
+              {:else if item.kind === 'td'}
+                <AwinOnlineCode unlock={item.data} provider="tradedoubler" />
               {:else}
                 <AwinOnlineCode unlock={item.data} />
               {/if}
@@ -432,6 +479,11 @@
                     {item.variant === 'verwendet' ? 'Verwendet' : 'Abgelaufen'}
                   </span>
                   <GutscheinKarte gutschein={item.data} variant={item.variant} />
+                {:else if item.kind === 'td'}
+                  <span class="w-fit rounded-full bg-error/10 px-2.5 py-0.5 text-xs font-semibold text-error">
+                    Abgelaufen
+                  </span>
+                  <AwinOnlineCode unlock={item.data} provider="tradedoubler" />
                 {:else}
                   <span class="w-fit rounded-full bg-error/10 px-2.5 py-0.5 text-xs font-semibold text-error">
                     Abgelaufen
@@ -445,6 +497,13 @@
 
       <!-- ═══ Tab: Offen ═══ -->
       {:else if activeTab === 'offen'}
+
+        <!-- Affiliate-Hinweis (UWG §5a) -->
+        <p class="mb-4 text-xs text-gray-400">
+          Die Online-Angebote unten sind Affiliate-Partnerschaften.
+          AustroFit erhält bei Nutzung eine Provision.
+          <a href="/datenschutz" class="underline underline-offset-2 hover:text-gray-600">Mehr erfahren</a>
+        </p>
 
         <!-- Kategorie-Chips (Regionale Partner) -->
         {#if isNativePlatform && direktusKategorienSlugs.length > 0}
@@ -532,7 +591,7 @@
 
         {:else}
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {#each gefilterteOffeneOffers as { program, promo } (promo.id)}
+            {#each gefilterteOffeneOffers as { program, promo, provider } (promo.id)}
               <AwinAngebotKarte
                 programId={program.id}
                 name={program.name}
@@ -544,6 +603,7 @@
                 promotions={[promo]}
                 {userPoints}
                 {isLoggedIn}
+                {provider}
                 onUnlocked={handleUnlocked}
               />
             {/each}

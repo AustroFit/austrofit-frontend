@@ -9,6 +9,15 @@ import { Health } from '@capgo/capacitor-health';
 const PERMISSION_KEY = 'austrofit_health_permission';
 const TEST_MODE_KEY = 'austrofit_test_mode';
 
+export interface WorkoutEntry {
+  workoutType: string;  // Plugin WorkoutType: 'running', 'cycling', 'walking', etc.
+  durationSeconds: number;
+  startDate: string;    // ISO 8601
+  endDate: string;      // ISO 8601
+  date: string;         // YYYY-MM-DD local date (Vienna UTC+1)
+  sourceName?: string;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function isNative(): boolean {
@@ -61,14 +70,15 @@ export async function checkHealthPermission(): Promise<'granted' | 'denied' | 'u
 }
 
 /**
- * Shows the native OS permission dialog.
+ * Shows the native OS permission dialog for steps + workouts.
  * Only works in a Capacitor native build.
  */
 export async function requestHealthPermission(): Promise<'granted' | 'denied'> {
   if (!browser || !isNative()) return 'denied';
 
   try {
-    await Health.requestAuthorization({ read: ['steps'], write: [] });
+    // 'workouts' is supported by the plugin but missing from HealthDataType typedef
+    await Health.requestAuthorization({ read: ['steps', 'workouts' as any], write: [] });
     localStorage.setItem(PERMISSION_KEY, 'granted');
     return 'granted';
   } catch (e) {
@@ -101,6 +111,45 @@ export async function getStepsForDate(date: string): Promise<number | null> {
     console.warn('[health] getStepsForDate failed:', e);
   }
   return null;
+}
+
+/**
+ * Reads workout sessions for the last N days (newest first).
+ * Returns only session types relevant for AustroFit cardio points.
+ * Only works in a Capacitor native build.
+ */
+export async function getWorkoutsForLastDays(days: number): Promise<WorkoutEntry[]> {
+  if (!browser || !isNative()) return [];
+
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - days + 1);
+  start.setHours(0, 0, 0, 0);
+
+  try {
+    const result = await Health.queryWorkouts({
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      limit: 200,
+      ascending: false
+    });
+
+    return (result.workouts ?? []).map((w: any) => {
+      const d = new Date(w.startDate);
+      const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return {
+        workoutType: w.workoutType as string,
+        durationSeconds: w.duration ?? 0,
+        startDate: w.startDate,
+        endDate: w.endDate,
+        date: localDate,
+        sourceName: w.sourceName
+      };
+    });
+  } catch (e) {
+    console.warn('[health] getWorkoutsForLastDays failed:', e);
+  }
+  return [];
 }
 
 /**

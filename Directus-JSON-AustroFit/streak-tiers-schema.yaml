@@ -1,0 +1,58 @@
+# Directus Collection: streak_tiers
+# Erstellt: 2026-03-27
+# Zweck: Alle Streak-Bonus-Tiers ohne Deploy ändern (Punkte, Schwellen).
+#
+# SETUP IN DIRECTUS UI:
+# ---------------------
+# 1. Settings → Data Model → "Create Collection"
+#    - Name: streak_tiers
+#    - Primary Key Type: "Manually entered string"
+#    - Primary Key Name: id
+#
+# 2. Folgende Felder hinzufügen:
+
+fields:
+  - field: id
+    type: string
+    note: "Slug, z.B. 'step_tag_t1'. Format: {bonus_type}_t{tier}"
+
+  - field: bonus_type
+    type: string
+    required: true
+    note: |
+      Werte:
+        'step_tag'    → Täglicher Schritte-Streak-Bonus (ab Tag 2)
+        'step_week'   → Wöchentlicher Schritte-Meilenstein
+        'quiz_tag'    → Täglicher Quiz-Streak-Bonus (ab Tag 2)
+        'quiz_week'   → Wöchentlicher Quiz-Meilenstein
+        'cardio_week' → Konsekutive Cardio-Vollwochen-Bonus
+
+  - field: tier
+    type: integer
+    required: true
+    note: "Tier-Nummer 1–4 (zur Sortierung und Übersicht)"
+
+  - field: min_value
+    type: integer
+    required: true
+    note: "Ab diesem Wert (inkl.) greift dieses Tier. Tage für step/quiz, Wochen für cardio."
+
+  - field: max_value
+    type: integer
+    note: "Bis zu diesem Wert (inkl.) greift dieses Tier. Leer lassen für unbegrenzt (Tier 4)."
+
+  - field: points
+    type: integer
+    required: true
+    note: "Punkte die für dieses Tier vergeben werden"
+
+# POLICY-ZUGRIFF:
+# ---------------
+# PRIVATE_CMS_STATIC_TOKEN: Read (wird server-seitig in streak.ts / cardioService.ts gelesen)
+# Beide Collections in der Admin-Policy freischalten!
+
+# WICHTIG BEI ÄNDERUNGEN:
+# ------------------------
+# - Punkte ändern: sofort live nach ~5 Min (Server-Cache TTL)
+# - Schwellen ändern: Sorgfältig testen! Betrifft alle aktiven User-Streaks
+# - Neues Tier: Sowohl min_value als auch max_value des Vorgänger-Tiers anpassen

@@ -1,0 +1,21 @@
+level,name,min_points,max_points
+1,Einsteiger,0,399
+2,Entdecker,400,1199
+3,Bergfreund,1200,2999
+4,Almgänger,3000,5999
+5,AustroFit Aktiv,6000,10999
+6,Gipfelstürmer,11000,17999
+7,Alpinist,18000,26999
+8,Steinbock,27000,38999
+9,Adlerblick,39000,54999
+10,AustroFit Champion,55000,74999
+11,Edelweiß,75000,99999
+12,Bergkristall,100000,129999
+13,Großglockner,130000,164999
+14,Alpengeist,165000,204999
+15,AustroFit Legende,205000,249999
+16,Eisriese,250000,299999
+17,Kaiserkrone,300000,354999
+18,Donnervogel,355000,414999
+19,Unsterblicher,415000,479999
+20,AustroFit Olympier,480000,99999999

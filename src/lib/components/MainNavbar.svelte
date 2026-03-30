@@ -82,6 +82,7 @@
           <li>
             <a
               href={item.href}
+              data-sveltekit-preload-code="hover"
               class="text-[15px] tracking-wide font-medium transition-colors py-2
                 {isActive(item.href) ? 'border-b-2 font-semibold' : 'text-dark-kvb-blue hover:text-dark-kvb-blue/70'}"
               style={isActive(item.href) ? 'color: var(--color-primary); border-color: var(--color-primary);' : ''}
@@ -161,6 +162,7 @@
         <div class="border-b border-gray-200">
           <a
             href={item.href}
+            data-sveltekit-preload-code="hover"
             onclick={closeMobileMenu}
             class="pl-6 pr-4 flex-1 py-3 block font-medium transition-colors hover:bg-light-grey/50
               {isActive(item.href) ? 'font-semibold' : 'text-dark-kvb-blue'}"

@@ -17,8 +17,10 @@
   import SyncToast from '$lib/components/SyncToast.svelte';
   import SchrittSyncButton from '$lib/components/SchrittSyncButton.svelte';
   import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
+  import ManuelleCardioEingabe from '$lib/components/dashboard/ManuelleCardioEingabe.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import type { SyncResult } from '$lib/services/stepSync';
+  import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
   import { formatDateMonthOnly } from '$lib/utils/date';
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -38,6 +40,17 @@
   const stepPercent = $derived(Math.min(100, Math.round((stepsToday / STEP_GOAL) * 100)));
   const todayPoints = $derived(calculatePoints(stepsToday));
   const bonusSteps = $derived(stepsToday > STEP_GOAL ? stepsToday - STEP_GOAL : 0);
+
+  // Points breakdown
+  let bewegungsPunkte = $state(0);
+  let quizPunkte = $state(0);
+
+  // Cardio week summary
+  let cardioEqMinutes = $state(0);
+  let cardioPointsTotal = $state(0);
+  let cardioTargets = $state<{ start: number; full: number }>({ start: 50, full: 150 });
+  let cardioStreakWeeks = $state(0);
+  const cardioPercent = $derived(Math.min(100, Math.round((cardioEqMinutes / cardioTargets.full) * 100)));
 
   // Streak
   let streakDays = $state(0);
@@ -59,15 +72,30 @@
   let schrittDays = $state(0);
   let hasEinloesung = $state(false);
 
+  interface DirectusBadge {
+    id: number;
+    name: string;
+    typ: string;
+    image_url: string | null;
+    earned: boolean;
+  }
+  let directusBadges = $state<DirectusBadge[]>([]);
+
   const badges = $derived<BadgeDef[]>(
     getBadgeDefs({ hasSchritte, schrittDays, quizPassCount, longestStreak, earnedPoints, hasEinloesung })
   );
 
   // Dashboard badges: earned in reverse order (newest milestone first), then first unearned
-  const dashboardBadges = $derived.by<BadgeDef[]>(() => {
+  // Also includes earned Directus (step-route) badges
+  const dashboardBadges = $derived.by(() => {
     const earned = [...badges].filter(b => b.earned).reverse();
     const next = badges.find(b => !b.earned);
-    return next ? [...earned, next] : earned;
+    const earnedDirectus = directusBadges.filter(b => b.earned);
+    return [
+      ...earned,
+      ...(next ? [{ ...next, _isNext: true }] : []),
+      ...earnedDirectus.map(b => ({ ...b, _isDirectus: true }))
+    ];
   });
 
   // System challenges (onboarding) – only show incomplete ones
@@ -91,7 +119,7 @@
         href: '/gesundheitswegweiser'
       });
     }
-    if (!hasSchritte && isNativePlatform) {
+    if (!hasSchritte && showNativeFeatures) {
       list.push({
         id: 'first-steps',
         icon: '🏃',
@@ -150,6 +178,10 @@
   let showSyncToast = $state(false);
   let syncToastPunkte = $state(0);
   let isNativePlatform = $state(false);
+  let devNativeMode = $state(false);
+  let cardioTestMode = $state(false);
+  // showNativeFeatures: real native OR dev toggle – used for UI only, not sync logic
+  const showNativeFeatures = $derived(isNativePlatform || devNativeMode);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   async function loadStepsFromHealth() {
@@ -166,11 +198,14 @@
     if (!userId) return;
     const token = await getValidAccessToken();
     const authHeader = { Authorization: `Bearer ${token}` };
-    const [ledgerRes, earnedRes, entriesRes, profileRes] = await Promise.all([
+    const [ledgerRes, earnedRes, entriesRes, profileRes, cardioRes, bewegungRes, quizPunkteRes] = await Promise.all([
       fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
       fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
       fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader }),
-      fetch('/api/profile', { headers: authHeader })
+      fetch('/api/profile', { headers: authHeader }),
+      fetch('/api/cardio/summary', { headers: authHeader }),
+      fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'schritte,step,cardio', positive_only: 'true' })}`, { headers: authHeader }),
+      fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`, { headers: authHeader })
     ]);
     if (ledgerRes.ok) totalPoints = Number((await ledgerRes.json()).total ?? 0);
     if (earnedRes.ok) earnedPoints = Number((await earnedRes.json()).total ?? 0);
@@ -181,6 +216,15 @@
       quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
       longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
     }
+    if (cardioRes.ok) {
+      const cd = await cardioRes.json();
+      cardioEqMinutes   = Number(cd.equivalentMinutes ?? 0);
+      cardioPointsTotal = Number(cd.pointsTotal ?? 0);
+      if (cd.targets) cardioTargets = cd.targets;
+      cardioStreakWeeks = Number(cd.consecutiveFullWeeks ?? 0);
+    }
+    if (bewegungRes.ok) bewegungsPunkte = Number((await bewegungRes.json()).total ?? 0);
+    if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
     await loadStepsFromHealth();
   }
 
@@ -203,16 +247,20 @@
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
-      // 1) User identity + profile
-      const [meRes, profileRes] = await Promise.all([
-        fetch('/api/me', { headers: authHeader }),
-        fetch('/api/profile', { headers: authHeader })
+      // 1) Profil (enthält id + first_name) + quizzes parallel – kein separater /api/me nötig
+      const [profileRes, quizzesRes] = await Promise.all([
+        fetch('/api/profile', { headers: authHeader }),
+        fetch(`/api/quizzes?${qs({
+          'filter[status][_in]': 'published,in_review',
+          fields: 'id,article_id.title,article_id.slug',
+          limit: '100'
+        })}`)
       ]);
 
-      if (!meRes.ok) { goto('/login'); return; }
-      const me = await meRes.json();
-      userId = me?.data?.id ?? '';
-      firstName = me?.data?.first_name ?? '';
+      if (!profileRes.ok) { goto('/login'); return; }
+      const profileData = await profileRes.json();
+      userId    = profileData?.data?.id         ?? '';
+      firstName = profileData?.data?.first_name ?? '';
       if (!userId) { goto('/login'); return; }
 
       identifyUser(userId);
@@ -220,15 +268,16 @@
       if (firstVisit) localStorage.setItem('austrofit_dashboard_visited', '1');
       track('dashboard_viewed', { first_visit: firstVisit });
 
-      if (profileRes.ok) {
-        const profileData = await profileRes.json();
-        streakDays     = Number(profileData?.data?.streak_days     ?? 0);
-        quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
-        longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
-      }
+      streakDays     = Number(profileData?.data?.streak_days     ?? 0);
+      quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
+      longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
 
-      // 2) Parallel requests
-      const [ledgerRes, earnedRes, challengeRes, quizzesRes, badgesRes, entriesRes] = await Promise.all([
+      // Quiz-IDs für Status-Batch ermitteln
+      const allQuizzes: any[] = quizzesRes.ok ? ((await quizzesRes.json())?.data ?? []) : [];
+      const quizIds = allQuizzes.map((q: any) => q.id);
+
+      // 2) Alle user-spezifischen Daten + quiz-status in einem Batch
+      const [ledgerRes, earnedRes, challengeRes, quizStatusRes, badgesRes, directusBadgesRes, entriesRes, cardioRes, bewegungRes, quizPunkteRes] = await Promise.all([
         fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
         fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
         fetch(`/api/challenges?${qs({
@@ -238,13 +287,15 @@
           limit: '1',
           sort: '-aktiv_bis'
         })}`),
-        fetch(`/api/quizzes?${qs({
-          'filter[status][_in]': 'published,in_review',
-          fields: 'id,article_id.title,article_id.slug',
-          limit: '100'
-        })}`),
+        quizIds.length
+          ? fetch(`/api/quiz-status?quizIds=${quizIds.join(',')}`, { headers: authHeader })
+          : Promise.resolve(null),
         fetch(`/api/badges-summary?${qs({ user: userId })}`, { headers: authHeader }),
-        fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader })
+        fetch('/api/badges', { headers: authHeader }),
+        fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader }),
+        fetch('/api/cardio/summary', { headers: authHeader }),
+        fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'schritte,step,cardio', positive_only: 'true' })}`, { headers: authHeader }),
+        fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`, { headers: authHeader })
       ]);
 
       if (ledgerRes.ok)  totalPoints  = Number((await ledgerRes.json()).total  ?? 0);
@@ -260,30 +311,35 @@
         schrittDays   = bd.schrittDays   ?? 0;
         hasEinloesung = bd.hasEinloesung ?? false;
       }
+      if (directusBadgesRes.ok) {
+        const db = await directusBadgesRes.json();
+        directusBadges = db.badges ?? [];
+      }
       if (entriesRes.ok) recentEntries = (await entriesRes.json()).data ?? [];
+      if (cardioRes.ok) {
+        const cd = await cardioRes.json();
+        cardioEqMinutes   = Number(cd.equivalentMinutes ?? 0);
+        cardioPointsTotal = Number(cd.pointsTotal ?? 0);
+        if (cd.targets) cardioTargets = cd.targets;
+        cardioStreakWeeks = Number(cd.consecutiveFullWeeks ?? 0);
+      }
+      if (bewegungRes.ok) bewegungsPunkte = Number((await bewegungRes.json()).total ?? 0);
+      if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
 
-      // 3) Offene Quizze
-      if (quizzesRes.ok) {
-        const quizzesData = await quizzesRes.json();
-        const quizzes: any[] = quizzesData?.data ?? [];
-        if (quizzes.length > 0) {
-          const quizIds = quizzes.map((q: any) => q.id);
-          const statusRes = await fetch(`/api/quiz-status?quizIds=${quizIds.join(',')}`, {
-            headers: authHeader
-          });
-          const statusMap: Record<string, any> = statusRes.ok ? await statusRes.json() : {};
-          openQuizzes = quizzes
-            .filter((q: any) => {
-              const s = statusMap[String(q.id)]?.status ?? 'open';
-              return s === 'open' || s === 'repeatable';
-            })
-            .slice(0, 5)
-            .map((q: any) => ({
-              quizId: q.id,
-              title: q.article_id?.title ?? 'Quiz',
-              slug: q.article_id?.slug ?? null
-            }));
-        }
+      // 3) Offene Quizze aus bereits geladenen Daten zusammensetzen
+      if (allQuizzes.length > 0) {
+        const statusMap: Record<string, any> = quizStatusRes?.ok ? await quizStatusRes.json() : {};
+        openQuizzes = allQuizzes
+          .filter((q: any) => {
+            const s = statusMap[String(q.id)]?.status ?? 'open';
+            return s === 'open' || s === 'repeatable';
+          })
+          .slice(0, 5)
+          .map((q: any) => ({
+            quizId: q.id,
+            title: q.article_id?.title ?? 'Quiz',
+            slug: q.article_id?.slug ?? null
+          }));
       }
     } catch (e: any) {
       errorMsg = e?.message ?? 'Fehler beim Laden des Dashboards.';
@@ -298,6 +354,10 @@
       const { Capacitor } = await import('@capacitor/core');
       isNativePlatform = Capacitor.isNativePlatform();
     } catch { /* Capacitor not available in browser */ }
+
+    // ── Dev toggles ───────────────────────────────────────────────────────
+    devNativeMode    = localStorage.getItem('austrofit_dev_native')    === 'true';
+    cardioTestMode   = localStorage.getItem('austrofit_test_mode_cardio') === 'true';
 
     // ── Health / steps logic ──────────────────────────────────────────────
     const healthCached = localStorage.getItem('austrofit_health_permission');
@@ -328,6 +388,19 @@
           })
           .catch((e) => console.warn('[dashboard] auto sync failed:', e));
       }
+
+      // ── Trigger B: cardio sync (parallel, non-blocking) ───────────────
+      if (shouldSyncCardio()) {
+        syncCardio()
+          .then((r) => {
+            if (r && r.pointsDelta > 0) {
+              syncToastPunkte = (syncToastPunkte ?? 0) + r.pointsDelta;
+              showSyncToast = true;
+              void refreshDashboardData();
+            }
+          })
+          .catch((e) => console.warn('[dashboard] cardio sync failed:', e));
+      }
     }
   });
 
@@ -354,15 +427,7 @@
 <svelte:head><title>Dashboard – AustroFit</title></svelte:head>
 
 <main class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24">
-  {#if loading}
-    <div class="flex items-center justify-center py-32">
-      <div class="flex flex-col items-center gap-4">
-        <div class="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-gray-600"></div>
-        <p class="text-sm text-gray-500">Dashboard wird geladen…</p>
-      </div>
-    </div>
-
-  {:else if errorMsg}
+  {#if errorMsg}
     <div class="mx-auto max-w-lg px-4 py-16">
       <div class="rounded-[var(--radius-card)] border border-error/30 bg-error/5 p-6 text-sm text-error">
         {errorMsg}
@@ -371,7 +436,7 @@
 
   {:else}
 
-    <!-- ── Page header ───────────────────────────────────────────────────── -->
+    <!-- ── Page header – sofort sichtbar ────────────────────────────────── -->
     <div class="bg-darkblue text-white">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-16">
         <div>
@@ -392,6 +457,33 @@
 
     <!-- ── Cards (overlap the header) ───────────────────────────────────── -->
     <div class="mx-auto max-w-2xl px-4 -mt-10 flex flex-col gap-4">
+
+    {#if loading}
+      <!-- Skeleton-Karten während Laden -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6 animate-pulse">
+        <div class="h-2.5 w-24 rounded bg-gray-200 mb-4"></div>
+        <div class="h-12 w-36 rounded bg-gray-200 mb-2"></div>
+        <div class="h-3 w-48 rounded bg-gray-200 mb-5"></div>
+        <div class="h-2 w-full rounded-full bg-gray-200"></div>
+      </div>
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6 animate-pulse">
+        <div class="h-2.5 w-32 rounded bg-gray-200 mb-4"></div>
+        <div class="h-6 w-24 rounded bg-gray-200 mb-3"></div>
+        <div class="h-3 w-full rounded-full bg-gray-200"></div>
+      </div>
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6 animate-pulse">
+        <div class="h-2.5 w-28 rounded bg-gray-200 mb-4"></div>
+        <div class="flex flex-col gap-3">
+          <div class="h-14 rounded-xl bg-gray-200"></div>
+          <div class="h-14 rounded-xl bg-gray-200"></div>
+        </div>
+      </div>
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6 animate-pulse">
+        <div class="h-2.5 w-20 rounded bg-gray-200 mb-4"></div>
+        <div class="h-16 rounded-xl bg-gray-200"></div>
+      </div>
+
+    {:else}
 
       <!-- 1. Punkte & Level -->
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
@@ -422,18 +514,23 @@
           <LevelFortschritt punkte={earnedPoints} />
         </div>
 
+        {#if bewegungsPunkte > 0 || quizPunkte > 0}
+          <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+            {#if bewegungsPunkte > 0}
+              <span>🏃 Bewegung: <span class="font-semibold text-gray-700">{bewegungsPunkte.toLocaleString('de-AT')}P</span></span>
+            {/if}
+            {#if quizPunkte > 0}
+              <span>📚 Quizze: <span class="font-semibold text-gray-700">{quizPunkte.toLocaleString('de-AT')}P</span></span>
+            {/if}
+          </div>
+        {/if}
+
         <div class="mt-4 pt-4 border-t border-black/5 flex items-center gap-4">
           <a
             href="/profil/level-roadmap"
             class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             Level-Roadmap →
-          </a>
-          <a
-            href="/profil/aktivitaeten"
-            class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Aktivitäten →
           </a>
         </div>
       </div>
@@ -451,7 +548,7 @@
           <!-- Test mode – manual entry -->
           <ManuelleSchrittEingabe {userId} onSave={refreshDashboardData} />
         {:else if !healthConnected}
-          {#if isNativePlatform}
+          {#if showNativeFeatures}
             <!-- Native: connect to Health Connect -->
             <div class="rounded-xl bg-primary/5 border border-primary/20 p-4">
               <p class="text-sm text-body leading-relaxed mb-3">
@@ -512,7 +609,7 @@
             </span>
           </div>
 
-          {#if isNativePlatform}
+          {#if showNativeFeatures}
             <div class="mt-4 pt-4 border-t border-black/5">
               <SchrittSyncButton onSyncComplete={onSchrittSyncComplete} />
             </div>
@@ -520,7 +617,84 @@
         {/if}
       </div>
 
-      <!-- 3. Aktive Challenges (Hybrid) -->
+      <!-- 3. Wochenziel Bewegung -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
+        <div class="flex items-center justify-between gap-4 mb-3">
+          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Wochenziel Bewegung
+          </div>
+          <div class="text-3xl">🏃</div>
+        </div>
+
+        {#if cardioTestMode}
+          <ManuelleCardioEingabe onSave={refreshDashboardData} />
+        {:else if !healthConnected}
+          {#if showNativeFeatures}
+            <!-- Native: connect to Health Connect -->
+            <div class="rounded-xl bg-primary/5 border border-primary/20 p-4">
+              <p class="text-sm text-body leading-relaxed mb-3">
+                Verbinde Health Connect, um Laufen, Radfahren & Co. zu tracken und Punkte zu verdienen.
+              </p>
+              <button
+                onclick={() => (showHealthPrompt = true)}
+                class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+              >
+                🏃 Bewegungs-Tracking verbinden
+              </button>
+            </div>
+          {:else}
+            <!-- PWA: coming soon -->
+            <div class="rounded-xl bg-gray-50 border border-black/10 p-4">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-sm font-semibold text-heading">Bewegungs-Tracking</span>
+                <span class="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Kommt bald</span>
+              </div>
+              <p class="text-sm text-gray-500 leading-relaxed">
+                Die AustroFit Android App mit automatischem Bewegungs-Tracking erscheint in Kürze im Play Store.
+              </p>
+            </div>
+          {/if}
+        {:else}
+          {#if cardioEqMinutes >= cardioTargets.full}
+            <div class="font-semibold text-lg text-primary">
+              {cardioEqMinutes} Min. Äquivalent ✓
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">
+              Wochenziel erreicht · {cardioPointsTotal}P diese Woche
+            </div>
+          {:else if cardioEqMinutes > 0}
+            <div class="font-semibold text-lg">
+              {cardioEqMinutes} / {cardioTargets.full} Min.
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">
+              {cardioPointsTotal > 0 ? `${cardioPointsTotal}P bereits verdient` : `Ab ${cardioTargets.start} Min. gibt es Punkte`}
+            </div>
+          {:else}
+            <div class="font-semibold text-gray-600">Noch keine Aktivität diese Woche</div>
+            <div class="text-xs text-gray-400 mt-0.5">
+              Ab {cardioTargets.start} Min. moderate Bewegung gibt es Punkte
+            </div>
+          {/if}
+
+          <!-- Progress bar -->
+          <div class="mt-3 h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-500 bg-primary"
+              style="width:{cardioPercent}%;"
+            ></div>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
+            <span>{cardioPercent}% des Wochenziels</span>
+            {#if cardioEqMinutes < cardioTargets.full}
+              <span>{cardioTargets.full - cardioEqMinutes} Min. bis zum Ziel</span>
+            {:else}
+              <span>🎉 Wochenziel erreicht!</span>
+            {/if}
+          </div>
+        {/if}
+      </div>
+
+      <!-- 4. Aktive Challenges (Hybrid) -->
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
           Aktive Challenges
@@ -594,7 +768,7 @@
         <div class="flex flex-col gap-4">
 
           <!-- Schritte-Streak (nur Native App) -->
-          {#if isNativePlatform}
+          {#if showNativeFeatures}
             <div class="flex items-center gap-3">
               <div class="text-3xl {streakDays > 0 ? '' : 'opacity-25'}">🔥</div>
               <div class="flex-1">
@@ -607,6 +781,28 @@
                 {:else}
                   <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
                   <div class="text-xs text-gray-400">Erreich heute 4.000 Schritte!</div>
+                {/if}
+              </div>
+            </div>
+
+            <div class="border-t border-black/5"></div>
+
+            <!-- Cardio-Wochen-Streak -->
+            <div class="flex items-center gap-3">
+              <div class="text-3xl {cardioStreakWeeks > 0 ? '' : 'opacity-25'}">🏃</div>
+              <div class="flex-1">
+                <div class="text-xs font-medium text-gray-400 mb-0.5">Cardio-Streak</div>
+                {#if cardioStreakWeeks >= 2}
+                  <div class="text-xl font-bold">{cardioStreakWeeks} Wochen in Folge</div>
+                  <div class="mt-0.5 text-xs text-gray-500">
+                    {cardioStreakWeeks === 2 ? '+100P Bonus erhalten!' : cardioStreakWeeks >= 4 ? '+300P Bonus erhalten!' : `Noch ${4 - cardioStreakWeeks} Wochen bis +300P`}
+                  </div>
+                {:else if cardioStreakWeeks === 1}
+                  <div class="text-xl font-bold">1 Woche</div>
+                  <div class="mt-0.5 text-xs text-gray-500">Noch 1 weitere Woche bis +100P Bonus</div>
+                {:else}
+                  <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
+                  <div class="text-xs text-gray-400">Erreiche ≥200P Cardio in einer Woche!</div>
                 {/if}
               </div>
             </div>
@@ -633,7 +829,7 @@
 
         </div>
 
-        {#if isNativePlatform && longestStreak > 0}
+        {#if showNativeFeatures && longestStreak > 0}
           <div class="mt-4 pt-4 border-t border-black/5 text-sm text-gray-400">
             Längster Schritte-Streak: <span class="font-semibold text-gray-600">{longestStreak} Tage</span>
           </div>
@@ -652,16 +848,22 @@
           <div class="py-4 text-center text-sm text-gray-400">Noch keine Auszeichnungen.</div>
         {:else}
           <div class="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
-            {#each dashboardBadges as badge (badge.id)}
+            {#each dashboardBadges as badge (('_isDirectus' in badge ? 'd' : 'l') + badge.id)}
               <div class="flex w-[4.5rem] shrink-0 flex-col items-center gap-1 text-center">
-                <div
-                  class="flex h-12 w-12 items-center justify-center rounded-xl text-2xl
-                    {badge.earned ? 'bg-primary/10' : 'bg-gray-100 opacity-40 grayscale'}"
-                >
-                  {badge.icon}
-                </div>
-                <div class="text-[10px] font-medium leading-tight {badge.earned ? '' : 'text-gray-400'}">
-                  {badge.earned ? badge.name : 'Nächstes Ziel'}
+                {#if '_isDirectus' in badge && badge.image_url}
+                  <img src={badge.image_url} alt={badge.name} class="h-12 w-12 rounded-xl object-contain" />
+                {:else if '_isDirectus' in badge}
+                  <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-xl">🏅</div>
+                {:else}
+                  <div
+                    class="flex h-12 w-12 items-center justify-center rounded-xl text-2xl
+                      {badge.earned ? 'bg-primary/10' : 'bg-gray-100 opacity-40 grayscale'}"
+                  >
+                    {badge.icon}
+                  </div>
+                {/if}
+                <div class="text-[10px] font-medium leading-tight {'_isNext' in badge && badge._isNext ? 'text-gray-400' : ''}">
+                  {'_isNext' in badge && badge._isNext ? 'Nächstes Ziel' : badge.name}
                 </div>
               </div>
             {/each}
@@ -716,6 +918,7 @@
         {/if}
       </div>
 
+    {/if}
     </div>
   {/if}
 </main>

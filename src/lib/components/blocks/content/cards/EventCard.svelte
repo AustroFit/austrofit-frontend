@@ -2,15 +2,15 @@
   import { getEventCardClasses } from "$lib/design-system/classes";
   import { getStateNames } from "$lib/utils/states";
   const { item, cardAlignment, cardStyle, buttonStyle, columns = 3} = $props();
-  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
-  const styles = getEventCardClasses(cardStyle, cardAlignment, columns);
+  const imageUrl = $derived(item.image ? `https://cms.austrofit.at/assets/${item.image}` : null);
+  const styles = $derived(getEventCardClasses(cardStyle, cardAlignment, columns));
   //console.log(styles);
 
   //extract state Ids from query
-  const stateIds = item.location_state?.map(ls => ls.states_id) || [];
-  const states = getStateNames(stateIds);
+  const stateIds = $derived(item.location_state?.map(ls => ls.states_id) || []);
+  const states = $derived(getStateNames(stateIds));
   //console.log("states:",states)
-  
+
 
   const typeLabels = {
     'general': 'Allgemein',
@@ -19,9 +19,9 @@
     'aktion': 'Aktion',
     'austauschtreffen': 'Austauschtreffen'
   };
-  const typeLabel = typeLabels[item.type] || null;
+  const typeLabel = $derived(typeLabels[item.type] || null);
   // Format date range
-  const eventDateDisplay = formatEventDate(item.event_date, item.event_date_end);
+  const eventDateDisplay = $derived(formatEventDate(item.event_date, item.event_date_end));
 
   //console.log(item);
   /**

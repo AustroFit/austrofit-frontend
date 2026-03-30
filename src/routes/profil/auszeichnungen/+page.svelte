@@ -3,33 +3,56 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { getValidAccessToken } from '$lib/utils/auth';
-  import { getBadgeDefs, BADGE_CATEGORY_DEFS } from '$lib/utils/badges';
-  import type { BadgeDef } from '$lib/utils/badges';
-  import { qs } from '$lib/utils/qs';
 
   let loading = $state(true);
   let errorMsg = $state('');
 
-  let earnedPoints = $state(0);
-  let longestStreak = $state(0);
-  let quizPassCount = $state(0);
-  let hasSchritte = $state(false);
-  let schrittDays = $state(0);
-  let hasEinloesung = $state(false);
+  interface DirectusBadge {
+    id: number;
+    slug: string;
+    name: string;
+    description: string;
+    hint: string;
+    step_threshold: number;
+    condition_type: string;
+    kategorie: string;
+    typ: string;
+    sort: number;
+    image_url: string | null;
+    earned: boolean;
+  }
 
-  const badges = $derived<BadgeDef[]>(
-    getBadgeDefs({ hasSchritte, schrittDays, quizPassCount, longestStreak, earnedPoints, hasEinloesung })
+  const TYP_META: Record<string, { label: string; emoji: string; subtitle: string }> = {
+    hauptstadt: { label: 'Bundeshauptstädte',  emoji: '🏙️', subtitle: 'Alle 9 Städte verbunden' },
+    bundesland: { label: 'Bundesländer',        emoji: '🗺️', subtitle: 'Landesgrenzen erwandert' },
+    oesterreich:{ label: 'Österreich',          emoji: '🇦🇹', subtitle: 'Das große Ziel' },
+    wanderweg:  { label: 'Wanderwege',          emoji: '🥾', subtitle: 'Etappen & Fernwege' },
+    see:        { label: 'Seen',                emoji: '🏊', subtitle: 'Österreichs Gewässer umrundet' },
+    berg:       { label: 'Berge',               emoji: '⛰️', subtitle: 'Gipfel symbolisch erklommen' },
+  };
+
+  const TYP_ORDER = ['hauptstadt','bundesland','oesterreich','wanderweg','see','berg'];
+
+  let directusBadges = $state<DirectusBadge[]>([]);
+  let totalSteps = $state(0);
+
+  const directusByTyp = $derived(
+    TYP_ORDER
+      .map(typ => {
+        const list = directusBadges.filter(b => b.typ === typ);
+        if (!list.length) return null;
+        return {
+          typ,
+          ...TYP_META[typ],
+          badges: list,
+          earnedCount: list.filter(b => b.earned).length
+        };
+      })
+      .filter(Boolean) as { typ: string; label: string; emoji: string; subtitle: string; badges: DirectusBadge[]; earnedCount: number }[]
   );
 
-  const badgesByKategorie = $derived(
-    BADGE_CATEGORY_DEFS.map(cat => ({
-      ...cat,
-      badges: badges.filter(b => b.kategorie === cat.key),
-      earnedCount: badges.filter(b => b.kategorie === cat.key && b.earned).length
-    }))
-  );
-
-  const totalEarned = $derived(badges.filter(b => b.earned).length);
+  const totalEarned = $derived(directusBadges.filter(b => b.earned).length);
+  const totalCount = $derived(directusBadges.length);
 
   onMount(async () => {
     const token = await getValidAccessToken();
@@ -37,27 +60,14 @@
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
-      const meRes = await fetch('/api/me', { headers: authHeader });
-      if (!meRes.ok) { goto('/login?next=/profil/auszeichnungen'); return; }
-      const me = await meRes.json();
-      const user = me?.data;
-      if (!user?.id) { goto('/login?next=/profil/auszeichnungen'); return; }
-
-      longestStreak = Number(user.longest_streak ?? 0);
-
-      const [earnedRes, badgesRes] = await Promise.all([
-        fetch(`/api/ledger-total?${qs({ user: user.id, positive_only: 'true' })}`, { headers: authHeader }),
-        fetch(`/api/badges-summary?${qs({ user: user.id })}`)
-      ]);
-
-      if (earnedRes.ok) earnedPoints = Number((await earnedRes.json()).total ?? 0);
-      if (badgesRes.ok) {
-        const bd = await badgesRes.json();
-        quizPassCount = bd.quizPassCount ?? 0;
-        hasSchritte   = bd.hasSchritte   ?? false;
-        schrittDays   = bd.schrittDays   ?? 0;
-        hasEinloesung = bd.hasEinloesung ?? false;
+      const directusRes = await fetch('/api/badges', { headers: authHeader });
+      if (!directusRes.ok) {
+        if (directusRes.status === 401) { goto('/login?next=/profil/auszeichnungen'); return; }
+        throw new Error(`Fehler ${directusRes.status}`);
       }
+      const db = await directusRes.json();
+      directusBadges = db.badges ?? [];
+      totalSteps     = db.total_steps ?? 0;
     } catch (e: unknown) {
       errorMsg = e instanceof Error ? e.message : 'Fehler beim Laden.';
     } finally {
@@ -86,62 +96,62 @@
     <!-- Header -->
     <div class="bg-darkblue text-white">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-14">
-        <a
-          href="/dashboard"
-          class="mb-4 inline-flex items-center gap-1.5 text-sm opacity-70 hover:opacity-100 transition-opacity"
-        >
+        <a href="/dashboard" class="mb-4 inline-flex items-center gap-1.5 text-sm opacity-70 hover:opacity-100 transition-opacity">
           ← Dashboard
         </a>
         <h1 class="text-2xl font-bold font-heading">Auszeichnungen</h1>
-        <p class="mt-1 text-sm opacity-70">
-          {totalEarned} von {badges.length} Badges verdient
-        </p>
+        <p class="mt-1 text-sm opacity-70">{totalEarned} von {totalCount} Badges verdient</p>
+        {#if totalSteps > 0}
+          <p class="mt-0.5 text-xs opacity-50">{totalSteps.toLocaleString('de-AT')} Schritte gesamt</p>
+        {/if}
       </div>
     </div>
 
     <div class="mx-auto -mt-8 flex max-w-2xl flex-col gap-4 px-4">
 
-      {#each badgesByKategorie as cat}
+      {#if directusByTyp.length === 0}
+        <div class="rounded-[var(--radius-card)] border border-black/10 bg-white shadow-sm p-8 text-center text-sm text-gray-400">
+          Noch keine Badges verfügbar.
+        </div>
+      {/if}
+
+      {#each directusByTyp as cat}
         {@const nextIdx = cat.badges.findIndex(b => !b.earned)}
         <div class="rounded-[var(--radius-card)] border border-black/10 bg-white shadow-sm overflow-hidden">
-          <!-- Kategorie-Header -->
           <div class="flex items-center justify-between px-4 pt-4 pb-2">
             <div>
-              <h2 class="font-bold text-heading leading-tight">
-                {cat.emoji} {cat.label}
-              </h2>
+              <h2 class="font-bold text-heading leading-tight">{cat.emoji} {cat.label}</h2>
               <p class="text-xs text-gray-400">{cat.subtitle}</p>
             </div>
             <span class="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
               {cat.earnedCount}/{cat.badges.length}
             </span>
           </div>
-
-          <!-- Horizontal-Scroll-Reihe -->
           <div class="relative">
             <div class="flex gap-2.5 overflow-x-auto px-4 pb-4 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {#each cat.badges as badge, i}
                 {@const isNext = !badge.earned && i === nextIdx}
                 {@const isBlurred = !badge.earned && nextIdx !== -1 && i > nextIdx}
-                <div
-                  class="flex w-[7.5rem] shrink-0 flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all select-none
-                    {badge.earned
-                      ? 'border-primary/20 bg-primary/5 shadow-sm'
-                      : isNext
-                        ? 'border-dashed border-gray-300 bg-gray-50'
-                        : 'border-dashed border-gray-200 bg-gray-50'}
-                    {isBlurred ? 'blur-[3px] opacity-40 pointer-events-none' : ''}"
-                >
-                  <div class="text-3xl leading-none
-                    {badge.earned ? '' : isNext ? 'grayscale opacity-50' : 'grayscale opacity-30'}">
-                    {badge.icon}
-                  </div>
-                  <div class="text-[11px] font-semibold leading-tight
-                    {badge.earned ? 'text-heading' : 'text-gray-400'}">
+                <div class="flex w-[7.5rem] shrink-0 flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all select-none
+                  {badge.earned ? 'border-primary/20 bg-primary/5 shadow-sm' : isNext ? 'border-dashed border-gray-300 bg-gray-50' : 'border-dashed border-gray-200 bg-gray-50'}
+                  {isBlurred ? 'blur-[3px] opacity-40 pointer-events-none' : ''}">
+                  {#if badge.image_url}
+                    <img
+                      src={badge.image_url}
+                      alt={badge.name}
+                      class="h-10 w-10 object-contain {badge.earned ? '' : 'grayscale opacity-40'}"
+                    />
+                  {:else}
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full border-2
+                      {badge.earned ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 bg-gray-100 text-gray-300'}">
+                      <span class="text-lg">{cat.emoji}</span>
+                    </div>
+                  {/if}
+                  <div class="text-[11px] font-semibold leading-tight {badge.earned ? 'text-heading' : 'text-gray-400'}">
                     {badge.name}
                   </div>
                   {#if badge.earned}
-                    <div class="text-[10px] text-primary leading-tight">{badge.beschreibung}</div>
+                    <div class="text-[10px] text-primary leading-tight">{badge.description}</div>
                     <div class="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary"></div>
                   {:else if isNext}
                     <div class="text-[10px] text-gray-400 leading-tight">{badge.hint}</div>
@@ -151,7 +161,6 @@
                 </div>
               {/each}
             </div>
-            <!-- Rechter Fade-Overlay -->
             <div class="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent"></div>
           </div>
         </div>

@@ -3,7 +3,7 @@
 
   const { item } = $props();
   const styles = getSupporterCardClasses();
-  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
+  const imageUrl = $derived(item.image ? `https://cms.austrofit.at/assets/${item.image}` : null);
 
 </script>
 

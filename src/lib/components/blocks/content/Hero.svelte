@@ -3,16 +3,16 @@
   import { getHeroClasses, getButtonClasses } from "$lib/design-system/classes";
 
   const { block } = $props();
-  const blockData = block.item;
-  const theme = block.background || 'light';
-  const layout = blockData.layout || 'image_right';
-  const isFullscreen = layout === 'image_full';
+  const blockData = $derived(block.item);
+  const theme = $derived(block.background || 'light');
+  const layout = $derived(blockData.layout || 'image_right');
+  const isFullscreen = $derived(layout === 'image_full');
 
-  const styles = getHeroClasses(layout, theme);
+  const styles = $derived(getHeroClasses(layout, theme));
 
-  const imageUrl = blockData.image
+  const imageUrl = $derived(blockData.image
     ? `https://cms.austrofit.at/assets/${blockData.image}`
-    : null;
+    : null);
 
   // Resolve button href from the button_group M2O (buttons collection)
   function resolveHref(btn) {
@@ -23,10 +23,10 @@
     return btn.external_url || null;
   }
 
-  const btn = blockData.button_group;
+  const btn = $derived(blockData.button_group);
   const btnHref = $derived(resolveHref(btn));
-  const btnTarget = btn?.open_in_new_tab ? '_blank' : undefined;
-  const btnClasses = getButtonClasses('red', 'lg');
+  const btnTarget = $derived(btn?.open_in_new_tab ? '_blank' : undefined);
+  const btnClasses = $derived(getButtonClasses('red', 'lg'));
 </script>
 
 {#if isFullscreen}

@@ -53,11 +53,14 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
+  role={isAktiv ? 'button' : undefined}
+  tabindex={isAktiv ? 0 : undefined}
   class="relative overflow-hidden rounded-[var(--radius-card)] border border-black/10 bg-white shadow-sm transition-shadow
     {isAktiv ? 'cursor-pointer hover:shadow-md' : ''}"
   onclick={isAktiv ? onclick : undefined}
+  onkeydown={isAktiv ? (e) => { if (e.key === 'Enter' || e.key === ' ') onclick?.(); } : undefined}
 >
   <!-- Ablauf-Warnung (Banner oben) -->
   {#if isExpiredToday}

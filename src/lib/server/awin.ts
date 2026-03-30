@@ -1,9 +1,9 @@
 // src/lib/server/awin.ts
 // AWIN Publisher API v2 – Server-only (enthält Secrets)
-// Hinweis: Die AWIN Publisher-REST-API hat keinen öffentlichen Promotions-Endpoint.
-// Codes werden manuell in src/lib/data/awinManualPromotions.ts gepflegt.
+// Promotions werden in Directus (Collection: online_promotions) gepflegt – kein Deploy nötig.
 
-import { getActivePromotions, MANUAL_PROMOTIONS, PROGRAM_NAMES, PROGRAM_META } from '$lib/data/awinManualPromotions';
+import { PUBLIC_CMSURL } from '$env/static/public';
+import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 
 /** Promotion-Objekt das an den Client gesendet wird (KEIN code-Feld) */
 export interface AwinPromotionPublic {
@@ -27,7 +27,49 @@ export interface AwinProgram {
   promotions: AwinPromotionPublic[];
 }
 
+/** Directus-Datensatz aus online_promotions */
+interface OnlinePromotion {
+  id: string;
+  network: string;
+  network_advertiser_id: string | null;
+  partner_name: string;
+  partner_url: string;
+  logo_url: string | null;
+  category: string | null;
+  code: string;
+  description: string;
+  end_date: string;
+  points_cost: number;
+  status: string;
+}
+
 const AWIN_API_BASE = 'https://api.awin.com';
+
+/**
+ * Aktive (nicht abgelaufene) Promotions aus Directus laden.
+ * Gibt leeres Array zurück wenn die Collection nicht erreichbar ist.
+ */
+async function fetchOnlinePromotions(fetchFn: typeof globalThis.fetch): Promise<OnlinePromotion[]> {
+  const today = new Date().toISOString().split('T')[0];
+  const params = new URLSearchParams({
+    'filter[status][_eq]': 'active',
+    'filter[end_date][_gte]': today,
+    fields: 'id,network,network_advertiser_id,partner_name,partner_url,logo_url,category,description,end_date,points_cost',
+    limit: '100'
+  });
+
+  const res = await fetchFn(`${PUBLIC_CMSURL}/items/online_promotions?${params}`, {
+    headers: { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` }
+  });
+
+  if (!res.ok) {
+    console.error(`[AWIN] Directus Promotions-Abruf fehlgeschlagen: ${res.status} ${res.statusText}`);
+    return [];
+  }
+
+  const body = await res.json();
+  return body.data ?? [];
+}
 
 /**
  * Alle genehmigten AWIN-Advertiser-Programme des Publishers abrufen.
@@ -80,9 +122,9 @@ export async function fetchAwinPrograms(
 }
 
 /**
- * Manuelle Promotions als Programmliste servieren.
- * Basis-Programmdaten (Name, URL, Logo) werden von der AWIN API ergänzt falls verfügbar –
- * manuelle Promotions werden aber immer angezeigt, unabhängig vom Joined-Status.
+ * Online-Promotions als Programmliste servieren.
+ * AWIN-Programme werden mit Daten aus der AWIN API angereichert wenn verfügbar.
+ * Promotions anderer Netzwerke (Tradedoubler, direct) werden direkt aus Directus-Metadaten gebaut.
  * Code selbst wird NICHT mitgesendet (nur über /api/awin/unlock-code abrufbar).
  */
 export async function fetchAwinProgramsWithPromotions(
@@ -90,42 +132,60 @@ export async function fetchAwinProgramsWithPromotions(
   publisherId: string,
   fetchFn: typeof globalThis.fetch = fetch
 ): Promise<AwinProgram[]> {
-  // Joined-Programme von AWIN abrufen (optional – nur zur Datenanreicherung, nie blockierend)
+  // AWIN-Programme abrufen (optional – nur zur Datenanreicherung für AWIN-Promotions)
   let joinedPrograms: AwinProgram[] = [];
   try {
     joinedPrograms = await fetchAwinPrograms(apiToken, publisherId, fetchFn);
   } catch {
-    /* AWIN API nicht erreichbar – manuelle Promotions trotzdem anzeigen */
+    /* AWIN API nicht erreichbar – Directus-Daten als Fallback */
   }
   const joinedMap = new Map(joinedPrograms.map((p) => [p.id, p]));
 
+  // Alle aktiven Promotions aus Directus laden
+  const promotions = await fetchOnlinePromotions(fetchFn);
+  if (promotions.length === 0) return [];
+
+  // Nach Partner gruppieren (network_advertiser_id oder partner_name als Schlüssel)
+  // Verwende zusammengesetzten Schlüssel damit gleicher Advertiser über verschiedene
+  // Netzwerke nicht zusammengemischt wird.
+  const groupKey = (p: OnlinePromotion) =>
+    p.network_advertiser_id ? `${p.network}:${p.network_advertiser_id}` : `direct:${p.partner_name}`;
+
+  const byPartner = new Map<string, OnlinePromotion[]>();
+  for (const promo of promotions) {
+    const key = groupKey(promo);
+    if (!byPartner.has(key)) byPartner.set(key, []);
+    byPartner.get(key)!.push(promo);
+  }
+
   const result: AwinProgram[] = [];
+  let syntheticId = -1; // Negativer Fallback-ID für Nicht-AWIN-Partner
 
-  for (const [advertiserIdStr, _promos] of Object.entries(MANUAL_PROMOTIONS)) {
-    const advertiserId = Number(advertiserIdStr);
-    const activePromos = getActivePromotions(advertiserId);
-    if (activePromos.length === 0) continue;
+  for (const promos of byPartner.values()) {
+    const first = promos[0];
+    const awinId =
+      first.network === 'awin' && first.network_advertiser_id
+        ? Number(first.network_advertiser_id)
+        : null;
+    const joined = awinId !== null ? joinedMap.get(awinId) : undefined;
 
-    const publicPromos: AwinPromotionPublic[] = activePromos.map((promo) => ({
+    const publicPromos: AwinPromotionPublic[] = promos.map((promo) => ({
       id: promo.id,
-      type: promo.type,
+      type: 'voucher',
       description: promo.description,
-      endDate: promo.endDate,
-      pointsCost: promo.pointsCost
+      endDate: promo.end_date,
+      pointsCost: promo.points_cost
       // code wird absichtlich NICHT mitgesendet
     }));
 
-    // Programmdaten: AWIN-API > manuelle Metadaten > Fallback
-    const joined = joinedMap.get(advertiserId);
-    const meta = PROGRAM_META[advertiserId];
     result.push({
-      id: advertiserId,
-      name: joined?.name ?? meta?.name ?? PROGRAM_NAMES[advertiserId] ?? String(advertiserId),
+      id: awinId ?? syntheticId--,
+      name: joined?.name ?? first.partner_name,
       url: joined?.url ?? '',
-      logoUrl: joined?.logoUrl ?? meta?.logoUrl ?? null,
-      displayUrl: joined?.displayUrl ?? meta?.displayUrl ?? '',
+      logoUrl: joined?.logoUrl ?? first.logo_url ?? null,
+      displayUrl: joined?.displayUrl ?? first.partner_url ?? '',
       description: joined?.description ?? null,
-      category: joined?.category ?? meta?.category ?? null,
+      category: joined?.category ?? first.category ?? null,
       currencyCode: joined?.currencyCode ?? 'EUR',
       promotions: publicPromos
     });

@@ -2,6 +2,7 @@
 <!-- Fortschrittsbalken: aktuelles Level + Punkte bis zum nächsten -->
 <script lang="ts">
   import { getLevelInfo } from '$lib/utils/level';
+  import { levelDefs } from '$lib/stores/levels';
 
   interface Props {
     punkte: number;
@@ -10,14 +11,14 @@
 
   let { punkte = 0, size = 'large' }: Props = $props();
 
-  const info = $derived(getLevelInfo(punkte));
+  const info = $derived(getLevelInfo(punkte, $levelDefs));
 </script>
 
 {#if size === 'large'}
   <div>
     <div class="mb-1.5 flex items-baseline justify-between gap-2">
       <span class="font-semibold">
-        Level {info.current.level} – {info.current.name}
+        {info.current.name}
       </span>
       {#if info.next}
         <span class="shrink-0 text-xs text-gray-500">
@@ -33,11 +34,6 @@
         style="width:{info.percent}%;"
       ></div>
     </div>
-    {#if info.next}
-      <div class="mt-1 text-xs text-gray-400">
-        Nächstes Level: <span class="font-medium text-gray-600">{info.next.name}</span>
-      </div>
-    {/if}
   </div>
 {:else}
   <div class="flex items-center gap-2">

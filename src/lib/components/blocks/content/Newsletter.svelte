@@ -4,10 +4,10 @@
   import { designClasses, getBaseBlockClasses, getButtonClasses } from "$lib/design-system/classes";
 
   const { block, formResponse } = $props();
-  const blockData = block.item;
-  const formData = blockData?.form;
+  const blockData = $derived(block.item);
+  const formData = $derived(blockData?.form);
 
-  const buttonStyle = getButtonClasses(blockData.button_style, 'md');
+  const buttonStyle = $derived(getButtonClasses(blockData.button_style, 'md'));
 
   // Design-System: zentriert, helles Theme
   const styles = $derived(getBaseBlockClasses('center', 'light'));

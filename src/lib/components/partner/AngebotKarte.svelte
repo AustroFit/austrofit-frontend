@@ -8,16 +8,16 @@
   interface Reward {
     id: string;
     titel: string;
-    beschreibung?: string;
+    beschreibung?: string | null;
     punkte_kosten: number;
-    gueltig_bis?: string;
+    gueltig_bis?: string | null;
   }
 
   interface Partner {
     id: string;
     name: string;
     kategorie?: string[];
-    adresse?: string;
+    adresse?: string | null;
     esg_zertifiziert?: boolean;
     logo_url?: string | null;
   }

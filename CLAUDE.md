@@ -47,8 +47,8 @@ src/
   lib/
     components/     # Svelte components (organized by feature)
     design-system/  # classes.js – Tailwind class composition utilities
-    server/         # Server-only utilities (Directus calls, stepsService)
-    services/       # Client-side services (health.ts, stepSync.ts)
+    server/         # Server-only utilities (Directus calls, stepsService, cardioService)
+    services/       # Client-side services (health.ts, stepSync.ts, cardioSync.ts)
     utils/          # Shared utilities (auth.ts, level.ts, streak.ts, badges.ts)
     stores/         # Svelte stores (for cross-component reactive state)
     data/           # Static data files
@@ -65,7 +65,29 @@ android/              # Capacitor Android project
 
 ### Gamification Data Flow
 
-Points are recorded in Directus `points_ledger` (append-only). The current balance is always a `SUM(points_delta)` query. Steps from native health → `/api/steps/sync` → `stepsService.ts` (deduplication, points calc, streak update). Level is derived client-side from total points via `getLevelInfo()` in `$lib/utils/level.ts`.
+Points are recorded in Directus `points_ledger` (append-only). The current balance is always a `SUM(points_delta)` query. **Level** is derived client-side from `earnedPoints` (positive-only sum) via `getLevelInfo()` in `$lib/utils/level.ts` — 20 levels, 0–480.000P, AustroFit branding every 5 levels.
+
+**Steps** → native health → `/api/steps/sync` → `stepsService.ts` (dedup, points calc, tiered streak update via `updateStreak()` in `streak.ts`). Streak-Tag-Bonus tiered: +20/30/45/60P (Tier 1–4). Weekly milestone: +60/90/120/150P.
+
+**Workouts** → native health → `/api/cardio/sync` → `cardioService.ts` (intensity mapping, weekly aggregation, group-specific targets). Cardio streak bonus tiered: +100/200/300/400P per consecutive full week (Tier 1–4).
+
+**Quiz** → anonymous attempt → `/api/quiz-attempts` → `/api/claim` links to user + awards points → `updateQuizStreak()` in `streak.ts` awards daily streak bonus (tiered +5/10/15/20P) and weekly milestone (+30/50/75/100P). Quiz cooldown: 30 days per quiz (configured in Directus `cooldown_days` field).
+
+**Milestones** → one-time bonuses awarded via `awardMilestoneIfNew()` in `$lib/server/milestoneService.ts`. Slugs + points defined in `$lib/utils/milestones.ts`. Dedup: `source_type='milestone'`, `source_ref='milestone-{slug}'`. 22 milestones across steps/cardio/quiz covering first achievements and first 4 weeks of streaks.
+
+### Dev / Test Tools (Browser-only)
+
+Toggle-Sektion in `/profil` → "Entwickler-Tools" (nur sichtbar wenn `!isNativePlatform`).
+Alle Flags sind localStorage-Keys und werden im Dashboard/Profil bei `onMount` gelesen:
+
+| localStorage-Key | Flag | Effekt |
+|---|---|---|
+| `austrofit_dev_native` | `devNativeMode` | Zeigt alle nativen Karten (Schritte, Cardio, Streaks) im Browser |
+| `austrofit_test_mode` | `testMode` | Ersetzt Schritt-Karte durch `ManuelleSchrittEingabe.svelte` |
+| `austrofit_test_mode_cardio` | `cardioTestMode` | Ersetzt Cardio-Karte durch `ManuelleCardioEingabe.svelte` |
+
+**Wichtig**: `devNativeMode` steuert nur UI-Sichtbarkeit (`showNativeFeatures = isNativePlatform || devNativeMode`).
+Die echten Health-Sync-Calls (Capacitor) laufen weiterhin nur wenn `isNativePlatform` true ist.
 
 ### Deployment
 

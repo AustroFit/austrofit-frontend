@@ -7,12 +7,14 @@
   import { getSinglePageConfig } from '$lib/config/singlePageConfigs.js';
   import { getSinglePageClasses } from '$lib/design-system/classes.js';
   const { data } = $props();
-  const { item, collection, relatedItems, quiz } = data;
-  const quizRecordId = quiz?.id ?? null;
-  console.log(item);
+  const item = $derived(data.item);
+  const collection = $derived(data.collection);
+  const relatedItems = $derived(data.relatedItems);
+  const quiz = $derived(data.quiz);
+  const quizRecordId = $derived(quiz?.id ?? null);
   // Get display configuration for this collection
-  const pageConfig = getSinglePageConfig(collection);
-  const styles = getSinglePageClasses();
+  const pageConfig = $derived(getSinglePageConfig(collection));
+  const styles = $derived(getSinglePageClasses());
   //console.log('Page data:', { item, collection, pageConfig });
 </script>
 

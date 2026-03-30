@@ -1,0 +1,50 @@
+# Directus Collection: levels
+# Erstellt: 2026-03-27
+# Zweck: Level-Namen und Punkt-Schwellen ohne Deploy editierbar machen.
+#        Die Berechnung läuft weiterhin client-seitig; die Daten werden beim
+#        App-Start von /api/levels geladen (hardcoded Fallback wenn Directus offline).
+#
+# SETUP IN DIRECTUS UI:
+# ---------------------
+# 1. Settings → Data Model → "Create Collection"
+#    - Name: levels
+#    - Primary Key Type: "Manually entered integer" (wichtig!)
+#    - Primary Key Name: level
+#
+# 2. Folgende Felder hinzufügen:
+
+fields:
+  - field: level
+    type: integer
+    note: "Level-Nummer 1–20. Dient als Primary Key. Nicht ändern!"
+    # Primary Key – beim Collection-Setup als integer PK (manual) konfigurieren
+
+  - field: name
+    type: string
+    required: true
+    note: "Anzeigename, z.B. 'Einsteiger', 'AustroFit Aktiv'. AustroFit-Branding alle 5 Level."
+
+  - field: min_points
+    type: integer
+    required: true
+    note: "Punkte ab denen dieses Level erreicht wird (earned_points, positive-only)"
+
+  - field: max_points
+    type: integer
+    required: true
+    note: "Obere Grenze des Level-Bereichs. Level 20 = 99999999 (unbegrenzt)."
+
+# POLICY-ZUGRIFF:
+# ---------------
+# Read Content API (DIRECTUS_READ_TOKEN):
+#   - Read: alle Felder (level, name, min_points, max_points)
+# PRIVATE_CMS_STATIC_TOKEN:
+#   - Read: alle Felder (für server-seitigen Abruf im /api/levels Endpoint)
+#
+# WICHTIG: Collection in beiden Policies freischalten!
+
+# WORKFLOW FÜR LEVEL-ÄNDERUNGEN:
+# --------------------------------
+# - Name ändern (z.B. "Einsteiger" → "Anfänger"): sofort live nach ~1h (CDN-Cache)
+# - Punkt-Schwellen ändern: Sorgfältig testen! Bestehende User könnten Level verlieren.
+# - Neues Level hinzufügen: Im Code zusätzlich LEVEL_DEFS aktualisieren (Fallback).

@@ -1,6 +1,16 @@
 import { PUBLIC_CMSURL } from '$env/static/public';
+import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
 
 export async function POST({ request }) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? request.headers.get('cf-connecting-ip')
+    ?? 'unknown';
+
+  // Max. 10 Login-Versuche pro 15 Minuten pro IP
+  if (isRateLimited(ip, 'login', 10, 15 * 60 * 1000)) {
+    return rateLimitResponse();
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();

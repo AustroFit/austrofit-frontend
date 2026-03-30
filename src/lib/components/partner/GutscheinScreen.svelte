@@ -15,7 +15,7 @@
   interface Props {
     gutschein: Gutschein;
     partnerName?: string;
-    partnerAdresse?: string;
+    partnerAdresse?: string | null;
     onclose: () => void;
   }
 

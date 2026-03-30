@@ -26,6 +26,8 @@
     userPoints?: number;
     isLoggedIn?: boolean;
     onUnlocked?: (pointsSpent: number) => void;
+    /** 'awin' (Standard) oder 'tradedoubler' – steuert Endpoints und localStorage-Prefix */
+    provider?: 'awin' | 'tradedoubler';
   }
 
   const {
@@ -39,8 +41,13 @@
     promotions = [],
     userPoints = 0,
     isLoggedIn = false,
-    onUnlocked
+    onUnlocked,
+    provider = 'awin'
   }: Props = $props();
+
+  const unlockUrl = $derived(provider === 'tradedoubler' ? '/api/tradedoubler/unlock-code' : '/api/awin/unlock-code');
+  const clickBasePath = $derived(provider === 'tradedoubler' ? '/api/tradedoubler/click' : '/api/awin/click');
+  const storagePrefix = $derived(provider === 'tradedoubler' ? 'austrofit_td_' : 'austrofit_awin_');
 
   // Erste Promotion als Haupt-Promo
   const promo = $derived(promotions[0] ?? null);
@@ -52,7 +59,7 @@
   let copied = $state(false);
   let shopLoading = $state(false);
 
-  const storageKey = $derived(promo ? `austrofit_awin_${promo.id}` : '');
+  const storageKey = $derived(promo ? `${storagePrefix}${promo.id}` : '');
 
   onMount(() => {
     if (storageKey) {
@@ -73,13 +80,14 @@
 
     try {
       const token = getAccessToken();
-      const res = await fetch('/api/awin/unlock-code', {
+      const payload = provider === 'tradedoubler' ? { voucherId: promo.id } : { promoId: promo.id };
+      const res = await fetch(unlockUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ promoId: promo.id })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -109,7 +117,7 @@
   }
 
   function getClickUrl(): string {
-    const base = `/api/awin/click/${programId}`;
+    const base = `${clickBasePath}/${programId}`;
     if (targetUrl) return `${base}?url=${encodeURIComponent(targetUrl)}`;
     return base;
   }
@@ -136,7 +144,10 @@
 
   const canAfford = $derived(userPoints >= (promo?.pointsCost ?? 0));
 
-  const labelText = category ? (AWIN_KATEGORIE_LABELS[category] ?? category) : null;
+  const labelText = $derived(category ? (AWIN_KATEGORIE_LABELS[category] ?? category) : null);
+
+  let descExpanded = $state(false);
+  const descIsLong = $derived((promo?.description?.length ?? 0) > 80);
 </script>
 
 <article class="flex flex-col rounded-[var(--radius-card)] border border-gray-200 bg-white shadow-[var(--shadow-s)] overflow-hidden">
@@ -163,9 +174,12 @@
       {/if}
     </div>
 
-    <span class="ml-auto flex-shrink-0 rounded-[var(--radius-pill)] bg-primary px-2.5 py-0.5 text-xs font-medium text-white">
-      Online
-    </span>
+    <div class="ml-auto flex flex-col items-end gap-1 flex-shrink-0">
+      <span class="rounded-[var(--radius-pill)] bg-primary px-2.5 py-0.5 text-xs font-medium text-white">
+        Online
+      </span>
+      <span class="text-[10px] font-medium text-gray-400 uppercase tracking-wide">Werbung</span>
+    </div>
   </div>
 
   <!-- Content -->
@@ -178,7 +192,15 @@
     {/if}
 
     {#if promo}
-      <p class="text-sm text-body line-clamp-2">{promo.description}</p>
+      <button
+        onclick={() => descIsLong && (descExpanded = !descExpanded)}
+        class="text-left w-full {descIsLong ? 'cursor-pointer' : 'cursor-default'}"
+      >
+        <p class="text-sm text-body {descIsLong && !descExpanded ? 'line-clamp-2' : ''}">{promo.description}</p>
+        {#if descIsLong}
+          <span class="text-xs text-primary font-medium">{descExpanded ? 'Weniger anzeigen' : 'Mehr anzeigen'}</span>
+        {/if}
+      </button>
 
       <!-- Code-Block: gesperrt oder freigeschaltet -->
       {#if unlockedCode}

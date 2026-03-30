@@ -81,26 +81,12 @@
 
     <!-- Intro -->
     <div class="max-w-2xl mx-auto text-center lg:text-left lg:mx-0 mb-12">
-      <h2 id="wie-heading" class="font-heading text-2xl lg:text-3xl font-bold text-heading mb-6">
-        Du bewegst dich bereits – wir belohnen dich dafür
-      </h2>
-      <ul class="space-y-3 text-body mb-6">
-        <li class="flex items-start gap-3">
-          <span class="text-primary font-bold text-lg leading-none mt-0.5" aria-hidden="true">✓</span>
-          <span>Du gehst mehrmals täglich Gassi?</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="text-primary font-bold text-lg leading-none mt-0.5" aria-hidden="true">✓</span>
-          <span>Du gehst bereits regelmäßig spazieren?</span>
-        </li>
-        <li class="flex items-start gap-3">
-          <span class="text-primary font-bold text-lg leading-none mt-0.5" aria-hidden="true">✓</span>
-          <span>Du machst dich bereits schlau zu Themen wie Bewegung und Ernährung?</span>
-        </li>
-      </ul>
-      <p class="text-heading font-semibold text-lg">
-        Perfekt. Dann lasse dich für dein gesundes Verhalten belohnen – in 3 Schritten:
+      <p class="text-body text-lg mb-4">
+        Gehst du bereits regelmäßig spazieren, Gassi oder informierst du dich über Bewegung und Ernährung?
       </p>
+      <h2 id="wie-heading" class="font-heading text-2xl lg:text-3xl font-bold text-heading mb-6">
+        Perfekt. Dann lasse dich für dein gesundes Verhalten belohnen – in 3 Schritten:
+      </h2>
     </div>
 
     <!-- 3-Schritt Cards -->
@@ -129,7 +115,7 @@
         <div class="text-5xl mb-4 text-center" aria-hidden="true">🎁</div>
         <h3 class="font-heading text-xl font-bold text-heading mb-2 text-center">Einlösen</h3>
         <p class="text-body text-sm leading-relaxed text-center">
-          Tausche Punkte gegen Gutscheine bei österreichischen Partnern.
+          Tausche Punkte gegen Rabatte bei österreichischen Partnern.
         </p>
       </article>
 

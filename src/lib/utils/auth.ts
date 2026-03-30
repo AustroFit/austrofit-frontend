@@ -70,6 +70,18 @@ export function logout() {
   localStorage.removeItem('austrofit_last_quiz_result');
   localStorage.removeItem('austrofit_pending_claim');
 
+  // Analytics-ID entfernen – verhindert Session-Übernahme durch nachfolgenden User
+  localStorage.removeItem('austrofit_analytics_id');
+
+  // AWIN- und TradeDoubler-Unlock-Codes entfernen
+  const unlockPrefixes = ['austrofit_awin_', 'austrofit_td_'];
+  const unlockKeysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && unlockPrefixes.some((p) => key.startsWith(p))) unlockKeysToRemove.push(key);
+  }
+  unlockKeysToRemove.forEach((k) => localStorage.removeItem(k));
+
   // Alle Duplikatbremsen-Keys entfernen (austrofit_attempt_created:*)
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {

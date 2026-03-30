@@ -3,7 +3,8 @@ import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { qs } from '$lib/utils/qs';
 import { resolveUserId } from '$lib/server/auth';
-import { updateQuizStreak } from '$lib/utils/streak';
+import { updateQuizStreak } from '$lib/server/streak';
+import { awardMilestoneIfNew } from '$lib/server/milestoneService';
 
 export const POST = async ({ request, fetch }) => {
   try {
@@ -135,6 +136,17 @@ export const POST = async ({ request, fetch }) => {
       results.push({ attempt_id: a.id, ledger_id: ledgerId });
     }
 
+    // Milestone: Erstes erfolgreich geclaimtes Quiz – einmalig (non-blocking)
+    if (claimed > 0) {
+      awardMilestoneIfNew({
+        userId: user_id,
+        slug: 'first_quiz',
+        cmsUrl: PUBLIC_CMSURL,
+        token: PRIVATE_CMS_STATIC_TOKEN,
+        fetchFn: fetch
+      }).catch(() => {});
+    }
+
     // Quiz-Streak aktualisieren (non-blocking)
     if (claimed > 0) {
       updateQuizStreak(user_id, {
@@ -142,7 +154,7 @@ export const POST = async ({ request, fetch }) => {
         token: PRIVATE_CMS_STATIC_TOKEN,
         userToken: access_token,
         fetchFn: fetch
-      }).catch((e) => console.warn('[claim] quiz streak update failed:', e));
+      }).catch((e: unknown) => console.warn('[claim] quiz streak update failed:', e));
     }
 
     return json({ claimed, results });

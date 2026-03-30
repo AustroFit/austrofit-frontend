@@ -10,13 +10,13 @@ import TeamCard from "./cards/TeamCard.svelte";
 
 const { block } = $props();
 
-const blockData = block?.item;
-const additionalData = block?.additionalData;
-const theme = block?.background || 'light';
-const alignment = blockData?.alignment || "left";
-const cardAlignment = blockData?.card_alignment || "center";
-const cardStyle = blockData?.card_style || 'lightgrey';
-const buttonStyle = getButtonClasses(blockData.button_style, blockData.button_size)
+const blockData = $derived(block?.item);
+const additionalData = $derived(block?.additionalData);
+const theme = $derived(block?.background || 'light');
+const alignment = $derived(blockData?.alignment || "left");
+const cardAlignment = $derived(blockData?.card_alignment || "center");
+const cardStyle = $derived(blockData?.card_style || 'lightgrey');
+const buttonStyle = $derived(getButtonClasses(blockData.button_style, blockData.button_size));
 
 const componentMap = {
   'articles': ArticleCard,
@@ -28,20 +28,20 @@ const componentMap = {
   'supporters_organizations': SupporterCard,
 };
 
-const CardComponent = componentMap[blockData.collection];
-const items = additionalData || [];
+const CardComponent = $derived(componentMap[blockData.collection]);
+const items = $derived(additionalData || []);
 
-const styles = getBaseBlockClasses(alignment, theme)
+const styles = $derived(getBaseBlockClasses(alignment, theme));
 
 // Check if this collection needs independent heights
-const needsIndependentHeight = INDEPENDENT_HEIGHT_COLLECTIONS.includes(blockData?.collection);
+const needsIndependentHeight = $derived(INDEPENDENT_HEIGHT_COLLECTIONS.includes(blockData?.collection));
 // Get column settings (with defaults)
-const colsDesktop = blockData?.columns_desktop || 3;
-const colsTablet = blockData?.columns_tablet || 2;
-const colsMobile = blockData?.columns_mobile || 1;
+const colsDesktop = $derived(blockData?.columns_desktop || 3);
+const colsTablet = $derived(blockData?.columns_tablet || 2);
+const colsMobile = $derived(blockData?.columns_mobile || 1);
 
 // Special case: Press releases always use list layout
-const isListLayout = ['press_releases'].includes(blockData?.collection);
+const isListLayout = $derived(['press_releases'].includes(blockData?.collection));
 
 /* // Map column numbers to full class strings
 const gridColClasses = {
@@ -55,9 +55,9 @@ const gridColClasses = {
 //const gridClasses = gridColClasses[desktopCols] || gridColClasses[3];
 
 // Generate grid classes
-const gridClasses = isListLayout 
+const gridClasses = $derived(isListLayout
   ? 'flex flex-col gap-4 mt-10'
-  : `${getResponsiveGridClasses(colsDesktop, colsTablet, colsMobile, needsIndependentHeight)} mt-10`;
+  : `${getResponsiveGridClasses(colsDesktop, colsTablet, colsMobile, needsIndependentHeight)} mt-10`);
 
 
 //console.log(block)

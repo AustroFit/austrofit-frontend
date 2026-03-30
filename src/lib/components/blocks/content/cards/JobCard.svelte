@@ -17,7 +17,7 @@
 
   let showMetaBanner = false;
   //console.log(item);
-  const styles = getJobCardClasses(cardStyle, cardAlignment);
+  const styles = $derived(getJobCardClasses(cardStyle, cardAlignment));
 </script>
 
 

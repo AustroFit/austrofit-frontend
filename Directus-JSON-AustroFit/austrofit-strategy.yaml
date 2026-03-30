@@ -1,8 +1,27 @@
 # ============================================================
 # AustroFit – Technische Strategie & Systemlogik
-# Version: 1.3
+# Version: 1.6
 # Zweck: Maschinenlesbarer Kontext für Claude Code / VS Code
 # Stand: März 2026
+# Änderungen v1.6: Level-System auf 20 Levels erweitert (5-Jahres-Horizont, neue österr. Namen)
+#   Skalierender Streak-Bonus (4 Tiers) für Schritte, Cardio und Quiz
+#   Quiz-Streak-Bonus neu implementiert (streak_quiz source_type, täglich ab Tag 2)
+#   Quiz-Cooldown: 30 Tage (war 90)
+#   Cardio-Streak: Tier-Logik statt Meilenstein-only; dedup auf cardio-streak-{weekKey}
+#   BuchungsZeile: streak_tag + streak_quiz gemappt; ledger-entries Streak-Filter erweitert
+# Änderungen v1.5: Cardio-Tracking implementiert (cardioService.ts, cardioSync.ts, /api/cardio/sync)
+#   Nutzergruppen (adult/senior/pregnant/chronic) → activity_group auf user_profiles
+#   Neue Collection: activity_logs (Workout-Sessions, Äquivalenz-Minuten, week_key)
+#   points_ledger: neue Felder source_id, rule_version, meta, description, entry_date, points
+#   Registrierung: 3-Step (Konto → Gruppenauswahl → E-Mail); init-onboarding jetzt in Login gerufen
+#   Intensitäts-Mapping: moderat 1× / intensiv 2× via @capgo/capacitor-health queryWorkouts()
+#   Ski/Snowboard/Tanzen: Phase 2 (Plugin-Limitation)
+# Änderungen v1.4: Level-System korrigiert (8 Levels, Österr. Landschaft – entspricht level.ts)
+#   Punkte-Formel 4000–6999 korrigiert (Gleitende Skala implementiert, kein Flat-Rate MVP)
+#   Streak-Datenspeicher: streak_days/longest_streak auf user_profiles Collection (nicht directus_users)
+#   Routes: /partner → /belohnung; /profil/gutscheine gelöscht (Gutscheine in /belohnung Aktiv-Tab)
+#   reward_redemptions: Felder user/reward/status/points_cost (entspricht tatsächlicher Collection)
+#   AWIN: Teilimplementiert (fetchAwinPrograms, Offen-Tab in /belohnung) – kein vollständiger Webhook
 # Änderungen v1.3: Android Health Connect native Build fertig (git commit März 2026)
 #   @capgo/capacitor-health v8.2.17 installiert + getestet
 #   Klarstellung: rewards_direktpartner = CODE fertig, kein Business-Betrieb
@@ -24,8 +43,9 @@ meta:
     payments: "Stripe oder lexoffice (geplant ab Direktpartnerschaften)"
   status:
     bildungsmodul: "FERTIG – Artikel, Quizze, Quiz-Attempts, anonym+authentifiziert"
-    punktesystem: "FERTIG – points_ledger, Streak inkl. Streak-Tag-Bonus (+20P/Tag ab Tag 1), Level (5 Stufen), Badges (5), Claim-Flow"
-    bewegungstracking: "TEILWEISE – Android Health Connect FERTIG (@capgo/capacitor-health v8.2.17); PWA zeigt 'Kommt bald'-UI (kein Health-Zugriff im Browser); iOS + Laufen/Radfahren Phase 2"
+    punktesystem: "FERTIG – points_ledger, Streak tiered (Schritte/Cardio/Quiz, 4 Tiers), 20 Levels (5-Jahres-Horizont, AustroFit-Branding alle 5 Level), Claim-Flow, Quiz-Streak-Bonus"
+    auszeichnungen: "FERTIG – 113 Directus-Badges (6 Typen: hauptstadt/bundesland/oesterreich/wanderweg/see/berg), condition_type=total_steps, /api/badges Route, /profil/auszeichnungen zeigt nur Directus-Badges; Bilder ausstehend (Stempel-Optik, ChatGPT DALL-E)"
+    bewegungstracking: "TEILWEISE – Schritte Android FERTIG; Cardio (Laufen/Radfahren/Wandern etc.) Android FERTIG (queryWorkouts, cardioService.ts, /api/cardio/sync); Nutzergruppen (adult/senior/pregnant/chronic) FERTIG (activity_group auf user_profiles); Registrierung 3-Step inkl. Gruppenauswahl FERTIG; iOS Phase 2; Ski/Snowboard/Tanzen Phase 2 (Plugin-Limitation)"
     rewards_direktpartner_code: "CODE FERTIG – Technischer Flow: redeem, QR-Code Gutscheine, 90-Tage-Verfall, /partner Marketplace"
     rewards_direktpartner_business: "OFFEN – Keine echten Partner-Verträge; kein Partner-Onboarding; kein B2B-Dashboard"
     rewards_awin: "OFFEN – Phase 1 Business: AWIN Publisher-Account vorhanden (ID 1896704); Integration via Gutscheincodes (nicht Deep-Links); 0 Programme beigetreten"
@@ -83,9 +103,17 @@ punkteformel:
         grund: "Unterhalb nachgewiesenem Mortalitäts-Schwellwert"
       - von: 4000
         bis: 6999
-        punkte: 10
-        implementierung: "Flat-Rate (MVP)"
-        geplant_phase2: "Gleitende Skala: 10 + floor((schritte - 4001) / 500) * 5"
+        formel: "10 + floor((schritte - 4000) / 500) * 5"
+        implementierung: "Gleitende Skala (implementiert)"
+        beispiele:
+          - schritte: 4000
+            punkte: 10
+          - schritte: 4500
+            punkte: 15
+          - schritte: 5000
+            punkte: 20
+          - schritte: 6500
+            punkte: 35
         grund: "Erste messbare Mortalitätsreduktion"
       - von: 7000
         bis: 7000
@@ -105,9 +133,37 @@ punkteformel:
         grund: "Je mehr desto besser – aber Fraud-Checks aktiv"
 
   bewegung:
-    einheit: "wöchentlich (Laufen + Radfahren in Minuten)"
-    implementiert: false
-    geplant: "Phase 2 – nach Capacitor native Build"
+    einheit: "wöchentlich (Äquivalenz-Minuten – moderat 1×, intensiv 2×)"
+    implementiert: true
+    implementierungsdateien:
+      - "src/lib/server/cardioService.ts"
+      - "src/lib/services/cardioSync.ts"
+      - "src/routes/api/cardio/sync/+server.ts"
+    nutzergruppen:
+      adult:    { wochenziel_min: 150, start_schwelle_min: 50, intensiv_erlaubt: true }
+      senior:   { wochenziel_min: 150, start_schwelle_min: 50, intensiv_erlaubt: true }
+      pregnant: { wochenziel_min: 150, start_schwelle_min: 50, intensiv_erlaubt: false }
+      chronic:  { wochenziel_min: 100, start_schwelle_min: 35, intensiv_erlaubt: true }
+    intensity_mapping:
+      moderat_1x: [walking, hiking, stairClimbing, elliptical, other]
+      intensiv_2x: [running, cycling, crossTraining]
+      ignoriert: [yoga, strengthTraining, swimming, soccer, basketball, tennis, rowing]
+      phase2: [skiing, crossCountrySkiing, snowboarding, dancing]
+    streak_boni:
+      implementiert: true
+      implementierungsdatei: "src/lib/server/cardioService.ts (awardCardioStreakBonuses)"
+      hinweis: >
+        Meilenstein-Boni (nicht wöchentlich wiederkehrend bei W2).
+        Ab W5+ wird +300P jede weitere konsekutive Woche erneut vergeben,
+        da der Code die letzten 4 Ledger-Einträge prüft (consecutiveFullWeeks bleibt 4).
+      - bedingung: "2 aufeinanderfolgende Wochen ≥ Wochenziel (200P)"
+        bonus: 100
+        source_type: streak
+        source_ref: "cardio-streak-2w-{weekKey}"
+      - bedingung: "4 aufeinanderfolgende Wochen ≥ Wochenziel (200P) – danach jede weitere Woche"
+        bonus: 300
+        source_type: streak
+        source_ref: "cardio-streak-4w-{weekKey}"
     regeln:
       - von: 0
         bis: 49
@@ -129,41 +185,55 @@ punkteformel:
 
   bildung:
     implementiert: true
-    implementierungsdatei: "src/routes/api/quiz-attempts/+server.js"
+    implementierungsdatei: "src/routes/api/quiz-attempts/+server.ts"
     regeln:
       - ereignis: "quiz_abschluss"
         bedingung: "score === totalQuestions (100% – jede Frage richtig)"
         punkte: 40
-        cooldown_tage: "cooldown_days aus quizzes Collection (default 90)"
+        cooldown_tage: 30  # pro Quiz in Directus konfiguriert
         anonym: true  # auch ohne Login verdienbar, dann Claim nach Registrierung
       - ereignis: "refresh_quiz"
-        bedingung: "cooldown_days nach letztem Abschluss erneut 100%"
+        bedingung: "30 Tage nach letztem Abschluss erneut 100%"
         punkte: 40
 
   streak_boni:
-    implementiert: "Schritte vollständig – Streak-Tag-Bonus (+20P) + Wochen-Bonus (+60P) + Milestones"
-    implementierungsdatei: "src/lib/utils/streak.ts + src/lib/server/stepsService.ts"
+    implementiert: "Alle Module (Schritte, Cardio, Quiz) – tiered, skalierend"
+    implementierungsdatei: "src/lib/utils/streak.ts + src/lib/server/stepsService.ts + src/lib/server/cardioService.ts"
     logik_hinweis: >
-      Tag 0 = erster Tag mit ≥7.000 Schritten → startet den Streak, kein Bonus.
-      Tag 1+ = jeder weitere aufeinanderfolgende ≥7k-Tag → +20P Streak-Tag-Bonus.
-      streak_days zählt alle aufeinanderfolgenden ≥7k-Tage ab Tag 0 (inkl.).
+      Tag 0 / Woche 1 = erster qualifizierender Eintrag → startet den Streak, kein Bonus.
+      Ab Tag 2 / Woche 2 → Streak-Bonus, Höhe steigt mit Tier.
+      Tiers skalieren mit Dauer: je länger der Streak, desto höher der Bonus.
     regeln:
       - modul: "schritte"
         typ: "streak_tag_bonus"
         bedingung: "streak_days > 1 (ab dem 2. aufeinanderfolgenden ≥7k-Tag)"
-        punkte: 20
+        tiers:
+          - tage: "2–13"
+            punkte: 20
+          - tage: "14–27"
+            punkte: 30
+          - tage: "28–55"
+            punkte: 45
+          - tage: "56+"
+            punkte: 60
         source_type: "streak_tag"
         source_ref: "YYYY-MM-DD"
         implementiert: true
-        beispiel: "Tag 0=0P, Tag 1=+20P, Tag 2=+20P, ..."
       - modul: "schritte"
         typ: "streak_woche_milestone"
-        bedingung: "(streak_days - 1) % 7 === 0 && streak_days > 1 (nach jeweils 7 Bonus-Tagen: streak_days 8, 15, 22, …)"
-        punkte: 60
+        bedingung: "(streak_days - 1) % 7 === 0 && streak_days > 1"
+        tiers:
+          - meilenstein: "Tag 8"
+            punkte: 60
+          - meilenstein: "Tage 15, 22"
+            punkte: 90
+          - meilenstein: "Tage 29–50"
+            punkte: 120
+          - meilenstein: "Tage 57+"
+            punkte: 150
         source_type: "streak"
         source_ref: "streak-{N}d-{datum}"
         implementiert: true
-        beispiel: "7 Streak-Bonus-Tage (Gesamttag 8) = +60P, 14 Bonus-Tage (Gesamttag 15) = +60P, ..."
       - modul: "schritte"
         typ: "milestone_first_goal"
         bedingung: "Erstes Mal ≥7.000 Schritte – einmalig"
@@ -180,17 +250,49 @@ punkteformel:
         implementiert: true
       - modul: "bewegung"
         typ: "streak_woche"
-        bedingung: "Zweite (+ jede folgende) Woche in Serie ≥ 150 min"
-        punkte: 100
-        implementiert: false
-        geplant: "Phase 2"
-      - modul: "bewegung"
-        typ: "streak_monat"
-        bedingung: "4 aufeinanderfolgende Ziel-Wochen"
-        punkte: 300
-        badge: "Move-Champion"
-        implementiert: false
-        geplant: "Phase 2"
+        bedingung: "≥2 aufeinanderfolgende Wochen ≥ 200P Cardio – jede weitere Woche"
+        tiers:
+          - wochen: "2–3"
+            punkte: 100
+          - wochen: "4–7"
+            punkte: 200
+          - wochen: "8–11"
+            punkte: 300
+          - wochen: "12+"
+            punkte: 400
+        source_type: "streak"
+        source_ref: "cardio-streak-{weekKey}"
+        implementiert: true
+      - modul: "bildung"
+        typ: "quiz_streak_tag_bonus"
+        bedingung: "quiz_streak_days > 1 (tägliche Quiz-Completion in Folge)"
+        tiers:
+          - tage: "2–6"
+            punkte: 5
+          - tage: "7–13"
+            punkte: 10
+          - tage: "14–29"
+            punkte: 15
+          - tage: "30+"
+            punkte: 20
+        source_type: "streak_quiz"
+        source_ref: "YYYY-MM-DD"
+        implementiert: true
+      - modul: "bildung"
+        typ: "quiz_streak_woche_milestone"
+        bedingung: "(quiz_streak_days - 1) % 7 === 0 && quiz_streak_days > 1"
+        tiers:
+          - meilenstein: "Tag 8"
+            punkte: 30
+          - meilenstein: "Tag 15"
+            punkte: 50
+          - meilenstein: "Tage 22, 29"
+            punkte: 75
+          - meilenstein: "Tage 36+"
+            punkte: 100
+        source_type: "streak"
+        source_ref: "quiz-streak-{N}d-{datum}"
+        implementiert: true
       - modul: "bildung"
         typ: "wissens_combo"
         bedingung: "3 perfekte Quizze innerhalb von 7 Tagen"
@@ -208,51 +310,139 @@ level_system:
   wichtige_regel: >
     Level basiert IMMER auf earnedPoints (nur positive Ledger-Einträge summiert),
     NICHT auf dem Netto-Kontostand (totalPoints). Einlösungen reduzieren NICHT das Level.
+  thema: "Österreichische Natur & Kultur – 20 Levels, 5-Jahres-Horizont, AustroFit-Branding alle 5 Level"
   levels:
     - stufe: 1
       name: "Einsteiger"
       min_punkte: 0
-      max_punkte: 199
+      max_punkte: 399
     - stufe: 2
-      name: "Aktiver"
-      min_punkte: 200
-      max_punkte: 499
+      name: "Entdecker"
+      min_punkte: 400
+      max_punkte: 1199
     - stufe: 3
-      name: "Gesundheitsprofi"
-      min_punkte: 500
-      max_punkte: 999
+      name: "Bergfreund"
+      min_punkte: 1200
+      max_punkte: 2999
     - stufe: 4
-      name: "Vitalexperte"
-      min_punkte: 1000
-      max_punkte: 2499
+      name: "Almgänger"
+      min_punkte: 3000
+      max_punkte: 5999
     - stufe: 5
+      name: "AustroFit Aktiv"
+      min_punkte: 6000
+      max_punkte: 10999
+      meilenstein: true
+    - stufe: 6
+      name: "Gipfelstürmer"
+      min_punkte: 11000
+      max_punkte: 17999
+    - stufe: 7
+      name: "Alpinist"
+      min_punkte: 18000
+      max_punkte: 26999
+    - stufe: 8
+      name: "Steinbock"
+      min_punkte: 27000
+      max_punkte: 38999
+    - stufe: 9
+      name: "Adlerblick"
+      min_punkte: 39000
+      max_punkte: 54999
+    - stufe: 10
       name: "AustroFit Champion"
-      min_punkte: 2500
+      min_punkte: 55000
+      max_punkte: 74999
+      meilenstein: true
+    - stufe: 11
+      name: "Edelweiß"
+      min_punkte: 75000
+      max_punkte: 99999
+    - stufe: 12
+      name: "Bergkristall"
+      min_punkte: 100000
+      max_punkte: 129999
+    - stufe: 13
+      name: "Großglockner"
+      min_punkte: 130000
+      max_punkte: 164999
+    - stufe: 14
+      name: "Alpengeist"
+      min_punkte: 165000
+      max_punkte: 204999
+    - stufe: 15
+      name: "AustroFit Legende"
+      min_punkte: 205000
+      max_punkte: 249999
+      meilenstein: true
+    - stufe: 16
+      name: "Eisriese"
+      min_punkte: 250000
+      max_punkte: 299999
+    - stufe: 17
+      name: "Kaiserkrone"
+      min_punkte: 300000
+      max_punkte: 354999
+    - stufe: 18
+      name: "Donnervogel"
+      min_punkte: 355000
+      max_punkte: 414999
+    - stufe: 19
+      name: "Unsterblicher"
+      min_punkte: 415000
+      max_punkte: 479999
+    - stufe: 20
+      name: "AustroFit Olympier"
+      min_punkte: 480000
       max_punkte: null
+      meilenstein: true
 
 # ============================================================
 # BADGES
 # ============================================================
 
 badges:
-  implementiert: true
-  implementierungsdatei: "src/lib/utils/badges.ts"
-  liste:
-    - id: "erster_schritt"
-      name: "Erster Schritt"
-      bedingung: "Step-Tracking gestartet"
-    - id: "quiz_meister"
-      name: "Quiz-Meister"
-      bedingung: "5 Quizze abgeschlossen"
-    - id: "wochenheld"
-      name: "Wochenheld"
-      bedingung: "7-Tage-Streak erreicht"
-    - id: "gesundheitsprofi"
-      name: "Gesundheitsprofi"
-      bedingung: "Level 3 erreicht (500P)"
-    - id: "gutschein_einloeser"
-      name: "Gutschein-Einlöser"
-      bedingung: "Ersten Gutschein eingelöst"
+  system: "Directus-Collection 'Badges' (März 2026 – ersetzt hardcodiertes badges.ts-System auf /profil/auszeichnungen)"
+  api_route: "src/routes/api/badges/+server.ts"
+  token: "DIRECTUS_READ_TOKEN (Policy: Read Content API) – NICHT PRIVATE_CMS_STATIC_TOKEN"
+  frontend_seite: "src/routes/profil/auszeichnungen/+page.svelte"
+  earned_logik: "client-seitig: condition_type='total_steps' → user.total_steps >= step_threshold"
+  total_steps_quelle: "user_profiles.total_steps (wird in stepsService.ts bei jedem Schritte-Eintrag inkrementiert)"
+  anzahl: 113
+  typen:
+    - typ: hauptstadt
+      label: "Bundeshauptstädte"
+      anzahl: 36
+      beschreibung: "Strecken zwischen österreichischen Landeshauptstädten"
+    - typ: bundesland
+      label: "Bundesländer"
+      anzahl: 9
+      beschreibung: "Symbolische Umrundung eines Bundeslandes"
+    - typ: oesterreich
+      label: "Österreich"
+      anzahl: 1
+      beschreibung: "Gesamte Umrundung Österreichs"
+    - typ: wanderweg
+      label: "Wanderwege"
+      anzahl: 31
+      beschreibung: "Österreichische Fernwanderwege und Etappenziele"
+    - typ: see
+      label: "Seen"
+      anzahl: 20
+      beschreibung: "Österreichische Seen symbolisch umrundet"
+    - typ: berg
+      label: "Berge"
+      anzahl: 16
+      beschreibung: "Österreichische Berggipfel symbolisch erklommen"
+  bilder:
+    status: "AUSSTEHEND – noch keine Bilder hochgeladen (März 2026)"
+    stil: "Stempel-Optik, einfarbig (dunkelgrün auf weiß), rund, kein Text, ChatGPT DALL-E 3"
+    platzhalter: "Emoji-Kreis mit Kategorie-Emoji wird angezeigt solange kein Bild vorhanden"
+  directus_permissions:
+    hinweis: >
+      Neue Collections brauchen expliziten Lesezugriff in BEIDEN Policies:
+      'Read Content API' (für DIRECTUS_READ_TOKEN) UND der Policy von PRIVATE_CMS_STATIC_TOKEN.
+      Badges wurde nur in 'Read Content API' eingetragen → /api/badges nutzt daher DIRECTUS_READ_TOKEN.
 
 # ============================================================
 # PARTNER-TYPEN
@@ -268,8 +458,7 @@ partner_typen:
       - "src/routes/api/partner/+server.js"
       - "src/routes/api/redeem/+server.js"
       - "src/routes/api/gutscheine/+server.js"
-      - "src/routes/partner/+page.svelte"
-      - "src/routes/profil/gutscheine/+page.svelte"
+      - "src/routes/belohnung/+page.svelte"  # Marketplace (Tabs: Offen/Aktiv/Archiv)
     beispiele:
       - "Lokale Fitnessstudios"
       - "Thermen & Wellness"
@@ -307,10 +496,17 @@ partner_typen:
 
   affiliate_awin:
     label: "Typ A – Affiliate-Netzwerk"
-    phase: 2
-    status: "OFFEN – noch nicht implementiert"
+    phase: 1
+    status: "TEILIMPLEMENTIERT – fetchAwinPrograms + Offen-Tab in /belohnung vorhanden; kein Webhook, keine Provisionsverarbeitung"
     netzwerk: "AWIN (primär), Tradedoubler (optional)"
-    geplant_nach: "App-Launch + ausreichende User-Zahlen für AWIN-Aufnahme"
+    implementiert_bisher:
+      - "fetchAwinPrograms() – lädt Programme vom AWIN API"
+      - "Offen-Tab in /belohnung zeigt AWIN-Angebote mit Logo-Fallback"
+      - "Fehlerbehandlung: manuelle Promotions erscheinen auch ohne AWIN-Verbindung"
+    geplant_noch:
+      - "Webhook /api/awin/webhook für Kommissions-Tracking"
+      - "Deeplink-Generation mit clickRef=user_id"
+      - "Punkte-Gutschrift bei AWIN-Kauf (awin_commission Ledger-Eintrag)"
     prioritaets_advertiser_at:
       - name: "shop-apotheke.at"
         kategorie: "apotheke"
@@ -350,12 +546,11 @@ directus_collections:
     hinweis: "In v1.1 als 'redemptions' beschrieben – tatsächlicher Name: 'reward_redemptions'"
     felder:
       id:               { typ: uuid, auto: true }
-      user_id:          { typ: m2o, referenz: directus_users, required: true }
-      reward_id:        { typ: m2o, referenz: rewards, required: true }
-      code:             { typ: string, beschreibung: "Eindeutiger 8-stelliger Gutschein-Code (AF-xxxxx)" }
-      erstellt_am:      { typ: datetime, auto: true }
-      ablaeuft_am:      { typ: datetime, beschreibung: "90 Tage nach erstellt_am" }
-      eingeloest_am:    { typ: datetime, nullable: true, beschreibung: "Null = aktiv, gesetzt = verwendet" }
+      user:             { typ: m2o, referenz: directus_users, required: true }   # nicht user_id!
+      reward:           { typ: m2o, referenz: rewards, required: true }           # nicht reward_id!
+      points_cost:      { typ: integer, beschreibung: "Punkte zum Einlösezeitpunkt" }
+      status:           { typ: string, optionen: [active, used], beschreibung: "active = nicht verwendet, used = eingelöst" }
+      created_at:       { typ: datetime, auto: true }
 
   points_ledger:
     beschreibung: "Audit-Log jeder Punktebewegung – nie löschen, nur ergänzen"
@@ -427,11 +622,15 @@ directus_collections:
       status:             { typ: string, optionen: [published, draft] }
       learning_module_id: { typ: m2o, referenz: learning_modules }
 
-  directus_users_custom_felder:
-    beschreibung: "Zusatzfelder auf directus_users – manuell hinzufügen falls nicht vorhanden"
+  user_profiles:
+    beschreibung: "Separate Collection für User-Profil-Erweiterungen (NICHT auf directus_users)"
+    hinweis: "streak.ts liest/schreibt user_profiles via filter[user][_eq]=userId"
     felder:
+      id:                    { typ: uuid, auto: true }
+      user:                  { typ: m2o, referenz: directus_users, required: true }
       streak_days:           { typ: integer, default: 0 }
       longest_streak:        { typ: integer, default: 0 }
+      quiz_streak_days:      { typ: integer, default: 0 }
       health_connected:      { typ: boolean, default: false }
       onboarding_completed:  { typ: boolean, default: false }
 
@@ -544,10 +743,9 @@ sveltekit_routes:
       beschreibung: "Profil-Einstellungen: Persönliche Daten, Health-Verbindung, Datenschutz & Account"
     - pfad: /profil/punkte
       beschreibung: "Vollständige Ledger-Historie + Badge-Grid + Level-Roadmap"
-    - pfad: /profil/gutscheine
-      beschreibung: "Gutschein-Übersicht: Aktiv / Verwendet / Abgelaufen"
-    - pfad: /partner
-      beschreibung: "Partner-Marketplace: Rewards einlösen, Filter nach Kategorie/Region/ESG"
+    # /profil/gutscheine wurde GELÖSCHT (März 2026) – Gutscheine jetzt im Aktiv-Tab von /belohnung
+    - pfad: /belohnung
+      beschreibung: "Partner-Marketplace: Tab Offen (AWIN-Angebote), Tab Aktiv (eingelöste Gutscheine), Tab Archiv"
 
 # ============================================================
 # FRAUD-DETECTION (Ist-Stand Phase 1)

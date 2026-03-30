@@ -14,7 +14,7 @@ import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { extractBearerToken } from '$lib/server/auth';
 
 const USER_FIELDS = 'id,first_name,last_name,email,date_created,avatar';
-const PROFILE_FIELDS = 'id,streak_days,longest_streak,quiz_streak_days,health_connected,onboarding_completed';
+const PROFILE_FIELDS = 'id,streak_days,longest_streak,quiz_streak_days,health_connected,onboarding_completed,activity_group';
 
 export async function GET({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) {
   const token = extractBearerToken(request) ?? '';
@@ -52,7 +52,8 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
       longest_streak: profile.longest_streak ?? 0,
       quiz_streak_days: profile.quiz_streak_days ?? 0,
       health_connected: profile.health_connected ?? false,
-      onboarding_completed: profile.onboarding_completed ?? false
+      onboarding_completed: profile.onboarding_completed ?? false,
+      activity_group: profile.activity_group ?? 'adult'
     }
   });
 }
@@ -70,33 +71,39 @@ export async function PATCH({ request, fetch }: { request: Request; fetch: typeo
   if (typeof body.first_name === 'string') userPatch.first_name = body.first_name.trim();
   if (typeof body.last_name === 'string') userPatch.last_name = body.last_name.trim();
   if (typeof body.health_connected === 'boolean') profilePatch.health_connected = body.health_connected;
+  if (['adult', 'senior', 'pregnant', 'chronic'].includes(body.activity_group)) {
+    profilePatch.activity_group = body.activity_group;
+  }
 
   if (!Object.keys(userPatch).length && !Object.keys(profilePatch).length) {
     return json({ error: 'no fields to update' }, { status: 400 });
   }
 
-  // Uniqueness-Check für first_name (Benutzername)
-  if (userPatch.first_name) {
-    // Aktuellen User ermitteln, um ihn vom Check auszuschließen
-    const meCheckRes = await fetch(`${PUBLIC_CMSURL}/users/me?fields=id`, {
+  // userId einmalig holen wenn für Uniqueness-Check oder profilePatch benötigt
+  let cachedUserId: string | null = null;
+  const needsUserId = !!userPatch.first_name || Object.keys(profilePatch).length > 0;
+  if (needsUserId) {
+    const meRes = await fetch(`${PUBLIC_CMSURL}/users/me?fields=id`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (meCheckRes.ok) {
-      const currentUserId = (await meCheckRes.json().catch(() => null))?.data?.id;
-      if (currentUserId) {
-        const dupRes = await fetch(
-          `${PUBLIC_CMSURL}/users?filter[first_name][_eq]=${encodeURIComponent(String(userPatch.first_name))}&filter[id][_neq]=${currentUserId}&fields=id&limit=1`,
-          { headers: { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` } }
+    if (!meRes.ok) return json({ error: 'Benutzer nicht gefunden.' }, { status: meRes.status });
+    cachedUserId = (await meRes.json().catch(() => null))?.data?.id ?? null;
+    if (!cachedUserId) return json({ error: 'Benutzer-ID nicht ermittelbar.' }, { status: 400 });
+  }
+
+  // Uniqueness-Check für first_name (Benutzername)
+  if (userPatch.first_name && cachedUserId) {
+    const dupRes = await fetch(
+      `${PUBLIC_CMSURL}/users?filter[first_name][_eq]=${encodeURIComponent(String(userPatch.first_name))}&filter[id][_neq]=${cachedUserId}&fields=id&limit=1`,
+      { headers: { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` } }
+    );
+    if (dupRes.ok) {
+      const dupData = await dupRes.json().catch(() => null);
+      if ((dupData?.data?.length ?? 0) > 0) {
+        return json(
+          { error: 'Dieser Benutzername ist bereits vergeben – bitte wähle einen anderen.' },
+          { status: 409 }
         );
-        if (dupRes.ok) {
-          const dupData = await dupRes.json().catch(() => null);
-          if ((dupData?.data?.length ?? 0) > 0) {
-            return json(
-              { error: 'Dieser Benutzername ist bereits vergeben – bitte wähle einen anderen.' },
-              { status: 409 }
-            );
-          }
-        }
       }
     }
   }
@@ -123,13 +130,7 @@ export async function PATCH({ request, fetch }: { request: Request; fetch: typeo
 
   // PATCH user_profiles (health_connected, …)
   if (Object.keys(profilePatch).length) {
-    // User-ID ermitteln
-    const meRes = await fetch(`${PUBLIC_CMSURL}/users/me?fields=id`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!meRes.ok) return json({ error: 'Benutzer nicht gefunden.' }, { status: meRes.status });
-    const userId = (await meRes.json().catch(() => null))?.data?.id;
-    if (!userId) return json({ error: 'Benutzer-ID nicht ermittelbar.' }, { status: 400 });
+    const userId = cachedUserId!;
 
     // user_profile-ID für diesen User ermitteln
     const profileListRes = await fetch(

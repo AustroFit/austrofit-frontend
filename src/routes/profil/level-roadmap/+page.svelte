@@ -3,7 +3,8 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { getValidAccessToken } from '$lib/utils/auth';
-  import { getLevelInfo, LEVEL_DEFS } from '$lib/utils/level';
+  import { getLevelInfo } from '$lib/utils/level';
+  import { levelDefs } from '$lib/stores/levels';
   import { qs } from '$lib/utils/qs';
   import LevelFortschritt from '$lib/components/profil/LevelFortschritt.svelte';
 
@@ -11,7 +12,7 @@
   let errorMsg = $state('');
   let earnedPoints = $state(0);
 
-  const levelInfo = $derived(getLevelInfo(earnedPoints));
+  const levelInfo = $derived(getLevelInfo(earnedPoints, $levelDefs));
 
   onMount(async () => {
     const token = await getValidAccessToken();
@@ -76,19 +77,6 @@
           Dein Fortschritt
         </div>
         <LevelFortschritt punkte={earnedPoints} />
-        {#if levelInfo.next}
-          <p class="mt-3 text-sm text-gray-500">
-            Noch
-            <span class="font-semibold text-primary">
-              {(levelInfo.next.min - earnedPoints).toLocaleString('de-AT')} Punkte
-            </span>
-            bis <span class="font-semibold">{levelInfo.next.name}</span>
-          </p>
-        {:else}
-          <p class="mt-3 text-sm font-semibold text-primary">
-            Du hast das höchste Level erreicht! 🏆
-          </p>
-        {/if}
       </div>
 
       <!-- Roadmap -->
@@ -96,8 +84,8 @@
         <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">
           Alle Level
         </div>
-        <div class="flex flex-col gap-3">
-          {#each LEVEL_DEFS as lvl (lvl.level)}
+        <div class="flex max-h-[420px] flex-col gap-3 overflow-y-auto pr-1">
+          {#each $levelDefs as lvl (lvl.level)}
             {@const isCurrent = lvl.level === levelInfo.current.level}
             {@const isDone    = lvl.level < levelInfo.current.level}
             {@const isNext    = levelInfo.next !== null && lvl.level === levelInfo.next.level}
@@ -132,16 +120,8 @@
                     {isCurrent ? 'text-heading' : isDone ? 'text-primary' : isNext ? 'text-body' : 'text-gray-400'}">
                     {isHidden ? '???' : lvl.name}
                   </span>
-                  {#if isCurrent}
-                    <span class="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-white">
-                      Aktuell
-                    </span>
-                  {:else if isDone}
+                  {#if isDone}
                     <span class="text-xs text-primary">Erreicht</span>
-                  {:else if isNext}
-                    <span class="rounded-full bg-secondary/20 px-2 py-0.5 text-xs font-semibold text-secondary">
-                      Nächstes Ziel
-                    </span>
                   {/if}
                 </div>
                 <div class="text-xs text-gray-400">

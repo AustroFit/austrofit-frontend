@@ -1,0 +1,45 @@
+{
+  "export_info": {
+    "generated_at": "2026-03-30T15:36:53.084Z",
+    "legal_basis": "Art. 20 DSGVO – Recht auf Datenübertragbarkeit",
+    "contact": "datenschutz@austrofit.at"
+  },
+  "account": {
+    "id": "7f284a0f-fec0-416d-8ffa-3de4c913fe09"
+  },
+  "profile": {
+    "streak_days": 1,
+    "longest_streak": 1,
+    "quiz_streak_days": 0,
+    "health_connected": false,
+    "onboarding_completed": false,
+    "activity_group": "adult",
+    "totalSteps": 0
+  },
+  "points_ledger": [
+    {
+      "points_delta": 65,
+      "source_type": "cardio",
+      "source_ref": "cardio-2026-W13",
+      "occurred_at": "2026-03-24T19:02:53",
+      "description": null
+    },
+    {
+      "points_delta": 40,
+      "source_type": "schritte",
+      "source_ref": "2026-03-25",
+      "occurred_at": "2026-03-25T16:37:35",
+      "description": null
+    },
+    {
+      "points_delta": 50,
+      "source_type": "milestone",
+      "source_ref": "milestone-first_goal",
+      "occurred_at": "2026-03-25T16:37:35",
+      "description": null
+    }
+  ],
+  "quiz_attempts": [],
+  "reward_redemptions": [],
+  "activity_logs": []
+}

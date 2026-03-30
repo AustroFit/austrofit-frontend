@@ -2,12 +2,12 @@
   import Form from "$lib/components/Form.svelte";
   import { getBaseBlockClasses, getButtonClasses } from "$lib/design-system/classes";
   const { block, formResponse } = $props();
-  const blockData = block.item;
-  const theme = block.background || 'light';
-  const alignment = blockData.alignment || 'left';
-  const formData = blockData?.form;
-  const styles = getBaseBlockClasses(alignment, theme);
-  const buttonStyle = getButtonClasses(blockData.button_style, 'md');
+  const blockData = $derived(block.item);
+  const theme = $derived(block.background || 'light');
+  const alignment = $derived(blockData.alignment || 'left');
+  const formData = $derived(blockData?.form);
+  const styles = $derived(getBaseBlockClasses(alignment, theme));
+  const buttonStyle = $derived(getButtonClasses(blockData.button_style, 'md'));
 </script>
 
 {#if formData && formData?.is_active}

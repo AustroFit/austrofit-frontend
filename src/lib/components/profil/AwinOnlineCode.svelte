@@ -22,9 +22,15 @@
 
   interface Props {
     unlock: AwinUnlockEntry;
+    /** 'awin' (Standard) oder 'tradedoubler' – steuert Endpoints und localStorage-Prefix */
+    provider?: 'awin' | 'tradedoubler';
   }
 
-  const { unlock }: Props = $props();
+  const { unlock, provider = 'awin' }: Props = $props();
+
+  const unlockUrl = $derived(provider === 'tradedoubler' ? '/api/tradedoubler/unlock-code' : '/api/awin/unlock-code');
+  const clickBasePath = $derived(provider === 'tradedoubler' ? '/api/tradedoubler/click' : '/api/awin/click');
+  const storagePrefix = $derived(provider === 'tradedoubler' ? 'austrofit_td_' : 'austrofit_awin_');
 
   let code = $state<string | null>(null);
   let fetching = $state(false);
@@ -32,7 +38,7 @@
   let copied = $state(false);
   let shopLoading = $state(false);
 
-  const storageKey = `austrofit_awin_${unlock.promoId}`;
+  const storageKey = $derived(`${storagePrefix}${unlock.promoId}`);
 
   const ablaeuftFormatted = $derived(formatDateNumeric(unlock.endDate));
   const daysUntilExpiry = $derived(calcDaysUntil(unlock.endDate));
@@ -51,13 +57,15 @@
     fetchError = '';
     try {
       const token = getAccessToken();
-      const res = await fetch('/api/awin/unlock-code', {
+      const payload =
+        provider === 'tradedoubler' ? { voucherId: unlock.promoId } : { promoId: unlock.promoId };
+      const res = await fetch(unlockUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ promoId: unlock.promoId })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!res.ok) {
@@ -91,15 +99,12 @@
       const token = getAccessToken();
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch(`/api/awin/click/${unlock.programId}`, {
-        method: 'GET',
-        headers,
-        redirect: 'manual'
-      });
-      const location = res.headers.get('Location') ?? `/api/awin/click/${unlock.programId}`;
+      const clickUrl = `${clickBasePath}/${unlock.programId}`;
+      const res = await fetch(clickUrl, { method: 'GET', headers, redirect: 'manual' });
+      const location = res.headers.get('Location') ?? clickUrl;
       window.open(location, '_blank', 'noopener,noreferrer');
     } catch {
-      window.open(`/api/awin/click/${unlock.programId}`, '_blank', 'noopener,noreferrer');
+      window.open(`${clickBasePath}/${unlock.programId}`, '_blank', 'noopener,noreferrer');
     } finally {
       shopLoading = false;
     }

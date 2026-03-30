@@ -3,7 +3,8 @@
   import Quiz from '$lib/components/singlepage/Quiz.svelte';
 
   const { data } = $props();
-  const { item, quiz } = data;
+  const item = $derived(data.item);
+  const quiz = $derived(data.quiz);
 
   /** @type {HTMLElement | null} */
   let contentEl = $state(null);
@@ -98,9 +99,9 @@
 
   import { BLOCK_STYLES } from '$lib/data/blockStyles';
 
-  const blockStyle = item.block ? BLOCK_STYLES[item.block] : null;
-  const backUrl = item.block ? `/gesundheitswegweiser?block=${item.block}` : '/gesundheitswegweiser';
-  const backLabel = item.blockLabel ?? 'Gesundheitswegweiser';
+  const blockStyle = $derived(item.block ? BLOCK_STYLES[item.block] : null);
+  const backUrl = $derived(item.block ? `/gesundheitswegweiser?block=${item.block}` : '/gesundheitswegweiser');
+  const backLabel = $derived(item.blockLabel ?? 'Gesundheitswegweiser');
 </script>
 
 <svelte:head>

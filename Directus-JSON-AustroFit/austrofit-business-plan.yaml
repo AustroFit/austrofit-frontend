@@ -17,6 +17,14 @@ meta:
   ort: Wien
   seiten: 53
   aenderungslog:
+    - version: "1.3"
+      datum: "2026-03-24"
+      aenderungen:
+        - "Cardio-Tracking implementiert: queryWorkouts() via @capgo/capacitor-health, cardioService.ts, /api/cardio/sync"
+        - "Nutzergruppen eingeführt (adult/senior/pregnant/chronic) → gruppenspezifische Wochenziele (WHO/FGOE)"
+        - "Registrierung: 3-stufig (Konto → Gruppenauswahl → E-Mail); init-onboarding jetzt im Login-Flow"
+        - "Neue Directus Collection: activity_logs; user_profiles um activity_group erweitert"
+        - "Ski/Snowboard/Tanzen: Phase 2 (Plugin-Limitation @capgo/capacitor-health)"
     - version: "1.2"
       datum: "2026-03-09"
       aenderungen:

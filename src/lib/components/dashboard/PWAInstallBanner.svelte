@@ -53,7 +53,7 @@
     <div class="mx-auto max-w-lg rounded-2xl bg-white p-5 shadow-xl border border-black/10 pointer-events-auto">
       <div class="flex items-start gap-4">
         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl overflow-hidden bg-neutral-100">
-          <img src="/logo/logo_white.svg" alt="AustroFit" class="h-8 w-8 object-contain" onerror={(e) => e.currentTarget.style.display='none'} />
+          <img src="/logo/logo_white.svg" alt="AustroFit" class="h-8 w-8 object-contain" onerror={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')} />
         </div>
         <div class="flex-1 min-w-0">
           <h3 class="font-semibold leading-snug">AustroFit als App installieren</h3>

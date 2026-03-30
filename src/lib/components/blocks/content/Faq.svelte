@@ -3,10 +3,10 @@
   import FaqItem from "./FaqItem.svelte";
   
   const { block } = $props();
-  const blockData = block.item;
-  const theme = block.background || 'light';
-  
-  const styles = getFaqClasses(theme);
+  const blockData = $derived(block.item);
+  const theme = $derived(block.background || 'light');
+
+  const styles = $derived(getFaqClasses(theme));
 </script>
 
 <div class={styles.container}>

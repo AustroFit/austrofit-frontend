@@ -4,12 +4,12 @@
   import { getFormClasses } from '$lib/design-system/classes';
 
   const { formData, buttonStyle, formResponse } = $props();
-  const theme = formData?.theme || 'light';
-  const alignment = formData?.alignment || 'left';
-  const styles = getFormClasses(alignment, theme);
+  const theme = $derived(formData?.theme || 'light');
+  const alignment = $derived(formData?.alignment || 'left');
+  const styles = $derived(getFormClasses(alignment, theme));
 
-  const hasError = formResponse?.error && formResponse?.formId === formData.id;
-  const hasSuccess = formResponse?.success && formResponse?.formId === formData.id;
+  const hasError = $derived(formResponse?.error && formResponse?.formId === formData.id);
+  const hasSuccess = $derived(formResponse?.success && formResponse?.formId === formData.id);
 </script>
 
 <div class={styles.wrapper}>

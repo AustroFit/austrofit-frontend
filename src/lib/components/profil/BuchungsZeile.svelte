@@ -18,11 +18,15 @@
   let { buchung, zeige_datum = true }: Props = $props();
 
   const SOURCE_MAP: Record<string, { icon: string; label: string }> = {
-    education:  { icon: '📚', label: 'Quiz abgeschlossen' },
-    onboarding: { icon: '🎁', label: 'Onboarding-Bonus' },
-    schritte:   { icon: '👟', label: 'Tagesziel erreicht' },
-    step:       { icon: '👟', label: 'Tagesziel erreicht' },
-    streak:     { icon: '🔥', label: 'Streak-Bonus' },
+    education:   { icon: '📚', label: 'Quiz abgeschlossen' },
+    onboarding:  { icon: '🎁', label: 'Onboarding-Bonus' },
+    schritte:    { icon: '👟', label: 'Tagesziel erreicht' },
+    step:        { icon: '👟', label: 'Tagesziel erreicht' },
+    streak:      { icon: '🔥', label: 'Streak-Bonus' },
+    streak_tag:  { icon: '🔥', label: 'Tages-Streak' },
+    streak_quiz: { icon: '🧠', label: 'Quiz-Streak' },
+    cardio:      { icon: '🏃', label: 'Wochenaktivität' },
+    milestone:   { icon: '🏅', label: 'Meilenstein' },
     einloesung:  { icon: '🎫', label: 'Gutschein eingelöst' },
     awin_unlock: { icon: '🔓', label: 'Online-Rabattcode freigeschaltet' },
   };

@@ -4,7 +4,7 @@
 
   const { item, collection, config} = $props();
 
-  const imageUrl = item.image ? `https://cms.austrofit.at/assets/${item.image}` : null;
+  const imageUrl = $derived(item.image ? `https://cms.austrofit.at/assets/${item.image}` : null);
 
   const styles = getSinglePageClasses();
 

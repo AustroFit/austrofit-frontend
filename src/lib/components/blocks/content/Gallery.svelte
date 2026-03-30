@@ -1,8 +1,8 @@
 <script>
   import { PUBLIC_CMSURL } from "$env/static/public";
   const { block } = $props();
-  const blockData = block.item;
-  const theme = block.background || 'light';
+  const blockData = $derived(block.item);
+  const theme = $derived(block.background || 'light');
 
 </script>
 

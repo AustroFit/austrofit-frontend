@@ -1,0 +1,110 @@
+# Directus Collection: online_promotions
+# Erstellt: 2026-03-27
+# Zweck: Online-Rabattcodes netzwerkübergreifend pflegen (AWIN, Tradedoubler, direkte Partner).
+#        Neue Promotions können ohne Deploy hinzugefügt werden.
+#
+# SETUP IN DIRECTUS UI:
+# ---------------------
+# 1. Settings → Data Model → "Create Collection"
+#    - Name: online_promotions
+#    - Primary Key Type: "Manually entered string" (wichtig!)
+#    - Primary Key Name: id
+#
+# 2. Folgende Felder hinzufügen:
+
+fields:
+  - field: id
+    type: string
+    note: "Stabiler Slug, z.B. 'myfruits-snacktime15'. Muss eindeutig sein. Wird als source_ref im Ledger verwendet."
+    # Primary Key – beim Collection-Setup als string PK konfigurieren
+
+  - field: network
+    type: string
+    note: "Affiliate-Netzwerk. Werte: 'awin' | 'tradedoubler' | 'direct'. Steuert Deeplink-Generierung."
+    # Tipp: Dropdown-Interface mit Optionen awin / tradedoubler / direct
+
+  - field: network_advertiser_id
+    type: string
+    note: "Advertiser-ID im jeweiligen Netzwerk (z.B. '103075' für AWIN, '123456' für Tradedoubler). Leer lassen bei 'direct'."
+
+  - field: partner_name
+    type: string
+    required: true
+    note: "Anzeigename des Partners, z.B. 'myfruits'"
+
+  - field: partner_url
+    type: string
+    note: "Anzeigedomain ohne https://, z.B. 'myfruits.eu'"
+
+  - field: logo_url
+    type: string
+    note: "Logo-URL (optional). AWIN-Format: https://ui.awin.com/images/upload/merchant/profile/{id}.png"
+
+  - field: category
+    type: string
+    note: "Kategorie-Label für die UI, z.B. 'Food/Drink', 'Wellness & Therme'"
+
+  - field: code
+    type: string
+    required: true
+    note: "⚠️ GEHEIM – wird nur server-seitig nach Punkte-Abzug ausgegeben, nie in der API-Liste"
+
+  - field: description
+    type: text
+    required: true
+    note: "Kurzbeschreibung die in der UI angezeigt wird (kein HTML)"
+
+  - field: end_date
+    type: date
+    required: true
+    note: "Ablaufdatum YYYY-MM-DD. Abgelaufene Codes werden automatisch ausgeblendet."
+
+  - field: points_cost
+    type: integer
+    required: true
+    default_value: 50
+    note: "Punkte die zum Freischalten benötigt werden"
+
+  - field: status
+    type: string
+    required: true
+    default_value: active
+    note: "Werte: 'active' (sichtbar) | 'archived' (ausgeblendet, History bleibt erhalten)"
+    # Tipp: Dropdown-Interface mit Optionen active / archived
+
+# POLICY-ZUGRIFF:
+# ---------------
+# PRIVATE_CMS_STATIC_TOKEN (Admin-Policy):
+#   - Read: alle Felder inkl. 'code'
+# Read Content API (DIRECTUS_READ_TOKEN):
+#   - Kein Zugriff nötig (alles läuft server-seitig)
+# Public Policy:
+#   - Kein Zugriff
+
+# WORKFLOW FÜR NEUE PROMOTIONS:
+# ------------------------------
+# 1. Directus öffnen → online_promotions
+# 2. "Create Item" klicken
+# 3. id = eindeutiger-slug (z.B. 'brand-herbst25')
+# 4. network = awin / tradedoubler / direct
+# 5. Alle Felder ausfüllen, status = active
+# 6. Speichern → sofort live (kein Deploy!)
+#
+# Um eine Promotion zu deaktivieren:
+# - status auf 'archived' setzen ODER end_date in die Vergangenheit setzen
+# - NICHT löschen! (Einlösungs-History in points_ledger bleibt erhalten)
+
+# NETZWERK-SPEZIFIKA:
+# -------------------
+# AWIN:
+#   - network_advertiser_id: numerisch (z.B. '103075')
+#   - Deeplink wird server-seitig über buildAwinDeeplink() generiert
+#   - Programmdaten (Name, Logo) werden von AWIN API ergänzt wenn verfügbar
+#
+# Tradedoubler:
+#   - network_advertiser_id: Tradedoubler Program ID
+#   - Deeplink-Generierung: zukünftig via buildTradedoublerDeeplink()
+#
+# Direct:
+#   - network_advertiser_id: leer
+#   - Kein Deeplink (partner_url wird direkt verlinkt)

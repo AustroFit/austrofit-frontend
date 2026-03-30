@@ -4,7 +4,9 @@
 // POST body: { date: 'YYYY-MM-DD', steps: number, mode?: 'automatic' | 'manual' }
 // Authorization: Bearer <user-access-token>
 import { json } from '@sveltejs/kit';
-import { PRIVATE_CMS_STATIC_TOKEN, SCHRITTE_FLOW_ID } from '$env/static/private';
+import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+const SCHRITTE_FLOW_ID = env.SCHRITTE_FLOW_ID;
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { recordStepEntry } from '$lib/server/stepsService';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';

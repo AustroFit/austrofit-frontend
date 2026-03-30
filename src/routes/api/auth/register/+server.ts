@@ -1,7 +1,17 @@
-import { PUBLIC_CMSURL } from '$env/static/public';
-import { DIRECTUS_READ_TOKEN } from '$env/static/private';
+import { PUBLIC_CMSURL, PUBLIC_APP_URL, PUBLIC_EMAIL_VERIFICATION } from '$env/static/public';
+import { DIRECTUS_READ_TOKEN, DIRECTUS_WRITE_TOKEN } from '$env/static/private';
+import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
 
 export async function POST({ request, fetch }) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? request.headers.get('cf-connecting-ip')
+    ?? 'unknown';
+
+  // Max. 5 Registrierungen pro 15 Minuten pro IP
+  if (isRateLimited(ip, 'register', 5, 15 * 60 * 1000)) {
+    return rateLimitResponse();
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -30,12 +40,17 @@ export async function POST({ request, fetch }) {
   }
 
   // Registrierung bei Directus
+  const registrationPayload =
+    PUBLIC_EMAIL_VERIFICATION === 'true'
+      ? { ...(payload as Record<string, unknown>), verification_url: `${PUBLIC_APP_URL}/auth/verify-email` }
+      : payload;
+
   let upstream: Response;
   try {
     upstream = await fetch(`${PUBLIC_CMSURL}/users/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(registrationPayload)
     });
   } catch {
     return new Response(JSON.stringify({ error: 'Service nicht erreichbar' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
@@ -50,7 +65,26 @@ export async function POST({ request, fetch }) {
     });
   }
 
-  // Erfolgs-Response – Directus liefert standardmäßig 204 (kein Body)
+  // Ohne Email-Verifikation: User sofort auf active setzen
+  if (upstream.status === 204 && PUBLIC_EMAIL_VERIFICATION !== 'true') {
+    try {
+      const userRes = await fetch(
+        `${PUBLIC_CMSURL}/users?filter[email][_eq]=${encodeURIComponent(String(email))}&limit=1&fields=id`,
+        { headers: { Authorization: `Bearer ${DIRECTUS_READ_TOKEN}` } }
+      );
+      const userData = await userRes.json();
+      const userId = userData?.data?.[0]?.id;
+      if (userId) {
+        await fetch(`${PUBLIC_CMSURL}/users/${userId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${DIRECTUS_WRITE_TOKEN}` },
+          body: JSON.stringify({ status: 'active' })
+        });
+      }
+    } catch { /* non-blocking */ }
+    return new Response(null, { status: 204 });
+  }
+
   if (upstream.status === 204) {
     return new Response(null, { status: 204 });
   }
