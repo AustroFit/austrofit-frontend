@@ -5,7 +5,8 @@
   import { onMount } from 'svelte';
   import { register, login } from '$lib/utils/auth';
   import { track } from '$lib/utils/mixpanel';
-  import { PUBLIC_EMAIL_VERIFICATION } from '$env/static/public';
+  import { env as dynPublicEnv } from '$env/dynamic/public';
+  const PUBLIC_EMAIL_VERIFICATION = dynPublicEnv.PUBLIC_EMAIL_VERIFICATION;
 
   let email = $state('');
   let password = $state('');

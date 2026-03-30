@@ -1,4 +1,5 @@
-import { PUBLIC_CMSURL, PUBLIC_APP_URL, PUBLIC_EMAIL_VERIFICATION } from '$env/static/public';
+import { PUBLIC_CMSURL, PUBLIC_APP_URL } from '$env/static/public';
+import { env as dynPublicEnv } from '$env/dynamic/public';
 import { DIRECTUS_READ_TOKEN, DIRECTUS_WRITE_TOKEN } from '$env/static/private';
 import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
 
@@ -41,7 +42,7 @@ export async function POST({ request, fetch }) {
 
   // Registrierung bei Directus
   const registrationPayload =
-    PUBLIC_EMAIL_VERIFICATION === 'true'
+    dynPublicEnv.PUBLIC_EMAIL_VERIFICATION === 'true'
       ? { ...(payload as Record<string, unknown>), verification_url: `${PUBLIC_APP_URL}/auth/verify-email` }
       : payload;
 
@@ -66,7 +67,7 @@ export async function POST({ request, fetch }) {
   }
 
   // Ohne Email-Verifikation: User sofort auf active setzen
-  if (upstream.status === 204 && PUBLIC_EMAIL_VERIFICATION !== 'true') {
+  if (upstream.status === 204 && dynPublicEnv.PUBLIC_EMAIL_VERIFICATION !== 'true') {
     try {
       const userRes = await fetch(
         `${PUBLIC_CMSURL}/users?filter[email][_eq]=${encodeURIComponent(String(email))}&limit=1&fields=id`,
