@@ -21,7 +21,7 @@
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import type { SyncResult } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
-  import { formatDateMonthOnly } from '$lib/utils/date';
+  import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel } from '$lib/utils/date';
 
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -42,7 +42,6 @@
   const bonusSteps = $derived(stepsToday > STEP_GOAL ? stepsToday - STEP_GOAL : 0);
 
   // Points breakdown
-  let bewegungsPunkte = $state(0);
   let quizPunkte = $state(0);
 
   // Cardio week summary
@@ -55,6 +54,13 @@
   // Streak
   let streakDays = $state(0);
   let quizStreakDays = $state(0);
+
+  // Weekly step data (current ISO week)
+  interface DayStepData { date: string; points: number; }
+  let weeklyStepData = $state<DayStepData[]>([]);
+  const weekDates = getISOWeekDates();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const WEEK_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const;
 
   // Streak next milestones
   const nextStepMilestone = $derived(Math.ceil((streakDays + 1) / 7) * 7);
@@ -198,13 +204,13 @@
     if (!userId) return;
     const token = await getValidAccessToken();
     const authHeader = { Authorization: `Bearer ${token}` };
-    const [ledgerRes, earnedRes, entriesRes, profileRes, cardioRes, bewegungRes, quizPunkteRes] = await Promise.all([
+    const [ledgerRes, earnedRes, entriesRes, profileRes, cardioRes, weeklyStepsRes, quizPunkteRes] = await Promise.all([
       fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
       fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
       fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader }),
       fetch('/api/profile', { headers: authHeader }),
       fetch('/api/cardio/summary', { headers: authHeader }),
-      fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'schritte,step,cardio', positive_only: 'true' })}`, { headers: authHeader }),
+      fetch(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', source_ref_from: weekDates[0], source_ref_to: weekDates[6], limit: '14' })}`, { headers: authHeader }),
       fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`, { headers: authHeader })
     ]);
     if (ledgerRes.ok) totalPoints = Number((await ledgerRes.json()).total ?? 0);
@@ -223,7 +229,15 @@
       if (cd.targets) cardioTargets = cd.targets;
       cardioStreakWeeks = Number(cd.consecutiveFullWeeks ?? 0);
     }
-    if (bewegungRes.ok) bewegungsPunkte = Number((await bewegungRes.json()).total ?? 0);
+    if (weeklyStepsRes.ok) {
+      const ws = await weeklyStepsRes.json();
+      const byDate: Record<string, number> = {};
+      for (const e of (ws.data ?? [])) {
+        const d = String(e.source_ref ?? '');
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) byDate[d] = (byDate[d] ?? 0) + (e.points_delta ?? 0);
+      }
+      weeklyStepData = weekDates.map((date: string) => ({ date, points: byDate[date] ?? 0 }));
+    }
     if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
     await loadStepsFromHealth();
   }
@@ -277,7 +291,7 @@
       const quizIds = allQuizzes.map((q: any) => q.id);
 
       // 2) Alle user-spezifischen Daten + quiz-status in einem Batch
-      const [ledgerRes, earnedRes, challengeRes, quizStatusRes, badgesRes, directusBadgesRes, entriesRes, cardioRes, bewegungRes, quizPunkteRes] = await Promise.all([
+      const [ledgerRes, earnedRes, challengeRes, quizStatusRes, badgesRes, directusBadgesRes, entriesRes, cardioRes, weeklyStepsRes2, quizPunkteRes] = await Promise.all([
         fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
         fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
         fetch(`/api/challenges?${qs({
@@ -294,7 +308,7 @@
         fetch('/api/badges', { headers: authHeader }),
         fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader }),
         fetch('/api/cardio/summary', { headers: authHeader }),
-        fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'schritte,step,cardio', positive_only: 'true' })}`, { headers: authHeader }),
+        fetch(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', source_ref_from: weekDates[0], source_ref_to: weekDates[6], limit: '14' })}`, { headers: authHeader }),
         fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`, { headers: authHeader })
       ]);
 
@@ -323,7 +337,15 @@
         if (cd.targets) cardioTargets = cd.targets;
         cardioStreakWeeks = Number(cd.consecutiveFullWeeks ?? 0);
       }
-      if (bewegungRes.ok) bewegungsPunkte = Number((await bewegungRes.json()).total ?? 0);
+      if (weeklyStepsRes2?.ok) {
+        const ws2 = await weeklyStepsRes2.json();
+        const byDate2: Record<string, number> = {};
+        for (const e of (ws2.data ?? [])) {
+          const d = String(e.source_ref ?? '');
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d)) byDate2[d] = (byDate2[d] ?? 0) + (e.points_delta ?? 0);
+        }
+        weeklyStepData = weekDates.map((date: string) => ({ date, points: byDate2[date] ?? 0 }));
+      }
       if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
 
       // 3) Offene Quizze aus bereits geladenen Daten zusammensetzen
@@ -514,14 +536,9 @@
           <LevelFortschritt punkte={earnedPoints} />
         </div>
 
-        {#if bewegungsPunkte > 0 || quizPunkte > 0}
+        {#if quizPunkte > 0}
           <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-            {#if bewegungsPunkte > 0}
-              <span>🏃 Bewegung: <span class="font-semibold text-gray-700">{bewegungsPunkte.toLocaleString('de-AT')}P</span></span>
-            {/if}
-            {#if quizPunkte > 0}
-              <span>📚 Quizze: <span class="font-semibold text-gray-700">{quizPunkte.toLocaleString('de-AT')}P</span></span>
-            {/if}
+            <span>📚 Quizze: <span class="font-semibold text-gray-700">{quizPunkte.toLocaleString('de-AT')}P</span></span>
           </div>
         {/if}
 
@@ -535,95 +552,93 @@
         </div>
       </div>
 
-      <!-- 2. Tagesziel Schritte -->
-      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
-        <div class="flex items-center justify-between gap-4 mb-3">
-          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">
-            Tagesziel Schritte
+      <!-- 2. Schritte -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-1.5">
+            <span class="text-lg">👟</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-gray-400">Schritte</span>
           </div>
-          <div class="text-3xl">👟</div>
+          <a href="/schritte" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
+            {formatCardDateLabel()} →
+          </a>
         </div>
 
         {#if testMode}
-          <!-- Test mode – manual entry -->
           <ManuelleSchrittEingabe {userId} onSave={refreshDashboardData} />
-        {:else if !healthConnected}
-          {#if showNativeFeatures}
-            <!-- Native: connect to Health Connect -->
-            <div class="rounded-xl bg-primary/5 border border-primary/20 p-4">
-              <p class="text-sm text-body leading-relaxed mb-3">
-                Verbinde dich mit Google Health Connect oder Apple HealthKit, um deine täglichen
-                Schritte automatisch zu tracken und Punkte zu verdienen.
-              </p>
-              <button
-                onclick={() => (showHealthPrompt = true)}
-                class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
-              >
-                👟 Schritt-Tracking verbinden
-              </button>
-            </div>
-          {:else}
-            <!-- PWA: coming soon -->
-            <div class="rounded-xl bg-gray-50 border border-black/10 p-4">
-              <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-sm font-semibold text-heading">Schritt-Tracking</span>
-                <span class="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Kommt bald</span>
-              </div>
-              <p class="text-sm text-gray-500 leading-relaxed">
-                Die AustroFit Android App mit automatischem Schritt-Tracking erscheint in Kürze im Play Store.
-              </p>
-            </div>
-          {/if}
-        {:else}
-          <!-- Health connected – show progress -->
-          {#if stepsToday >= STEP_GOAL}
-            <div class="font-semibold text-lg text-primary">
-              {stepsToday.toLocaleString('de-AT')} Schritte ✓
-            </div>
-            {#if bonusSteps > 0}
-              <div class="text-xs text-gray-500 mt-0.5">
-                +{bonusSteps.toLocaleString('de-AT')} Bonusschritte · {todayPoints}P heute
-              </div>
-            {/if}
-          {:else}
-            <div class="font-semibold text-lg">
+        {:else if healthConnected}
+          <!-- Heute: Punkte + Schritte -->
+          <div class="flex items-baseline justify-between gap-2 mb-2">
+            <div class="text-3xl font-bold font-heading text-secondary">{todayPoints}P</div>
+            <div class="text-2xl font-bold font-heading text-heading">
               {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
             </div>
-          {/if}
-
-          <!-- Progress bar -->
-          <div class="mt-3 h-3 w-full rounded-full bg-gray-100 overflow-hidden">
-            <div
-              class="h-full rounded-full transition-all duration-500 bg-primary"
-              style="width:{stepPercent}%;"
-            ></div>
           </div>
-          <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-            <span>{stepPercent}% erreicht</span>
-            <span>
-              {#if stepPercent >= 100}
-                🎉 Tagesziel erreicht!
-              {:else}
-                {(STEP_GOAL - stepsToday).toLocaleString('de-AT')} Schritte bis zum Ziel
+          <!-- Fortschrittsbalken: amber (<Ziel), grün (≥Ziel), dunkelgrün Überschuss -->
+          <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
+            {#if stepPercent >= 100}
+              <div class="absolute inset-0 bg-primary rounded-full"></div>
+              {#if bonusSteps > 0}
+                {@const excessPct = Math.min(55, Math.round((bonusSteps / STEP_GOAL) * 100))}
+                <div class="absolute inset-y-0 right-0 rounded-r-full bg-primary-dark" style="width:{excessPct}%;"></div>
               {/if}
-            </span>
+            {:else}
+              <div class="absolute inset-y-0 left-0 bg-secondary rounded-full transition-all duration-500" style="width:{stepPercent}%;"></div>
+            {/if}
           </div>
+        {:else if showNativeFeatures}
+          <div class="mb-4 rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-3">
+            <p class="flex-1 text-sm text-body leading-snug">
+              Verbinde Health Connect, um Schritte zu tracken und Punkte zu verdienen.
+            </p>
+            <button
+              onclick={() => (showHealthPrompt = true)}
+              class="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
+            >
+              Verbinden
+            </button>
+          </div>
+        {/if}
 
-          {#if showNativeFeatures}
-            <div class="mt-4 pt-4 border-t border-black/5">
-              <SchrittSyncButton onSyncComplete={onSchrittSyncComplete} />
+        <!-- Wochenkreise (immer sichtbar) -->
+        <div class="grid grid-cols-7 gap-0.5">
+          {#each weekDates as date, i}
+            {@const dayData = weeklyStepData.find(d => d.date === date)}
+            {@const pts = dayData?.points ?? 0}
+            {@const isGoal = pts >= 40}
+            {@const isPartial = pts > 0 && pts < 40}
+            {@const isToday = date === todayStr}
+            <div class="flex flex-col items-center gap-0.5">
+              <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
+              <div
+                class="h-9 w-9 rounded-full border-2 flex items-center justify-center
+                  {isGoal ? 'bg-primary border-primary' : isPartial ? 'border-secondary bg-secondary/10' : 'border-gray-200 bg-white'}
+                  {isToday ? 'ring-2 ring-offset-1 ring-primary/40' : ''}"
+              ></div>
+              {#if pts > 0}
+                <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{pts}P</span>
+              {:else}
+                <span class="text-[10px] leading-tight text-transparent select-none">–</span>
+              {/if}
             </div>
-          {/if}
+          {/each}
+        </div>
+
+        {#if showNativeFeatures && healthConnected}
+          <div class="mt-4 pt-4 border-t border-black/5">
+            <SchrittSyncButton onSyncComplete={onSchrittSyncComplete} />
+          </div>
         {/if}
       </div>
 
-      <!-- 3. Wochenziel Bewegung -->
+      <!-- 3. Bewegung -->
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="flex items-center justify-between gap-4 mb-3">
-          <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">
-            Wochenziel Bewegung
+          <div class="flex items-center gap-1.5">
+            <span class="text-lg">🏃</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-gray-400">Bewegung</span>
           </div>
-          <div class="text-3xl">🏃</div>
         </div>
 
         {#if cardioTestMode}
@@ -676,10 +691,10 @@
             </div>
           {/if}
 
-          <!-- Progress bar -->
-          <div class="mt-3 h-3 w-full rounded-full bg-gray-100 overflow-hidden">
+          <!-- Fortschrittsbalken: amber (<Ziel), grün (≥Ziel) -->
+          <div class="mt-3 h-3.5 w-full rounded-full bg-gray-100 overflow-hidden">
             <div
-              class="h-full rounded-full transition-all duration-500 bg-primary"
+              class="h-full rounded-full transition-all duration-500 {cardioPercent >= 100 ? 'bg-primary' : 'bg-secondary'}"
               style="width:{cardioPercent}%;"
             ></div>
           </div>

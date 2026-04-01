@@ -35,3 +35,26 @@ export function daysUntilExpiry(iso: string | null | undefined): number {
   if (!iso) return 0;
   return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
+
+/** Returns YYYY-MM-DD strings for Mon–Sun of the current ISO week */
+export function getISOWeekDates(): string[] {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun, 1=Mon, ...
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d.toISOString().split('T')[0];
+  });
+}
+
+/** "Do, Mär. 26" – short weekday + date label for card headers */
+export function formatCardDateLabel(date: Date = new Date()): string {
+  const weekday = date.toLocaleDateString('de-AT', { weekday: 'short' }).replace(/\.$/, '');
+  const day = date.getDate();
+  const month = date.toLocaleDateString('de-AT', { month: 'short' });
+  return `${weekday}, ${month} ${day}`;
+}
