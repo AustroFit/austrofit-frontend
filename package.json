@@ -13,7 +13,7 @@
     "format": "prettier --write .",
     "lint": "prettier --check . && eslint .",
     "generate-safelist": "node scripts/generate-safelist.js",
-    "cap:sync": "npx cap sync android",
+    "cap:sync": "npx cap sync android && node -e \"const fs=require('fs');const path=require('path');function del(d){if(!fs.existsSync(d))return;for(const f of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,f.name);if(f.isDirectory())del(p);else if(f.name.endsWith('.gz'))fs.unlinkSync(p);}}del('android/app/src/main/assets');console.log('Removed .gz files from Android assets');\"",
     "cap:open": "npx cap open android",
     "cap:run": "npx cap run android"
   },
@@ -47,6 +47,7 @@
     "@capacitor/android": "^8.2.0",
     "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.1.0",
+    "@capacitor/status-bar": "^8.0.2",
     "@capgo/capacitor-health": "^8.2.17",
     "@directus/sdk": "^19.1.0",
     "@types/qrcode": "^1.5.6",

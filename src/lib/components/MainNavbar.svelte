@@ -63,8 +63,11 @@
   ];
 </script>
 
-<nav class="z-50 flex flex-row justify-center font-montserrat h-[75px] bg-light-grey shadow-sm">
-  <div class="w-full max-w-[1140px] flex flex-row h-full px-4 lg:px-6">
+<nav
+  class="z-50 flex flex-col justify-end font-montserrat bg-light-grey shadow-sm"
+  style="padding-top: env(safe-area-inset-top);"
+>
+  <div class="w-full max-w-[1140px] flex flex-row h-[75px] px-4 lg:px-6 mx-auto">
 
     <!-- Logo -->
     <div class="pr-6 lg:pr-10">
@@ -156,7 +159,7 @@
   </button>
 
   <!-- Mobile menu panel -->
-  <div class="fixed top-[75px] w-full max-w-[100vw] bg-white shadow-md z-50 overflow-y-auto lg:hidden">
+  <div class="fixed w-full max-w-[100vw] bg-white shadow-md z-50 overflow-y-auto lg:hidden" style="top: calc(75px + env(safe-area-inset-top));">
     <nav class="py-4">
       {#each (loggedIn ? authNav : guestNav) as item}
         <div class="border-b border-gray-200">

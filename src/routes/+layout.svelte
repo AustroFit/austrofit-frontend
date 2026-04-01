@@ -1,6 +1,8 @@
 <script lang="ts">
   import '../app.css';
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
+  import { Capacitor } from '@capacitor/core';
   import MainNavbar from '$lib/components/MainNavbar.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import ConsentBanner from '$lib/components/dashboard/ConsentBanner.svelte';
@@ -13,6 +15,14 @@
   const { children } = $props();
 
   onMount(() => {
+    // Statusleiste konfigurieren (nur native App)
+    if (browser && Capacitor.isNativePlatform()) {
+      import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+        StatusBar.setStyle({ style: Style.Light });          // dunkle Icons auf hellem Hintergrund
+        StatusBar.setBackgroundColor({ color: '#F0FBF1' });  // passend zur Navbar (bg-light-grey)
+      }).catch(() => { /* nicht-kritisch */ });
+    }
+
     // Analytics nur nach expliziter Einwilligung initialisieren (DSGVO Art. 7)
     if (localStorage.getItem('austrofit_analytics_consent') === 'true') {
       initAnalytics(env.PUBLIC_POSTHOG_TOKEN ?? '');

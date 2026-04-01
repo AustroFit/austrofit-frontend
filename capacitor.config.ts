@@ -10,6 +10,13 @@ const config: CapacitorConfig = {
     // Production: https://austrofit.at      (main branch)
     url: 'https://dev.austrofit.at',
     cleartext: false
+  },
+  plugins: {
+    StatusBar: {
+      // LIGHT = dunkle Icons → lesbar auf hellem Hintergrund (#F0FBF1 Navbar)
+      style: 'LIGHT',
+      backgroundColor: '#F0FBF1'
+    }
   }
 };
 
