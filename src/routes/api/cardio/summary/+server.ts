@@ -43,7 +43,7 @@ export async function GET({
   const logsParams = new URLSearchParams({
     'filter[user_id][_eq]': userId,
     'filter[week_key][_eq]': weekKey,
-    fields: 'equivalent_minutes',
+    fields: 'date,equivalent_minutes',
     limit: '100'
   });
   const ledgerParams = new URLSearchParams({
@@ -70,10 +70,17 @@ export async function GET({
       .then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
 
-  const equivalentMinutes = (logsBody?.data ?? []).reduce(
-    (sum: number, row: { equivalent_minutes: number }) => sum + Number(row.equivalent_minutes ?? 0),
-    0
-  );
+  const dailyMap: Record<string, number> = {};
+  let equivalentMinutes = 0;
+  for (const row of (logsBody?.data ?? []) as { date?: string; equivalent_minutes?: number }[]) {
+    const mins = Number(row.equivalent_minutes ?? 0);
+    equivalentMinutes += mins;
+    const d = String(row.date ?? '');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      dailyMap[d] = (dailyMap[d] ?? 0) + mins;
+    }
+  }
+  const dailyMinutes = Object.entries(dailyMap).map(([date, minutes]) => ({ date, minutes }));
   const pointsTotal = Number(ledgerBody?.data?.[0]?.points_delta ?? 0);
   let consecutiveFullWeeks = 0;
   for (const entry of (streakBody?.data ?? [])) {
@@ -88,6 +95,7 @@ export async function GET({
     pointsTotal,
     targets: weeklyTargets[activityGroup],
     activityGroup,
-    consecutiveFullWeeks
+    consecutiveFullWeeks,
+    dailyMinutes
   });
 }

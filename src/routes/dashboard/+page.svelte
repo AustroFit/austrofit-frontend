@@ -15,11 +15,9 @@
   import HealthPermissionPrompt from '$lib/components/dashboard/HealthPermissionPrompt.svelte';
   import PWAInstallBanner from '$lib/components/dashboard/PWAInstallBanner.svelte';
   import SyncToast from '$lib/components/SyncToast.svelte';
-  import SchrittSyncButton from '$lib/components/SchrittSyncButton.svelte';
   import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
   import ManuelleCardioEingabe from '$lib/components/dashboard/ManuelleCardioEingabe.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
-  import type { SyncResult } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
   import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel } from '$lib/utils/date';
 
@@ -50,6 +48,11 @@
   let cardioTargets = $state<{ start: number; full: number }>({ start: 50, full: 150 });
   let cardioStreakWeeks = $state(0);
   const cardioPercent = $derived(Math.min(100, Math.round((cardioEqMinutes / cardioTargets.full) * 100)));
+  const dailyCardioGoal = $derived(Math.round(cardioTargets.full / 7)); // ≈21 min for full=150
+
+  // Weekly cardio data (current ISO week, per day)
+  interface DayCardioData { date: string; minutes: number; }
+  let weeklyCardioData = $state<DayCardioData[]>([]);
 
   // Streak
   let streakDays = $state(0);
@@ -184,6 +187,46 @@
   let showSyncToast = $state(false);
   let syncToastPunkte = $state(0);
   let isNativePlatform = $state(false);
+
+  // Pull-to-refresh
+  let pullRefreshing = $state(false);
+  let pullOffset = $state(0);
+  let _pullStartY = 0;
+  let _pullStartScrollY = 0;
+  const PULL_THRESHOLD = 60;
+
+  function onTouchStart(e: TouchEvent) {
+    _pullStartY = e.touches[0].clientY;
+    _pullStartScrollY = window.scrollY;
+  }
+
+  function onTouchMove(e: TouchEvent) {
+    if (_pullStartScrollY > 5 || pullRefreshing) return;
+    const delta = e.touches[0].clientY - _pullStartY;
+    if (delta > 0) pullOffset = Math.min(80, delta * 0.4);
+  }
+
+  async function onTouchEnd() {
+    if (pullOffset >= PULL_THRESHOLD * 0.7 && !pullRefreshing) {
+      pullOffset = 0;
+      pullRefreshing = true;
+      try {
+        if (isNativePlatform) {
+          await Promise.all([
+            syncSteps({ days: 7, mode: 'automatic' })
+              .then(r => { if (r.punkte_total > 0) { syncToastPunkte = r.punkte_total; showSyncToast = true; } })
+              .catch(() => {}),
+            syncCardio().catch(() => {})
+          ]);
+        }
+        await refreshDashboardData();
+      } finally {
+        pullRefreshing = false;
+      }
+    } else {
+      pullOffset = 0;
+    }
+  }
   let devNativeMode = $state(false);
   let cardioTestMode = $state(false);
   // showNativeFeatures: real native OR dev toggle – used for UI only, not sync logic
@@ -228,6 +271,12 @@
       cardioPointsTotal = Number(cd.pointsTotal ?? 0);
       if (cd.targets) cardioTargets = cd.targets;
       cardioStreakWeeks = Number(cd.consecutiveFullWeeks ?? 0);
+      if (cd.dailyMinutes) {
+        weeklyCardioData = weekDates.map((date: string) => ({
+          date,
+          minutes: (cd.dailyMinutes as {date: string; minutes: number}[]).find(d => d.date === date)?.minutes ?? 0
+        }));
+      }
     }
     if (weeklyStepsRes.ok) {
       const ws = await weeklyStepsRes.json();
@@ -244,10 +293,6 @@
 
   function handleSyncToastHide() {
     showSyncToast = false;
-  }
-
-  function onSchrittSyncComplete(_result: SyncResult) {
-    void refreshDashboardData();
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -336,6 +381,12 @@
         cardioPointsTotal = Number(cd.pointsTotal ?? 0);
         if (cd.targets) cardioTargets = cd.targets;
         cardioStreakWeeks = Number(cd.consecutiveFullWeeks ?? 0);
+        if (cd.dailyMinutes) {
+          weeklyCardioData = weekDates.map((date: string) => ({
+            date,
+            minutes: (cd.dailyMinutes as {date: string; minutes: number}[]).find(d => d.date === date)?.minutes ?? 0
+          }));
+        }
       }
       if (weeklyStepsRes2?.ok) {
         const ws2 = await weeklyStepsRes2.json();
@@ -448,7 +499,27 @@
 
 <svelte:head><title>Dashboard – AustroFit</title></svelte:head>
 
-<main class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24">
+<!-- Pull-to-refresh indicator -->
+{#if pullOffset > 0 || pullRefreshing}
+  <div
+    class="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-150"
+    style="height: {pullRefreshing ? 48 : pullOffset}px; opacity: {pullRefreshing ? 1 : Math.min(1, pullOffset / 40)};"
+  >
+    {#if pullRefreshing}
+      <span class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+    {:else}
+      <span class="text-gray-400 text-base" style="display:block; transform: rotate({Math.min(180, pullOffset * 2.5)}deg);">↓</span>
+    {/if}
+  </div>
+{/if}
+
+<main
+  class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24"
+  style="overscroll-behavior-y: contain;"
+  ontouchstart={onTouchStart}
+  ontouchmove={onTouchMove}
+  ontouchend={onTouchEnd}
+>
   {#if errorMsg}
     <div class="mx-auto max-w-lg px-4 py-16">
       <div class="rounded-[var(--radius-card)] border border-error/30 bg-error/5 p-6 text-sm text-error">
@@ -625,20 +696,19 @@
           {/each}
         </div>
 
-        {#if showNativeFeatures && healthConnected}
-          <div class="mt-4 pt-4 border-t border-black/5">
-            <SchrittSyncButton onSyncComplete={onSchrittSyncComplete} />
-          </div>
-        {/if}
       </div>
 
       <!-- 3. Bewegung -->
-      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
-        <div class="flex items-center justify-between gap-4 mb-3">
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-1.5">
             <span class="text-lg">🏃</span>
             <span class="text-xs font-semibold uppercase tracking-widest text-gray-400">Bewegung</span>
           </div>
+          <a href="/bewegung" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
+            {formatCardDateLabel()} →
+          </a>
         </div>
 
         {#if cardioTestMode}
@@ -646,15 +716,15 @@
         {:else if !healthConnected}
           {#if showNativeFeatures}
             <!-- Native: connect to Health Connect -->
-            <div class="rounded-xl bg-primary/5 border border-primary/20 p-4">
-              <p class="text-sm text-body leading-relaxed mb-3">
+            <div class="rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-3">
+              <p class="flex-1 text-sm text-body leading-snug">
                 Verbinde Health Connect, um Laufen, Radfahren & Co. zu tracken und Punkte zu verdienen.
               </p>
               <button
                 onclick={() => (showHealthPrompt = true)}
-                class="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+                class="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
               >
-                🏃 Bewegungs-Tracking verbinden
+                Verbinden
               </button>
             </div>
           {:else}
@@ -670,41 +740,54 @@
             </div>
           {/if}
         {:else}
-          {#if cardioEqMinutes >= cardioTargets.full}
-            <div class="font-semibold text-lg text-primary">
-              {cardioEqMinutes} Min. Äquivalent ✓
+          <!-- Heute: Minuten + Wochenziel -->
+          <div class="flex items-baseline justify-between gap-2 mb-2">
+            {#if cardioEqMinutes >= cardioTargets.full}
+              <div class="text-3xl font-bold font-heading text-primary">{cardioPointsTotal}P</div>
+            {:else if cardioEqMinutes > 0}
+              <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
+            {:else}
+              <div class="text-3xl font-bold font-heading text-gray-300">0P</div>
+            {/if}
+            <div class="text-2xl font-bold font-heading text-heading">
+              {cardioEqMinutes} / {cardioTargets.full} min
             </div>
-            <div class="text-xs text-gray-500 mt-0.5">
-              Wochenziel erreicht · {cardioPointsTotal}P diese Woche
-            </div>
-          {:else if cardioEqMinutes > 0}
-            <div class="font-semibold text-lg">
-              {cardioEqMinutes} / {cardioTargets.full} Min.
-            </div>
-            <div class="text-xs text-gray-500 mt-0.5">
-              {cardioPointsTotal > 0 ? `${cardioPointsTotal}P bereits verdient` : `Ab ${cardioTargets.start} Min. gibt es Punkte`}
-            </div>
-          {:else}
-            <div class="font-semibold text-gray-600">Noch keine Aktivität diese Woche</div>
-            <div class="text-xs text-gray-400 mt-0.5">
-              Ab {cardioTargets.start} Min. moderate Bewegung gibt es Punkte
-            </div>
-          {/if}
+          </div>
 
           <!-- Fortschrittsbalken: amber (<Ziel), grün (≥Ziel) -->
-          <div class="mt-3 h-3.5 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
             <div
-              class="h-full rounded-full transition-all duration-500 {cardioPercent >= 100 ? 'bg-primary' : 'bg-secondary'}"
+              class="absolute inset-y-0 left-0 rounded-full transition-all duration-500 {cardioPercent >= 100 ? 'bg-primary' : 'bg-secondary'}"
               style="width:{cardioPercent}%;"
             ></div>
           </div>
-          <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-            <span>{cardioPercent}% des Wochenziels</span>
-            {#if cardioEqMinutes < cardioTargets.full}
-              <span>{cardioTargets.full - cardioEqMinutes} Min. bis zum Ziel</span>
-            {:else}
-              <span>🎉 Wochenziel erreicht!</span>
-            {/if}
+        {/if}
+
+        <!-- Wochenkreise (immer sichtbar wenn health connected oder testMode) -->
+        {#if healthConnected || cardioTestMode}
+          <div class="grid grid-cols-7 gap-0.5">
+            {#each weekDates as date, i}
+              {@const dayData = weeklyCardioData.find(d => d.date === date)}
+              {@const mins = dayData?.minutes ?? 0}
+              {@const isGoal    = mins >= dailyCardioGoal}
+              {@const isPartial = mins > 0 && mins < dailyCardioGoal}
+              {@const isToday   = date === todayStr}
+              <div class="flex flex-col items-center gap-0.5">
+                <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
+                <div
+                  class="h-9 w-9 rounded-full border-2 flex items-center justify-center
+                    {isGoal    ? 'bg-primary border-primary'
+                    : isPartial ? 'border-secondary bg-secondary/10'
+                    : 'border-gray-200 bg-white'}
+                    {isToday ? 'ring-2 ring-offset-1 ring-primary/40' : ''}"
+                ></div>
+                {#if mins > 0}
+                  <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{mins}m</span>
+                {:else}
+                  <span class="text-[10px] leading-tight text-transparent select-none">–</span>
+                {/if}
+              </div>
+            {/each}
           </div>
         {/if}
       </div>
