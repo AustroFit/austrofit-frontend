@@ -20,7 +20,7 @@
   import CircleRing from '$lib/components/CircleRing.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
-  import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel } from '$lib/utils/date';
+  import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel, toLocalDateString } from '$lib/utils/date';
 
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -63,7 +63,7 @@
   interface DayStepData { date: string; points: number; }
   let weeklyStepData = $state<DayStepData[]>([]);
   const weekDates = getISOWeekDates();
-  const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+  const todayStr = toLocalDateString();
   const WEEK_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const;
 
   // Streak next milestones
@@ -655,7 +655,7 @@
         {:else if healthConnected}
           <!-- Heute: Punkte + Schritte -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
-            <div class="text-3xl font-bold font-heading {stepsToday >= STEP_GOAL ? 'text-[#22c55e]' : 'text-secondary'}">{todayPoints}P</div>
+            <div class="text-3xl font-bold font-heading {stepsToday >= STEP_GOAL ? 'text-success' : 'text-secondary'}">{todayPoints}P</div>
             <div class="text-2xl font-bold font-heading text-heading">
               {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
             </div>
@@ -663,7 +663,7 @@
           <!-- Fortschrittsbalken: amber (<Ziel), hellgrün (≥Ziel), dunkelgrün Überschuss -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
             {#if stepPercent >= 100}
-              <div class="absolute inset-0 rounded-full" style="background:#22c55e;"></div>
+              <div class="absolute inset-0 rounded-full bg-success"></div>
               {#if bonusSteps > 0}
                 {@const excessPct = Math.min(55, Math.round((bonusSteps / STEP_GOAL) * 100))}
                 <div class="absolute inset-y-0 right-0 rounded-r-full bg-primary" style="width:{excessPct}%;"></div>
@@ -698,9 +698,9 @@
             {@const displayPts = isToday ? todayPoints : pts}
             <div class="flex flex-col items-center gap-0.5">
               <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-              <CircleRing percent={ringPercent} color={ringColor} complete={isGoal} {isToday} />
+              <CircleRing percent={ringPercent} color={ringColor} {isToday} />
               {#if displayPts > 0}
-                <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-[#22c55e]' : 'text-secondary'}">{displayPts}P</span>
+                <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-success' : 'text-secondary'}">{displayPts}P</span>
               {:else}
                 <span class="text-[10px] leading-tight text-transparent select-none">–</span>
               {/if}
@@ -755,7 +755,7 @@
           <!-- Heute: Minuten + Wochenziel -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
             {#if cardioEqMinutes >= cardioTargets.full}
-              <div class="text-3xl font-bold font-heading text-[#22c55e]">{cardioPointsTotal}P</div>
+              <div class="text-3xl font-bold font-heading text-success">{cardioPointsTotal}P</div>
             {:else if cardioEqMinutes > 0}
               <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
             {:else}
@@ -769,8 +769,8 @@
           <!-- Fortschrittsbalken: amber (<Ziel), grün (≥Ziel) -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
             <div
-              class="absolute inset-y-0 left-0 rounded-full transition-all duration-500 {cardioPercent >= 100 ? '' : 'bg-secondary'}"
-              style="width:{cardioPercent}%; {cardioPercent >= 100 ? 'background:#22c55e;' : ''}"
+              class="absolute inset-y-0 left-0 rounded-full transition-all duration-500 {cardioPercent >= 100 ? 'bg-success' : 'bg-secondary'}"
+              style="width:{cardioPercent}%;"
             ></div>
           </div>
         {/if}
@@ -787,9 +787,9 @@
               {@const ringColor = isGoal ? 'primary' : 'secondary'}
               <div class="flex flex-col items-center gap-0.5">
                 <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-                <CircleRing percent={ringPercent} color={ringColor} complete={isGoal} {isToday} />
+                <CircleRing percent={ringPercent} color={ringColor} {isToday} />
                 {#if mins > 0}
-                  <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-[#22c55e]' : 'text-secondary'}">{mins}m</span>
+                  <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-success' : 'text-secondary'}">{mins}m</span>
                 {:else}
                   <span class="text-[10px] leading-tight text-transparent select-none">–</span>
                 {/if}

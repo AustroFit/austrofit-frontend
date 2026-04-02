@@ -5,6 +5,7 @@
   import { getValidAccessToken } from '$lib/utils/auth';
   import { qs } from '$lib/utils/qs';
   import CircleRing from '$lib/components/CircleRing.svelte';
+  import { toLocalDateString } from '$lib/utils/date';
 
   // ── State ────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -17,7 +18,7 @@
   let viewYear = $state(now.getFullYear());
   let viewMonth = $state(now.getMonth()); // 0-based
 
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayStr = toLocalDateString(now);
   const WEEK_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const;
 
   // ── Derived ──────────────────────────────────────────────────────────────

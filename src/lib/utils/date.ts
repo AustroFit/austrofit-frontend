@@ -36,6 +36,11 @@ export function daysUntilExpiry(iso: string | null | undefined): number {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
+/** Returns "YYYY-MM-DD" for a given Date in local timezone */
+export function toLocalDateString(date: Date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 /** Returns YYYY-MM-DD strings for Mon–Sun of the current ISO week (local timezone) */
 export function getISOWeekDates(): string[] {
   const now = new Date();
