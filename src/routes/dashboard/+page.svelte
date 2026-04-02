@@ -63,7 +63,7 @@
   interface DayStepData { date: string; points: number; }
   let weeklyStepData = $state<DayStepData[]>([]);
   const weekDates = getISOWeekDates();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
   const WEEK_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const;
 
   // Streak next milestones

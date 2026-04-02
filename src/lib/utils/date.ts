@@ -36,7 +36,7 @@ export function daysUntilExpiry(iso: string | null | undefined): number {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-/** Returns YYYY-MM-DD strings for Mon–Sun of the current ISO week */
+/** Returns YYYY-MM-DD strings for Mon–Sun of the current ISO week (local timezone) */
 export function getISOWeekDates(): string[] {
   const now = new Date();
   const dow = now.getDay(); // 0=Sun, 1=Mon, ...
@@ -47,7 +47,7 @@ export function getISOWeekDates(): string[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return d.toISOString().split('T')[0];
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
 }
 
