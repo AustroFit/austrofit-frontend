@@ -6,6 +6,8 @@
     percent: number;
     /** Ring color when filling */
     color?: 'primary' | 'secondary';
+    /** Use brighter fill when goal is fully reached */
+    complete?: boolean;
     /** Highlight today with a faint colored track */
     isToday?: boolean;
     /** Optional text label rendered inside the ring (e.g. day number) */
@@ -14,7 +16,7 @@
     size?: number;
   }
 
-  const { percent = 0, color = 'primary', isToday = false, label = '', size = 36 }: Props = $props();
+  const { percent = 0, color = 'primary', complete = false, isToday = false, label = '', size = 36 }: Props = $props();
 
   const STROKE_WIDTH = 4.5;
   const cx = size / 2;
@@ -26,7 +28,12 @@
     circumference - (Math.min(100, Math.max(0, percent)) / 100) * circumference
   );
 
-  const strokeColor = $derived(color === 'primary' ? '#1B7A44' : '#F59E0B');
+  // Brighter green when goal completed, normal primary otherwise
+  const strokeColor = $derived(
+    color === 'secondary' ? '#F59E0B'
+    : complete ? '#22c55e'
+    : '#1B7A44'
+  );
   // Track: faint primary for today, light gray otherwise
   const trackColor = $derived(isToday ? '#1B7A44' : '#C8E6C9');
   const trackOpacity = $derived(isToday ? 0.3 : 1);

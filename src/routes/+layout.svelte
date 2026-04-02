@@ -23,9 +23,10 @@
       }).catch(() => { /* nicht-kritisch */ });
 
       // Back-Geste / Hardware-Back-Button: zurück navigieren oder App beenden
+      // canGoBack ist im WebView immer false → pathname prüfen
       import('@capacitor/app').then(({ App }) => {
-        App.addListener('backButton', ({ canGoBack }) => {
-          if (canGoBack) {
+        App.addListener('backButton', () => {
+          if (window.location.pathname !== '/dashboard') {
             window.history.back();
           } else {
             App.exitApp();

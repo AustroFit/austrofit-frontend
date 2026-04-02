@@ -46,7 +46,7 @@ export async function GET({
 
   const dailyMap: Record<string, number> = {};
   for (const row of rows) {
-    const d = String(row.date ?? '');
+    const d = String(row.date ?? '').substring(0, 10);
     if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
       dailyMap[d] = (dailyMap[d] ?? 0) + Number(row.equivalent_minutes ?? 0);
     }

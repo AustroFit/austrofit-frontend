@@ -204,7 +204,10 @@
   function onTouchMove(e: TouchEvent) {
     if (_pullStartScrollY > 5 || pullRefreshing) return;
     const delta = e.touches[0].clientY - _pullStartY;
-    if (delta > 0) pullOffset = Math.min(80, delta * 0.4);
+    if (delta > 0) {
+      e.preventDefault(); // verhindert natives Overscroll
+      pullOffset = Math.min(80, delta * 0.4);
+    }
   }
 
   async function onTouchEnd() {
@@ -295,6 +298,19 @@
   function handleSyncToastHide() {
     showSyncToast = false;
   }
+
+  // ── Pull-to-Refresh: non-passive touch listener (e.preventDefault() nötig) ──
+  $effect(() => {
+    if (!browser) return;
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  });
 
   // ── Load ──────────────────────────────────────────────────────────────────
   onMount(async () => {
@@ -517,9 +533,6 @@
 <main
   class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24"
   style="overscroll-behavior-y: contain;"
-  ontouchstart={onTouchStart}
-  ontouchmove={onTouchMove}
-  ontouchend={onTouchEnd}
 >
   {#if errorMsg}
     <div class="mx-auto max-w-lg px-4 py-16">
@@ -642,18 +655,18 @@
         {:else if healthConnected}
           <!-- Heute: Punkte + Schritte -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
-            <div class="text-3xl font-bold font-heading text-secondary">{todayPoints}P</div>
+            <div class="text-3xl font-bold font-heading {stepsToday >= STEP_GOAL ? 'text-[#22c55e]' : 'text-secondary'}">{todayPoints}P</div>
             <div class="text-2xl font-bold font-heading text-heading">
               {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
             </div>
           </div>
-          <!-- Fortschrittsbalken: amber (<Ziel), grün (≥Ziel), dunkelgrün Überschuss -->
+          <!-- Fortschrittsbalken: amber (<Ziel), hellgrün (≥Ziel), dunkelgrün Überschuss -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
             {#if stepPercent >= 100}
-              <div class="absolute inset-0 bg-primary rounded-full"></div>
+              <div class="absolute inset-0 rounded-full" style="background:#22c55e;"></div>
               {#if bonusSteps > 0}
                 {@const excessPct = Math.min(55, Math.round((bonusSteps / STEP_GOAL) * 100))}
-                <div class="absolute inset-y-0 right-0 rounded-r-full bg-primary-dark" style="width:{excessPct}%;"></div>
+                <div class="absolute inset-y-0 right-0 rounded-r-full bg-primary" style="width:{excessPct}%;"></div>
               {/if}
             {:else}
               <div class="absolute inset-y-0 left-0 bg-secondary rounded-full transition-all duration-500" style="width:{stepPercent}%;"></div>
@@ -682,11 +695,12 @@
             {@const isGoal = isToday ? stepsToday >= STEP_GOAL : pts >= 40}
             {@const ringPercent = isToday ? stepPercent : Math.min(100, Math.round((pts / 40) * 100))}
             {@const ringColor = isGoal ? 'primary' : 'secondary'}
+            {@const displayPts = isToday ? todayPoints : pts}
             <div class="flex flex-col items-center gap-0.5">
               <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-              <CircleRing percent={ringPercent} color={ringColor} {isToday} />
-              {#if pts > 0}
-                <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{pts}P</span>
+              <CircleRing percent={ringPercent} color={ringColor} complete={isGoal} {isToday} />
+              {#if displayPts > 0}
+                <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-[#22c55e]' : 'text-secondary'}">{displayPts}P</span>
               {:else}
                 <span class="text-[10px] leading-tight text-transparent select-none">–</span>
               {/if}
@@ -741,7 +755,7 @@
           <!-- Heute: Minuten + Wochenziel -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
             {#if cardioEqMinutes >= cardioTargets.full}
-              <div class="text-3xl font-bold font-heading text-primary">{cardioPointsTotal}P</div>
+              <div class="text-3xl font-bold font-heading text-[#22c55e]">{cardioPointsTotal}P</div>
             {:else if cardioEqMinutes > 0}
               <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
             {:else}
@@ -755,8 +769,8 @@
           <!-- Fortschrittsbalken: amber (<Ziel), grün (≥Ziel) -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
             <div
-              class="absolute inset-y-0 left-0 rounded-full transition-all duration-500 {cardioPercent >= 100 ? 'bg-primary' : 'bg-secondary'}"
-              style="width:{cardioPercent}%;"
+              class="absolute inset-y-0 left-0 rounded-full transition-all duration-500 {cardioPercent >= 100 ? '' : 'bg-secondary'}"
+              style="width:{cardioPercent}%; {cardioPercent >= 100 ? 'background:#22c55e;' : ''}"
             ></div>
           </div>
         {/if}
@@ -773,9 +787,9 @@
               {@const ringColor = isGoal ? 'primary' : 'secondary'}
               <div class="flex flex-col items-center gap-0.5">
                 <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-                <CircleRing percent={ringPercent} color={ringColor} {isToday} />
+                <CircleRing percent={ringPercent} color={ringColor} complete={isGoal} {isToday} />
                 {#if mins > 0}
-                  <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{mins}m</span>
+                  <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-[#22c55e]' : 'text-secondary'}">{mins}m</span>
                 {:else}
                   <span class="text-[10px] leading-tight text-transparent select-none">–</span>
                 {/if}

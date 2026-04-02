@@ -20,7 +20,7 @@
   let viewYear  = $state(now.getFullYear());
   let viewMonth = $state(now.getMonth()); // 0-based
 
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const WEEK_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const;
 
   // ── Derived ──────────────────────────────────────────────────────────────
