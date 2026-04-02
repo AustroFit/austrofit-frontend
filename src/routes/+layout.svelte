@@ -21,6 +21,17 @@
         StatusBar.setStyle({ style: Style.Light });          // dunkle Icons auf hellem Hintergrund
         StatusBar.setBackgroundColor({ color: '#F0FBF1' });  // passend zur Navbar (bg-light-grey)
       }).catch(() => { /* nicht-kritisch */ });
+
+      // Back-Geste / Hardware-Back-Button: zurück navigieren oder App beenden
+      import('@capacitor/app').then(({ App }) => {
+        App.addListener('backButton', ({ canGoBack }) => {
+          if (canGoBack) {
+            window.history.back();
+          } else {
+            App.exitApp();
+          }
+        });
+      }).catch(() => { /* nicht-kritisch */ });
     }
 
     // Analytics nur nach expliziter Einwilligung initialisieren (DSGVO Art. 7)
