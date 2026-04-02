@@ -678,9 +678,9 @@
           {#each weekDates as date, i}
             {@const dayData = weeklyStepData.find(d => d.date === date)}
             {@const pts = dayData?.points ?? 0}
-            {@const isGoal = pts >= 40}
             {@const isToday = date === todayStr}
-            {@const ringPercent = Math.min(100, Math.round((pts / 40) * 100))}
+            {@const isGoal = isToday ? stepsToday >= STEP_GOAL : pts >= 40}
+            {@const ringPercent = isToday ? stepPercent : Math.min(100, Math.round((pts / 40) * 100))}
             {@const ringColor = isGoal ? 'primary' : 'secondary'}
             <div class="flex flex-col items-center gap-0.5">
               <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
