@@ -17,6 +17,7 @@
   import SyncToast from '$lib/components/SyncToast.svelte';
   import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
   import ManuelleCardioEingabe from '$lib/components/dashboard/ManuelleCardioEingabe.svelte';
+  import CircleRing from '$lib/components/CircleRing.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
   import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel } from '$lib/utils/date';
@@ -678,15 +679,12 @@
             {@const dayData = weeklyStepData.find(d => d.date === date)}
             {@const pts = dayData?.points ?? 0}
             {@const isGoal = pts >= 40}
-            {@const isPartial = pts > 0 && pts < 40}
             {@const isToday = date === todayStr}
+            {@const ringPercent = Math.min(100, Math.round((pts / 40) * 100))}
+            {@const ringColor = isGoal ? 'primary' : 'secondary'}
             <div class="flex flex-col items-center gap-0.5">
               <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-              <div
-                class="h-9 w-9 rounded-full border-2 flex items-center justify-center
-                  {isGoal ? 'bg-primary border-primary' : isPartial ? 'border-secondary bg-secondary/10' : 'border-gray-200 bg-white'}
-                  {isToday ? 'ring-2 ring-offset-1 ring-primary/40' : ''}"
-              ></div>
+              <CircleRing percent={ringPercent} color={ringColor} {isToday} />
               {#if pts > 0}
                 <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{pts}P</span>
               {:else}
@@ -769,18 +767,13 @@
             {#each weekDates as date, i}
               {@const dayData = weeklyCardioData.find(d => d.date === date)}
               {@const mins = dayData?.minutes ?? 0}
-              {@const isGoal    = mins >= dailyCardioGoal}
-              {@const isPartial = mins > 0 && mins < dailyCardioGoal}
-              {@const isToday   = date === todayStr}
+              {@const isGoal  = mins >= dailyCardioGoal}
+              {@const isToday = date === todayStr}
+              {@const ringPercent = Math.min(100, Math.round((mins / (dailyCardioGoal || 1)) * 100))}
+              {@const ringColor = isGoal ? 'primary' : 'secondary'}
               <div class="flex flex-col items-center gap-0.5">
                 <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-                <div
-                  class="h-9 w-9 rounded-full border-2 flex items-center justify-center
-                    {isGoal    ? 'bg-primary border-primary'
-                    : isPartial ? 'border-secondary bg-secondary/10'
-                    : 'border-gray-200 bg-white'}
-                    {isToday ? 'ring-2 ring-offset-1 ring-primary/40' : ''}"
-                ></div>
+                <CircleRing percent={ringPercent} color={ringColor} {isToday} />
                 {#if mins > 0}
                   <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{mins}m</span>
                 {:else}

@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { getValidAccessToken } from '$lib/utils/auth';
   import { qs } from '$lib/utils/qs';
+  import CircleRing from '$lib/components/CircleRing.svelte';
 
   // ── State ────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -169,23 +170,12 @@
             {:else}
               {@const pts = getDayPoints(date)}
               {@const isGoal = pts >= 40}
-              {@const isPartial = pts > 0 && pts < 40}
               {@const isToday = date === todayStr}
               {@const dayNum = parseInt(date.split('-')[2])}
+              {@const ringPercent = Math.min(100, Math.round((pts / 40) * 100))}
+              {@const ringColor = isGoal ? 'primary' : 'secondary'}
               <div class="flex flex-col items-center gap-0.5 py-0.5">
-                <div
-                  class="relative h-9 w-9 rounded-full flex items-center justify-center
-                    {isGoal    ? 'bg-primary'
-                    : isPartial ? 'border-2 border-secondary bg-secondary/10'
-                    : isToday  ? 'border-2 border-gray-300'
-                    : ''}
-                    {isToday ? 'ring-2 ring-offset-1 ring-primary/30' : ''}"
-                >
-                  <span
-                    class="text-sm font-semibold leading-none
-                      {isGoal ? 'text-white' : isPartial ? 'text-body' : 'text-gray-500'}"
-                  >{dayNum}</span>
-                </div>
+                <CircleRing percent={ringPercent} color={ringColor} {isToday} label={String(dayNum)} />
                 {#if pts > 0}
                   <span class="text-[9px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{pts}P</span>
                 {:else}
