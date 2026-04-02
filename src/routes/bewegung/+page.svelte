@@ -47,6 +47,7 @@
     return days;
   });
 
+  let totalMonthPoints = $state(0);
   const totalMonthMinutes = $derived(monthData.reduce((sum, d) => sum + d.minutes, 0));
   const activeDays  = $derived(monthData.filter(d => d.minutes > 0).length);
   const goalDays    = $derived(monthData.filter(d => d.minutes >= dailyGoal).length);
@@ -73,6 +74,7 @@
     if (res.ok) {
       const body = await res.json();
       monthData = (body.dailyMinutes ?? []) as DayData[];
+      totalMonthPoints = Number(body.totalMonthPoints ?? 0);
     }
     loading = false;
   }
@@ -161,7 +163,7 @@
               {@const isGoal  = mins >= dailyGoal}
               {@const isToday = date === todayStr}
               {@const dayNum  = parseInt(date.split('-')[2])}
-              {@const ringPercent = Math.min(100, Math.round((mins / (dailyGoal || 1)) * 100))}
+              {@const ringPercent = Math.min(100, Math.round((mins / ((dailyGoal || 1) * 2)) * 100))}
               {@const ringColor = isGoal ? 'primary' : 'secondary'}
               <div class="flex flex-col items-center gap-0.5 py-0.5">
                 <CircleRing percent={ringPercent} color={ringColor} {isToday} label={String(dayNum)} />
@@ -183,11 +185,17 @@
         <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
           {monthName} – Zusammenfassung
         </div>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 gap-3 mb-3">
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
-            <span class="text-xl font-bold font-heading text-secondary">{totalMonthMinutes} min</span>
-            <span class="text-[10px] text-gray-400 font-medium">Äquivalenz-Min.</span>
+            <span class="text-xl font-bold font-heading text-heading">{totalMonthMinutes} min</span>
+            <span class="text-[10px] text-gray-400 font-medium">Äquiv.-Minuten</span>
           </div>
+          <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
+            <span class="text-xl font-bold font-heading text-secondary">{totalMonthPoints}P</span>
+            <span class="text-[10px] text-gray-400 font-medium">Punkte gesamt</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
             <span class="text-xl font-bold font-heading text-primary">{goalDays}</span>
             <span class="text-[10px] text-gray-400 font-medium">Tagesziel ({dailyGoal} min)</span>

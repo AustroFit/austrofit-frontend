@@ -693,17 +693,13 @@
             {@const pts = dayData?.points ?? 0}
             {@const isToday = date === todayStr}
             {@const isGoal = isToday ? stepsToday >= STEP_GOAL : pts >= 40}
-            {@const ringPercent = isToday ? stepPercent : Math.min(100, Math.round((pts / 40) * 100))}
+            {@const ringPercent = isToday
+              ? Math.min(100, Math.round((stepsToday / (STEP_GOAL * 2)) * 100))
+              : Math.min(100, Math.round((pts / 80) * 100))}
             {@const ringColor = isGoal ? 'primary' : 'secondary'}
-            {@const displayPts = isToday ? todayPoints : pts}
             <div class="flex flex-col items-center gap-0.5">
               <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
               <CircleRing percent={ringPercent} color={ringColor} {isToday} />
-              {#if displayPts > 0}
-                <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-success' : 'text-secondary'}">{displayPts}P</span>
-              {:else}
-                <span class="text-[10px] leading-tight text-transparent select-none">–</span>
-              {/if}
             </div>
           {/each}
         </div>
@@ -783,16 +779,11 @@
               {@const mins = dayData?.minutes ?? 0}
               {@const isGoal  = mins >= dailyCardioGoal}
               {@const isToday = date === todayStr}
-              {@const ringPercent = Math.min(100, Math.round((mins / (dailyCardioGoal || 1)) * 100))}
+              {@const ringPercent = Math.min(100, Math.round((mins / ((dailyCardioGoal || 1) * 2)) * 100))}
               {@const ringColor = isGoal ? 'primary' : 'secondary'}
               <div class="flex flex-col items-center gap-0.5">
                 <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
                 <CircleRing percent={ringPercent} color={ringColor} {isToday} />
-                {#if mins > 0}
-                  <span class="text-[10px] font-bold leading-tight {isGoal ? 'text-success' : 'text-secondary'}">{mins}m</span>
-                {:else}
-                  <span class="text-[10px] leading-tight text-transparent select-none">–</span>
-                {/if}
               </div>
             {/each}
           </div>

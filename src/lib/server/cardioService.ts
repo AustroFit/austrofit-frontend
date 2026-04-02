@@ -80,15 +80,20 @@ async function fetchCardioConfigFromDirectus(
     }
   }
 
-  // workout_types
-  let intenseTypes = FALLBACK_INTENSE_TYPES;
-  let moderateTypes = FALLBACK_MODERATE_TYPES;
+  // workout_types: merge Directus entries WITH fallbacks so missing rows don't remove known types
+  let intenseTypes = new Set(FALLBACK_INTENSE_TYPES);
+  let moderateTypes = new Set(FALLBACK_MODERATE_TYPES);
   if (typesRes.ok) {
     const body = await typesRes.json();
     const rows: { workout_type: string; intensity: string }[] = body.data ?? [];
-    if (rows.length > 0) {
-      intenseTypes = new Set(rows.filter((r) => r.intensity === 'intense').map((r) => r.workout_type));
-      moderateTypes = new Set(rows.filter((r) => r.intensity === 'moderate').map((r) => r.workout_type));
+    for (const r of rows) {
+      if (r.intensity === 'intense') {
+        intenseTypes.add(r.workout_type);
+        moderateTypes.delete(r.workout_type); // Directus wins on conflict
+      } else if (r.intensity === 'moderate') {
+        moderateTypes.add(r.workout_type);
+        intenseTypes.delete(r.workout_type);
+      }
     }
   }
 

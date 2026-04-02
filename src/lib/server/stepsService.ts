@@ -44,49 +44,58 @@ export async function recordStepEntry(params: {
     Authorization: `Bearer ${adminToken}`
   };
 
-  // Duplicate check – one step entry per user per date
+  // Duplicate check: fetch existing entry (including points_delta) to allow delta correction
   const dupParams = new URLSearchParams({
     'filter[user][_eq]': userId,
     'filter[source_type][_eq]': 'schritte',
     'filter[source_ref][_eq]': date,
-    fields: 'id',
+    fields: 'id,points_delta',
     limit: '1'
   });
   const dupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dupParams}`, {
     headers: adminHeaders
   });
+  let existingPoints = -1; // -1 = no entry found
   if (dupRes.ok) {
     const dupBody = await dupRes.json();
-    if ((dupBody.data ?? []).length > 0) {
-      return {
-        success: true,
-        skipped: true,
-        punkte: 0,
-        ledger_id: null,
-        neue_streak_days: 0,
-        longest_streak: 0,
-        streak_bonus_awarded: false,
-        streak_tag_bonus_awarded: false,
-        milestone_step_awarded: false,
-        milestone_streak4_awarded: false,
-        capped: false
-      };
-    }
+    const existing = dupBody.data?.[0];
+    if (existing) existingPoints = Number(existing.points_delta ?? 0);
   }
 
-  // Calculate points
+  // Calculate points for new step count
   const punkte = calculatePoints(steps);
 
-  // Create step ledger entry (always – even 0P, so dedup works for low-step days)
+  // Skip if: existing entry has >= same points, OR new points == 0 (no entry for 0P days)
+  if (existingPoints >= punkte || (existingPoints >= 0 && punkte === 0)) {
+    return {
+      success: true,
+      skipped: true,
+      punkte: 0,
+      ledger_id: null,
+      neue_streak_days: 0,
+      longest_streak: 0,
+      streak_bonus_awarded: false,
+      streak_tag_bonus_awarded: false,
+      milestone_step_awarded: false,
+      milestone_streak4_awarded: false,
+      capped: false
+    };
+  }
+
+  // Write new (or correction) ledger entry.
+  // delta = punkte - max(existingPoints, 0) so the ledger sum stays correct.
+  const punkeDelta = existingPoints >= 0 ? punkte - existingPoints : punkte;
+
   const ledgerRes = await fetchFn(`${cmsUrl}/items/points_ledger`, {
     method: 'POST',
     headers: adminHeaders,
     body: JSON.stringify({
       user: userId,
-      points_delta: punkte,
+      points_delta: punkeDelta,
       source_type: 'schritte',
       source_ref: date,
-      occurred_at: new Date(date + 'T12:00:00').toISOString()
+      occurred_at: new Date(date + 'T12:00:00').toISOString(),
+      meta: { steps }
     })
   });
 

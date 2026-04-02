@@ -11,7 +11,7 @@
   let loading = $state(true);
   let userId = $state('');
 
-  interface DayData { date: string; points: number; }
+  interface DayData { date: string; points: number; steps?: number; }
   let monthData = $state<DayData[]>([]);
 
   const now = new Date();
@@ -46,13 +46,16 @@
   });
 
   const totalMonthPoints = $derived(monthData.reduce((sum, d) => sum + d.points, 0));
+  const totalMonthSteps  = $derived(monthData.reduce((sum, d) => sum + (d.steps ?? 0), 0));
   const activeDays = $derived(monthData.filter(d => d.points > 0).length);
   const goalDays = $derived(monthData.filter(d => d.points >= 40).length);
 
+  const STEP_GOAL = 7000;
+
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function getDayPoints(date: string | null): number {
-    if (!date) return 0;
-    return monthData.find(d => d.date === date)?.points ?? 0;
+  function getDayData(date: string | null): DayData {
+    if (!date) return { date: '', points: 0 };
+    return monthData.find(d => d.date === date) ?? { date, points: 0 };
   }
 
   async function loadMonthData() {
@@ -79,14 +82,16 @@
 
     if (res.ok) {
       const body = await res.json();
-      const byDate: Record<string, number> = {};
+      const byDate: Record<string, { points: number; steps: number }> = {};
       for (const e of (body.data ?? [])) {
         const d = String(e.source_ref ?? '');
         if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-          byDate[d] = (byDate[d] ?? 0) + (e.points_delta ?? 0);
+          if (!byDate[d]) byDate[d] = { points: 0, steps: 0 };
+          byDate[d].points += e.points_delta ?? 0;
+          byDate[d].steps  += Number(e.meta?.steps ?? 0);
         }
       }
-      monthData = Object.entries(byDate).map(([date, points]) => ({ date, points }));
+      monthData = Object.entries(byDate).map(([date, v]) => ({ date, points: v.points, steps: v.steps }));
     }
     loading = false;
   }
@@ -169,16 +174,20 @@
             {#if date === null}
               <div></div>
             {:else}
-              {@const pts = getDayPoints(date)}
+              {@const day = getDayData(date)}
+              {@const pts = day.points}
+              {@const steps = day.steps ?? 0}
               {@const isGoal = pts >= 40}
               {@const isToday = date === todayStr}
               {@const dayNum = parseInt(date.split('-')[2])}
-              {@const ringPercent = Math.min(100, Math.round((pts / 40) * 100))}
+              {@const ringPercent = Math.min(100, Math.round((pts / 80) * 100))}
               {@const ringColor = isGoal ? 'primary' : 'secondary'}
               <div class="flex flex-col items-center gap-0.5 py-0.5">
                 <CircleRing percent={ringPercent} color={ringColor} {isToday} label={String(dayNum)} />
-                {#if pts > 0}
-                  <span class="text-[9px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{pts}P</span>
+                {#if steps > 0}
+                  <span class="text-[9px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{steps.toLocaleString('de-AT')}</span>
+                {:else if pts > 0}
+                  <span class="text-[9px] font-bold leading-tight text-secondary">{pts}P</span>
                 {:else}
                   <span class="text-[9px] leading-tight text-transparent select-none">–</span>
                 {/if}
@@ -195,11 +204,17 @@
         <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
           {monthName} – Zusammenfassung
         </div>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
+            <span class="text-xl font-bold font-heading text-heading">{totalMonthSteps.toLocaleString('de-AT')}</span>
+            <span class="text-[10px] text-gray-400 font-medium">Schritte gesamt</span>
+          </div>
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
             <span class="text-xl font-bold font-heading text-secondary">{totalMonthPoints.toLocaleString('de-AT')}P</span>
             <span class="text-[10px] text-gray-400 font-medium">Punkte gesamt</span>
           </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
             <span class="text-xl font-bold font-heading text-primary">{goalDays}</span>
             <span class="text-[10px] text-gray-400 font-medium">Tagesziel erreicht</span>

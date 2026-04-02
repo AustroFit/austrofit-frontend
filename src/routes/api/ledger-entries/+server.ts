@@ -22,10 +22,13 @@ export async function GET({ url, request, fetch }: { url: URL; request: Request;
   const sourceRefFrom = url.searchParams.get('source_ref_from') ?? '';
   const sourceRefTo = url.searchParams.get('source_ref_to') ?? '';
 
+  const occurredAtFrom = url.searchParams.get('occurred_at_from') ?? '';
+  const occurredAtTo   = url.searchParams.get('occurred_at_to')   ?? '';
+
   const params = new URLSearchParams({
     'filter[user][_eq]': userId,
     'filter[points_delta][_neq]': '0',
-    fields: 'id,points_delta,source_type,source_ref,occurred_at,created_at',
+    fields: 'id,points_delta,source_type,source_ref,occurred_at,created_at,meta',
     sort: '-occurred_at,-created_at',
     limit: String(limit),
     offset: String(offset),
@@ -43,6 +46,8 @@ export async function GET({ url, request, fetch }: { url: URL; request: Request;
 
   if (sourceRefFrom) params.set('filter[source_ref][_gte]', sourceRefFrom);
   if (sourceRefTo) params.set('filter[source_ref][_lte]', sourceRefTo);
+  if (occurredAtFrom) params.set('filter[occurred_at][_gte]', occurredAtFrom);
+  if (occurredAtTo) params.set('filter[occurred_at][_lte]', occurredAtTo);
 
   const res = await fetch(`${PUBLIC_CMSURL}/items/points_ledger?${params}`, {
     headers: { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` }

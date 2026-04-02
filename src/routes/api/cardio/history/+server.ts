@@ -30,18 +30,31 @@ export async function GET({
   const dateFrom = `${year}-${mm}-01`;
   const dateTo   = `${year}-${mm}-${String(lastDay).padStart(2, '0')}`;
 
-  const params = new URLSearchParams({
+  const logsParams = new URLSearchParams({
     'filter[user_id][_eq]': userId,
     'filter[date][_between]': JSON.stringify([dateFrom, dateTo]),
     fields: 'date,equivalent_minutes',
     limit: '500'
   });
+  const ledgerParams = new URLSearchParams({
+    'filter[user][_eq]': userId,
+    'filter[source_type][_eq]': 'cardio',
+    'filter[occurred_at][_gte]': `${dateFrom}T00:00:00`,
+    'filter[occurred_at][_lte]': `${dateTo}T23:59:59`,
+    fields: 'points_delta',
+    limit: '500'
+  });
 
   const adminHeaders = { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` };
   let rows: { date?: string; equivalent_minutes?: number }[] = [];
+  let ledgerRows: { points_delta?: number }[] = [];
   try {
-    const res = await fetch(`${PUBLIC_CMSURL}/items/activity_logs?${params}`, { headers: adminHeaders });
-    if (res.ok) rows = (await res.json())?.data ?? [];
+    const [logsRes, ledgerRes] = await Promise.all([
+      fetch(`${PUBLIC_CMSURL}/items/activity_logs?${logsParams}`, { headers: adminHeaders }),
+      fetch(`${PUBLIC_CMSURL}/items/points_ledger?${ledgerParams}`, { headers: adminHeaders })
+    ]);
+    if (logsRes.ok) rows = (await logsRes.json())?.data ?? [];
+    if (ledgerRes.ok) ledgerRows = (await ledgerRes.json())?.data ?? [];
   } catch { /* return empty */ }
 
   const dailyMap: Record<string, number> = {};
@@ -52,6 +65,7 @@ export async function GET({
     }
   }
 
+  const totalMonthPoints = ledgerRows.reduce((sum, r) => sum + Number(r.points_delta ?? 0), 0);
   const dailyMinutes = Object.entries(dailyMap).map(([date, minutes]) => ({ date, minutes }));
-  return json({ dailyMinutes });
+  return json({ dailyMinutes, totalMonthPoints });
 }

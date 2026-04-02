@@ -17,7 +17,7 @@
   --color-primary:       #1B7A44;   /* bg-primary / text-primary          */
   --color-primary-dark:  #2E7D32;   /* bg-primary-dark  – Hover, gedrückt */
   --color-primary-light: #D4EDE3;   /* bg-primary-light – Chips, Badges   */
-  --color-success:       #22c55e;   /* bg-success / text-success – Ziel erreicht */
+  --color-success:       #1B7A44;   /* bg-success / text-success – Ziel erreicht (= primary) */
 
   /* ── SEKUNDÄRFARBE: Gold ───────────────────────────────────────
    * Gamification: Punkte, Level-Badges, Streak-Highlights.
