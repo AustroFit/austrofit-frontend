@@ -1,9 +1,14 @@
 // BUILD_TARGET=capacitor → adapter-static (SPA, für Capacitor native bundle)
 // Default (kein BUILD_TARGET) → adapter-vercel (SSR + API-Routes, für Web)
 import adapterVercel from '@sveltejs/adapter-vercel';
-import adapterStatic from '@sveltejs/adapter-static';
 
 const isCapacitor = process.env.BUILD_TARGET === 'capacitor';
+
+// adapter-static ist nur bei Capacitor-Builds nötig – lazy import vermeidet
+// Fehler auf Vercel, wo devDependencies nicht installiert werden.
+const adapterStatic = isCapacitor
+  ? (await import('@sveltejs/adapter-static')).default
+  : null;
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
