@@ -65,8 +65,8 @@ export async function recordStepEntry(params: {
   // Calculate points for new step count
   const punkte = calculatePoints(steps);
 
-  // Skip if: existing entry has >= same points, OR new points == 0 (no entry for 0P days)
-  if (existingPoints >= punkte || (existingPoints >= 0 && punkte === 0)) {
+  // Skip if no improvement: 0P days never get an entry; existing entry already has >= points
+  if (punkte === 0 || existingPoints >= punkte) {
     return {
       success: true,
       skipped: true,

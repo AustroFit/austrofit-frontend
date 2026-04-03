@@ -8,6 +8,7 @@
     source_ref: string | null;
     occurred_at: string | null;
     created_at: string | null;
+    meta?: { steps?: number } | null;
   }
 
   interface Props {
@@ -20,8 +21,6 @@
   const SOURCE_MAP: Record<string, { icon: string; label: string }> = {
     education:   { icon: '📚', label: 'Quiz abgeschlossen' },
     onboarding:  { icon: '🎁', label: 'Onboarding-Bonus' },
-    schritte:    { icon: '👟', label: 'Tagesziel erreicht' },
-    step:        { icon: '👟', label: 'Tagesziel erreicht' },
     streak:      { icon: '🔥', label: 'Streak-Bonus' },
     streak_tag:  { icon: '🔥', label: 'Tages-Streak' },
     streak_quiz: { icon: '🧠', label: 'Quiz-Streak' },
@@ -31,9 +30,15 @@
     awin_unlock: { icon: '🔓', label: 'Online-Rabattcode freigeschaltet' },
   };
 
-  const mapped = $derived(
-    SOURCE_MAP[buchung.source_type] ?? { icon: '⚡', label: buchung.source_type }
-  );
+  const mapped = $derived.by(() => {
+    // Schritte: ≥40P = Tagesziel erreicht (7.000 Schritte), <40P = Extra Schritte (Delta-Korrektur)
+    if (buchung.source_type === 'schritte' || buchung.source_type === 'step') {
+      return buchung.points_delta >= 40
+        ? { icon: '👟', label: 'Tagesziel erreicht' }
+        : { icon: '👟', label: 'Extra Schritte' };
+    }
+    return SOURCE_MAP[buchung.source_type] ?? { icon: '⚡', label: buchung.source_type };
+  });
   const isPositive = $derived(buchung.points_delta >= 0);
 
   import { formatDateShort } from '$lib/utils/date';

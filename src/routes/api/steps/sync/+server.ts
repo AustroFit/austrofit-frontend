@@ -43,12 +43,15 @@ export async function POST({
   if (isNaN(new Date(date + 'T00:00:00Z').getTime())) {
     return json({ error: 'Ungültiges Datum' }, { status: 400 });
   }
-  const today = new Date().toISOString().split('T')[0];
+  // Allow 1 day buffer for timezone offsets (server runs UTC, client may be UTC+2)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
   const minDate = new Date();
   minDate.setDate(minDate.getDate() - 30);
   const minDateStr = minDate.toISOString().split('T')[0];
 
-  if (date > today) {
+  if (date > tomorrowStr) {
     return json({ error: 'Datum darf nicht in der Zukunft liegen' }, { status: 400 });
   }
   if (date < minDateStr) {
