@@ -4,6 +4,5 @@
 //
 // Web / Vercel:          PUBLIC_API_BASE = ''  → relative URLs bleiben relativ
 // Capacitor native Build: PUBLIC_API_BASE = 'https://austrofit.at'
-import { PUBLIC_API_BASE } from '$env/static/public';
-
-export const apiUrl = (path: string): string => `${PUBLIC_API_BASE}${path}`;
+export const apiUrl = (path: string): string =>
+  `${import.meta.env.PUBLIC_API_BASE ?? ''}${path}`;
