@@ -44,13 +44,14 @@ export async function recordStepEntry(params: {
     Authorization: `Bearer ${adminToken}`
   };
 
-  // Duplicate check: fetch existing entry (including points_delta) to allow delta correction
+  // Fetch ALL existing entries for this date to get the true accumulated total
+  // (multiple delta-correction entries can exist for the same date)
   const dupParams = new URLSearchParams({
     'filter[user][_eq]': userId,
     'filter[source_type][_eq]': 'schritte',
     'filter[source_ref][_eq]': date,
-    fields: 'id,points_delta',
-    limit: '1'
+    fields: 'points_delta',
+    limit: '50'
   });
   const dupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dupParams}`, {
     headers: adminHeaders
@@ -58,8 +59,10 @@ export async function recordStepEntry(params: {
   let existingPoints = -1; // -1 = no entry found
   if (dupRes.ok) {
     const dupBody = await dupRes.json();
-    const existing = dupBody.data?.[0];
-    if (existing) existingPoints = Number(existing.points_delta ?? 0);
+    const rows: { points_delta?: number }[] = dupBody.data ?? [];
+    if (rows.length > 0) {
+      existingPoints = rows.reduce((sum, r) => sum + Number(r.points_delta ?? 0), 0);
+    }
   }
 
   // Calculate points for new step count
