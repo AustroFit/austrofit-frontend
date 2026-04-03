@@ -6,6 +6,7 @@ import {
   getStreakTiers,
   lookupTierBonus
 } from '$lib/utils/streak';
+import { isValidDateString } from '$lib/utils/date';
 
 /**
  * Full server-side streak update for steps.
@@ -52,7 +53,7 @@ export async function updateStreak(
       qualifiedDates = (body.data ?? [])
         .filter((e: any) => Number(e.points_delta ?? 0) >= 40)
         .map((e: any) => (e.source_ref ?? '').split('T')[0])
-        .filter((d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+        .filter((d: string) => isValidDateString(d));
     }
   } catch {
     /* non-critical */
@@ -229,7 +230,7 @@ export async function updateQuizStreak(
       const body = await res.json();
       completedDates = (body.data ?? [])
         .map((e: any) => (e.completed_at ?? '').split('T')[0])
-        .filter((d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+        .filter((d: string) => isValidDateString(d));
     }
   } catch {
     /* non-critical */

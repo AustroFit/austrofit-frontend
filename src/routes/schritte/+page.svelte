@@ -5,7 +5,7 @@
   import { getValidAccessToken } from '$lib/utils/auth';
   import { qs } from '$lib/utils/qs';
   import CircleRing from '$lib/components/CircleRing.svelte';
-  import { toLocalDateString } from '$lib/utils/date';
+  import { toLocalDateString, buildCalendarDays, buildMonthDateRange, isValidDateString } from '$lib/utils/date';
 
   // ── State ────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -31,19 +31,7 @@
   );
 
   /** Calendar grid: null = empty leading cell, string = YYYY-MM-DD */
-  const calendarDays = $derived.by<(string | null)[]>(() => {
-    const firstDay = new Date(viewYear, viewMonth, 1);
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    // ISO week: Mon=0 … Sun=6
-    const startDow = (firstDay.getDay() + 6) % 7;
-    const days: (string | null)[] = Array(startDow).fill(null);
-    for (let d = 1; d <= daysInMonth; d++) {
-      days.push(
-        `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-      );
-    }
-    return days;
-  });
+  const calendarDays = $derived(buildCalendarDays(viewYear, viewMonth));
 
   const totalMonthPoints = $derived(monthData.reduce((sum, d) => sum + d.points, 0));
   const totalMonthSteps  = $derived(monthData.reduce((sum, d) => sum + (d.steps ?? 0), 0));
@@ -64,10 +52,7 @@
     const token = await getValidAccessToken();
     if (!token) { goto('/login'); return; }
 
-    const mm = String(viewMonth + 1).padStart(2, '0');
-    const lastDay = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const dateFrom = `${viewYear}-${mm}-01`;
-    const dateTo   = `${viewYear}-${mm}-${String(lastDay).padStart(2, '0')}`;
+    const { dateFrom, dateTo } = buildMonthDateRange(viewYear, viewMonth + 1);
 
     const res = await fetch(
       `/api/ledger-entries?${qs({
@@ -85,7 +70,7 @@
       const byDate: Record<string, { points: number; steps: number }> = {};
       for (const e of (body.data ?? [])) {
         const d = String(e.source_ref ?? '');
-        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        if (isValidDateString(d)) {
           if (!byDate[d]) byDate[d] = { points: 0, steps: 0 };
           byDate[d].points += e.points_delta ?? 0;
           byDate[d].steps  += Number(e.meta?.steps ?? 0);

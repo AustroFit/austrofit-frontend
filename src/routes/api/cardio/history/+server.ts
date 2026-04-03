@@ -6,6 +6,7 @@ import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
+import { isValidDateString } from '$lib/utils/date';
 
 export async function GET({
   request,
@@ -60,7 +61,7 @@ export async function GET({
   const dailyMap: Record<string, number> = {};
   for (const row of rows) {
     const d = String(row.date ?? '').substring(0, 10);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    if (isValidDateString(d)) {
       dailyMap[d] = (dailyMap[d] ?? 0) + Number(row.equivalent_minutes ?? 0);
     }
   }

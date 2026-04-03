@@ -6,6 +6,7 @@ import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
 import { getWeekKey, getWeeklyTargets, type ActivityGroup } from '$lib/server/cardioService';
+import { isValidDateString } from '$lib/utils/date';
 
 export async function GET({
   request,
@@ -76,7 +77,7 @@ export async function GET({
     const mins = Number(row.equivalent_minutes ?? 0);
     equivalentMinutes += mins;
     const d = String(row.date ?? '').substring(0, 10); // handle both 'YYYY-MM-DD' and 'YYYY-MM-DDTHH:...'
-    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    if (isValidDateString(d)) {
       dailyMap[d] = (dailyMap[d] ?? 0) + mins;
     }
   }

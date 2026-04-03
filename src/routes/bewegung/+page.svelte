@@ -5,7 +5,7 @@
   import { getValidAccessToken } from '$lib/utils/auth';
   import { qs } from '$lib/utils/qs';
   import CircleRing from '$lib/components/CircleRing.svelte';
-  import { toLocalDateString } from '$lib/utils/date';
+  import { toLocalDateString, buildCalendarDays } from '$lib/utils/date';
 
   // ── State ────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -34,18 +34,7 @@
   );
 
   /** Calendar grid: null = empty leading cell, string = YYYY-MM-DD */
-  const calendarDays = $derived.by<(string | null)[]>(() => {
-    const firstDay = new Date(viewYear, viewMonth, 1);
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const startDow = (firstDay.getDay() + 6) % 7; // ISO week: Mon=0 … Sun=6
-    const days: (string | null)[] = Array(startDow).fill(null);
-    for (let d = 1; d <= daysInMonth; d++) {
-      days.push(
-        `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-      );
-    }
-    return days;
-  });
+  const calendarDays = $derived(buildCalendarDays(viewYear, viewMonth));
 
   let totalMonthPoints = $state(0);
   const totalMonthMinutes = $derived(monthData.reduce((sum, d) => sum + d.minutes, 0));

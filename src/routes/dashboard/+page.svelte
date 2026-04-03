@@ -20,7 +20,7 @@
   import CircleRing from '$lib/components/CircleRing.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
-  import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel, toLocalDateString } from '$lib/utils/date';
+  import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel, toLocalDateString, isValidDateString } from '$lib/utils/date';
 
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -287,7 +287,7 @@
       const byDate: Record<string, number> = {};
       for (const e of (ws.data ?? [])) {
         const d = String(e.source_ref ?? '');
-        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) byDate[d] = (byDate[d] ?? 0) + (e.points_delta ?? 0);
+        if (isValidDateString(d)) byDate[d] = (byDate[d] ?? 0) + (e.points_delta ?? 0);
       }
       weeklyStepData = weekDates.map((date: string) => ({ date, points: byDate[date] ?? 0 }));
     }

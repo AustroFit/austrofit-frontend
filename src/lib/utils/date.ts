@@ -56,6 +56,35 @@ export function getISOWeekDates(): string[] {
   });
 }
 
+/** Returns true if `s` is a valid YYYY-MM-DD date string */
+export function isValidDateString(s: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+/** Returns Mon–Sun YYYY-MM-DD strings for a given month as a calendar grid.
+ *  Leading empty cells are represented as null. */
+export function buildCalendarDays(year: number, month: number): (string | null)[] {
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDow = (firstDay.getDay() + 6) % 7; // ISO week: Mon=0 … Sun=6
+  const days: (string | null)[] = Array(startDow).fill(null);
+  const mm = String(month + 1).padStart(2, '0');
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push(`${year}-${mm}-${String(d).padStart(2, '0')}`);
+  }
+  return days;
+}
+
+/** Returns { dateFrom: 'YYYY-MM-01', dateTo: 'YYYY-MM-DD' } for a given month (month is 1-based) */
+export function buildMonthDateRange(year: number, month: number): { dateFrom: string; dateTo: string } {
+  const mm = String(month).padStart(2, '0');
+  const lastDay = new Date(year, month, 0).getDate();
+  return {
+    dateFrom: `${year}-${mm}-01`,
+    dateTo: `${year}-${mm}-${String(lastDay).padStart(2, '0')}`
+  };
+}
+
 /** "Do, Mär. 26" – short weekday + date label for card headers */
 export function formatCardDateLabel(date: Date = new Date()): string {
   const weekday = date.toLocaleDateString('de-AT', { weekday: 'short' }).replace(/\.$/, '');
