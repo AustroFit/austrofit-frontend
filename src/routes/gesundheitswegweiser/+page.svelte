@@ -4,8 +4,18 @@
   import ArtikelKarte from '$lib/components/gesundheitswegweiser/ArtikelKarte.svelte';
   import KategorieFilter from '$lib/components/gesundheitswegweiser/KategorieFilter.svelte';
   import SuchFeld from '$lib/components/gesundheitswegweiser/SuchFeld.svelte';
+  import { apiUrl } from '$lib/utils/api';
+  import { page } from '$app/state';
 
   const { data } = $props();
+
+  // Block filter is read client-side from URL params (prerendering-safe: starts null on SSR)
+  let activeBlock = $state(null);
+  $effect(() => {
+    const blockIds = data.availableBlocks.map((b) => b.id);
+    const param = page.url.searchParams.get('block') || null;
+    activeBlock = param && blockIds.includes(param) ? param : null;
+  });
 
   const PAGE_SIZE = 10;
 
@@ -22,15 +32,19 @@
    */
   let quizStatuses = $state({});
 
-  // Client-side filtered articles (search runs on the SSR-filtered set)
+  // Client-side filtered articles (block filter + search)
+  const blockFiltered = $derived(
+    activeBlock ? data.articles.filter((a) => a.block === activeBlock) : data.articles
+  );
+
   const searchFiltered = $derived(
     searchTerm
-      ? data.articles.filter(
+      ? blockFiltered.filter(
           (a) =>
             a.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             a.description?.toLowerCase().includes(searchTerm.toLowerCase())
         )
-      : data.articles
+      : blockFiltered
   );
 
   // Quiz-Status-Filter (nur eingeloggt)
@@ -93,7 +107,7 @@
     if (!quizIds.length) return;
 
     try {
-      const res = await fetch(`/api/quiz-status?quizIds=${quizIds.join(',')}`, {
+      const res = await fetch(apiUrl(`/api/quiz-status?quizIds=${quizIds.join(',')}`), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -149,7 +163,7 @@
   <div class="mb-6 flex flex-col gap-4">
     <SuchFeld {onSearch} />
 
-    <KategorieFilter blocks={data.availableBlocks} activeBlock={data.activeBlock} />
+    <KategorieFilter blocks={data.availableBlocks} activeBlock={activeBlock} />
 
     <!-- Quiz-Status-Toggle (nur eingeloggt) -->
     {#if isLoggedIn}
@@ -193,7 +207,7 @@
     <p class="mb-4 text-sm text-body/60">
       {filteredArticles.length}
       {filteredArticles.length === 1 ? 'Artikel' : 'Artikel'}
-      {data.activeBlock ? `· ${data.availableBlocks.find((b) => b.id === data.activeBlock)?.label ?? ''}` : ''}
+      {activeBlock ? `· ${data.availableBlocks.find((b) => b.id === activeBlock)?.label ?? ''}` : ''}
     </p>
 
     <!-- Liste -->

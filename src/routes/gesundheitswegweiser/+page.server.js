@@ -1,3 +1,5 @@
+export const prerender = true;
+
 import { error } from '@sveltejs/kit';
 import getDirectusReadInstance from '$lib/directus.js';
 import { readItems } from '@directus/sdk';
@@ -5,13 +7,8 @@ import { BLOCKS, parseModuleId } from '$lib/config/articleBlocks.js';
 import { PUBLIC_CMSURL } from '$env/static/public';
 
 /** @type {import('./$types').PageServerLoad} */
-export async function load({ fetch, url }) {
+export async function load({ fetch }) {
   const directus = getDirectusReadInstance(fetch);
-  const activeBlock = url.searchParams.get('block') || null;
-
-  // Validate block param
-  const validBlockIds = BLOCKS.map((b) => b.id);
-  const resolvedBlock = activeBlock && validBlockIds.includes(activeBlock) ? activeBlock : null;
 
   // Fetch all published articles
   let rawArticles;
@@ -49,11 +46,6 @@ export async function load({ fetch, url }) {
       readingMinutes,
     };
   });
-
-  // Pre-filter on server if block specified (SSR for SEO)
-  const articles = resolvedBlock
-    ? allArticles.filter((a) => a.block === resolvedBlock)
-    : allArticles;
 
   // Fetch quizzes for all articles to display eligible points
   const articleIds = allArticles.map((a) => a.id);
@@ -99,9 +91,9 @@ export async function load({ fetch, url }) {
     .map((b) => ({ id: b.id, label: b.label }));
 
   return {
-    articles,
+    articles: allArticles,
     quizzesByArticleId,
-    activeBlock: resolvedBlock,
+    activeBlock: null,
     availableBlocks,
   };
 }
