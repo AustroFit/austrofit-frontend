@@ -50,18 +50,20 @@ export async function recordStepEntry(params: {
     'filter[user][_eq]': userId,
     'filter[source_type][_eq]': 'schritte',
     'filter[source_ref][_eq]': date,
-    fields: 'points_delta',
+    fields: 'points_delta,meta',
     limit: '50'
   });
   const dupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dupParams}`, {
     headers: adminHeaders
   });
   let existingPoints = -1; // -1 = no entry found
+  let existingMetaSteps = 0; // highest step count recorded for this date
   if (dupRes.ok) {
     const dupBody = await dupRes.json();
-    const rows: { points_delta?: number }[] = dupBody.data ?? [];
+    const rows: { points_delta?: number; meta?: { steps?: number } }[] = dupBody.data ?? [];
     if (rows.length > 0) {
       existingPoints = rows.reduce((sum, r) => sum + Number(r.points_delta ?? 0), 0);
+      existingMetaSteps = Math.max(...rows.map(r => Number(r.meta?.steps ?? 0)));
     }
   }
 
@@ -121,25 +123,29 @@ export async function recordStepEntry(params: {
     }
   }
 
-  // total_steps in user_profiles inkrementieren (non-critical)
+  // totalSteps in user_profiles inkrementieren (non-critical)
+  // Only add the delta (steps - existingMetaSteps) to avoid double-counting correction entries
   try {
-    const profileParams = new URLSearchParams({
-      'filter[user][_eq]': userId,
-      fields: 'id,total_steps',
-      limit: '1'
-    });
-    const profileRes = await fetchFn(`${cmsUrl}/items/user_profiles?${profileParams}`, {
-      headers: adminHeaders
-    });
-    if (profileRes.ok) {
-      const pb = await profileRes.json();
-      const profile = pb.data?.[0];
-      if (profile?.id) {
-        await fetchFn(`${cmsUrl}/items/user_profiles/${profile.id}`, {
-          method: 'PATCH',
-          headers: adminHeaders,
-          body: JSON.stringify({ total_steps: Number(profile.total_steps ?? 0) + steps })
-        });
+    const stepsDelta = existingMetaSteps > 0 ? Math.max(0, steps - existingMetaSteps) : steps;
+    if (stepsDelta > 0) {
+      const profileParams = new URLSearchParams({
+        'filter[user][_eq]': userId,
+        fields: 'id,totalSteps',
+        limit: '1'
+      });
+      const profileRes = await fetchFn(`${cmsUrl}/items/user_profiles?${profileParams}`, {
+        headers: adminHeaders
+      });
+      if (profileRes.ok) {
+        const pb = await profileRes.json();
+        const profile = pb.data?.[0];
+        if (profile?.id) {
+          await fetchFn(`${cmsUrl}/items/user_profiles/${profile.id}`, {
+            method: 'PATCH',
+            headers: adminHeaders,
+            body: JSON.stringify({ totalSteps: Number(profile.totalSteps ?? 0) + stepsDelta })
+          });
+        }
       }
     }
   } catch {

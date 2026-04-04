@@ -6,8 +6,6 @@
   import { getValidAccessToken } from '$lib/utils/auth';
   import { track, identifyUser } from '$lib/utils/mixpanel';
   import { calculatePoints } from '$lib/utils/streak';
-  import { getBadgeDefs } from '$lib/utils/badges';
-  import type { BadgeDef } from '$lib/utils/badges';
   import { qs } from '$lib/utils/qs';
   import LevelFortschritt from '$lib/components/profil/LevelFortschritt.svelte';
   import BuchungsZeile from '$lib/components/profil/BuchungsZeile.svelte';
@@ -99,33 +97,23 @@
   // Badges
   let quizPassCount = $state(0);
   let hasSchritte = $state(false);
-  let schrittDays = $state(0);
   let hasEinloesung = $state(false);
 
   interface DirectusBadge {
     id: number;
     name: string;
     typ: string;
+    step_threshold: number;
     image_url: string | null;
     earned: boolean;
   }
   let directusBadges = $state<DirectusBadge[]>([]);
 
-  const badges = $derived<BadgeDef[]>(
-    getBadgeDefs({ hasSchritte, schrittDays, quizPassCount, longestStreak, earnedPoints, hasEinloesung })
-  );
-
-  // Dashboard badges: earned in reverse order (newest milestone first), then first unearned
-  // Also includes earned Directus (step-route) badges
+  // Earned badges sorted by threshold desc (highest = most recently unlocked), then first unearned
   const dashboardBadges = $derived.by(() => {
-    const earned = [...badges].filter(b => b.earned).reverse();
-    const next = badges.find(b => !b.earned);
-    const earnedDirectus = directusBadges.filter(b => b.earned);
-    return [
-      ...earned,
-      ...(next ? [{ ...next, _isNext: true }] : []),
-      ...earnedDirectus.map(b => ({ ...b, _isDirectus: true }))
-    ];
+    const earned = directusBadges.filter(b => b.earned).sort((a, b) => b.step_threshold - a.step_threshold);
+    const next = directusBadges.find(b => !b.earned);
+    return [...earned, ...(next ? [{ ...next, _isNext: true }] : [])];
   });
 
   // System challenges (onboarding) – only show incomplete ones
@@ -412,7 +400,6 @@
         const bd = await badgesRes.json();
         quizPassCount = bd.quizPassCount ?? 0;
         hasSchritte   = bd.hasSchritte   ?? false;
-        schrittDays   = bd.schrittDays   ?? 0;
         hasEinloesung = bd.hasEinloesung ?? false;
       }
       if (directusBadgesRes.ok) {
@@ -964,22 +951,16 @@
           <div class="py-4 text-center text-sm text-gray-400">Noch keine Auszeichnungen.</div>
         {:else}
           <div class="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
-            {#each dashboardBadges as badge (('_isDirectus' in badge ? 'd' : 'l') + badge.id)}
+            {#each dashboardBadges as badge (badge.id + ('_isNext' in badge ? '-next' : ''))}
               <div class="flex w-[4.5rem] shrink-0 flex-col items-center gap-1 text-center">
-                {#if '_isDirectus' in badge && badge.image_url}
-                  <img src={badge.image_url} alt={badge.name} class="h-12 w-12 rounded-xl object-contain" />
-                {:else if '_isDirectus' in badge}
-                  <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-xl">🏅</div>
+                {#if badge.image_url}
+                  <img src={badge.image_url} alt={badge.name} class="h-12 w-12 rounded-xl object-contain {'_isNext' in badge ? 'grayscale opacity-50' : ''}" />
                 {:else}
-                  <div
-                    class="flex h-12 w-12 items-center justify-center rounded-xl text-2xl
-                      {badge.earned ? 'bg-primary/10' : 'bg-gray-100 opacity-40 grayscale'}"
-                  >
-                    {badge.icon}
-                  </div>
+                  <div class="flex h-12 w-12 items-center justify-center rounded-xl text-xl
+                    {'_isNext' in badge ? 'bg-gray-100' : 'bg-primary/10'}">🏅</div>
                 {/if}
-                <div class="text-[10px] font-medium leading-tight {'_isNext' in badge && badge._isNext ? 'text-gray-400' : ''}">
-                  {'_isNext' in badge && badge._isNext ? 'Nächstes Ziel' : badge.name}
+                <div class="text-[10px] font-medium leading-tight {'_isNext' in badge ? 'text-gray-400' : ''}">
+                  {'_isNext' in badge ? 'Nächstes Ziel' : badge.name}
                 </div>
               </div>
             {/each}

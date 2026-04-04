@@ -19,7 +19,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
       { headers: { Authorization: `Bearer ${DIRECTUS_READ_TOKEN}` } }
     ),
     fetch(
-      `${PUBLIC_CMSURL}/items/user_profiles?filter[user][_eq]=${userId}&fields=total_steps&limit=1`,
+      `${PUBLIC_CMSURL}/items/user_profiles?filter[user][_eq]=${userId}&fields=totalSteps&limit=1`,
       { headers: { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` } }
     )
   ]);
@@ -28,7 +28,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
   const profileData = profileRes.ok ? await profileRes.json().catch(() => null) : null;
 
   const badges: DirectusBadge[] = badgesData?.data ?? [];
-  const totalSteps = Number(profileData?.data?.[0]?.total_steps ?? 0);
+  const totalSteps = Number(profileData?.data?.[0]?.totalSteps ?? 0);
 
   const result = badges.map((b) => ({
     ...b,
