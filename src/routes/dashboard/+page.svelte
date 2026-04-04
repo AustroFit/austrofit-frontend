@@ -21,6 +21,8 @@
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
   import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel, toLocalDateString, isValidDateString } from '$lib/utils/date';
+  import { apiUrl } from '$lib/utils/api';
+  import { lapDisplayPercent, lapTailwindBg } from '$lib/utils/progress';
 
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -36,7 +38,9 @@
   // Steps / day goal
   let stepsToday = $state(0);
   const STEP_GOAL = 7000;
-  const stepPercent = $derived(Math.min(100, Math.round((stepsToday / STEP_GOAL) * 100)));
+  const stepPercent = $derived(Math.round((stepsToday / STEP_GOAL) * 100));
+  const stepDisplayPercent = $derived(lapDisplayPercent(stepPercent));
+  const stepBarColor = $derived(lapTailwindBg(stepPercent));
   const todayPoints = $derived(calculatePoints(stepsToday));
   const bonusSteps = $derived(stepsToday > STEP_GOAL ? stepsToday - STEP_GOAL : 0);
 
@@ -48,7 +52,9 @@
   let cardioPointsTotal = $state(0);
   let cardioTargets = $state<{ start: number; full: number }>({ start: 50, full: 150 });
   let cardioStreakWeeks = $state(0);
-  const cardioPercent = $derived(Math.min(100, Math.round((cardioEqMinutes / cardioTargets.full) * 100)));
+  const cardioPercent = $derived(Math.round((cardioEqMinutes / (cardioTargets.full || 1)) * 100));
+  const cardioDisplayPercent = $derived(lapDisplayPercent(cardioPercent));
+  const cardioBarColor = $derived(lapTailwindBg(cardioPercent));
   const dailyCardioGoal = $derived(Math.round(cardioTargets.full / 7)); // ≈21 min for full=150
 
   // Weekly cardio data (current ISO week, per day)
@@ -252,13 +258,13 @@
     const token = await getValidAccessToken();
     const authHeader = { Authorization: `Bearer ${token}` };
     const [ledgerRes, earnedRes, entriesRes, profileRes, cardioRes, weeklyStepsRes, quizPunkteRes] = await Promise.all([
-      fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
-      fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
-      fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader }),
-      fetch('/api/profile', { headers: authHeader }),
-      fetch('/api/cardio/summary', { headers: authHeader }),
-      fetch(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', source_ref_from: weekDates[0], source_ref_to: weekDates[6], limit: '14' })}`, { headers: authHeader }),
-      fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`, { headers: authHeader })
+      fetch(apiUrl(`/api/ledger-total?${qs({ user: userId })}`), { headers: authHeader }),
+      fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`), { headers: authHeader }),
+      fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`), { headers: authHeader }),
+      fetch(apiUrl('/api/profile'), { headers: authHeader }),
+      fetch(apiUrl('/api/cardio/summary'), { headers: authHeader }),
+      fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', occurred_at_from: `${weekDates[0]}T00:00:00`, occurred_at_to: `${weekDates[6]}T23:59:59`, limit: '14' })}`), { headers: authHeader }),
+      fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`), { headers: authHeader })
     ]);
     if (ledgerRes.ok) totalPoints = Number((await ledgerRes.json()).total ?? 0);
     if (earnedRes.ok) earnedPoints = Number((await earnedRes.json()).total ?? 0);
@@ -325,12 +331,12 @@
     try {
       // 1) Profil (enthält id + first_name) + quizzes parallel – kein separater /api/me nötig
       const [profileRes, quizzesRes] = await Promise.all([
-        fetch('/api/profile', { headers: authHeader }),
-        fetch(`/api/quizzes?${qs({
+        fetch(apiUrl('/api/profile'), { headers: authHeader }),
+        fetch(apiUrl(`/api/quizzes?${qs({
           'filter[status][_in]': 'published,in_review',
           fields: 'id,article_id.title,article_id.slug',
           limit: '100'
-        })}`)
+        })}`))
       ]);
 
       if (!profileRes.ok) { goto('/login'); return; }
@@ -354,24 +360,24 @@
 
       // 2) Alle user-spezifischen Daten + quiz-status in einem Batch
       const [ledgerRes, earnedRes, challengeRes, quizStatusRes, badgesRes, directusBadgesRes, entriesRes, cardioRes, weeklyStepsRes2, quizPunkteRes] = await Promise.all([
-        fetch(`/api/ledger-total?${qs({ user: userId })}`, { headers: authHeader }),
-        fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader }),
-        fetch(`/api/challenges?${qs({
+        fetch(apiUrl(`/api/ledger-total?${qs({ user: userId })}`), { headers: authHeader }),
+        fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`), { headers: authHeader }),
+        fetch(apiUrl(`/api/challenges?${qs({
           'filter[status][_eq]': 'published',
           'filter[aktiv_bis][_gte]': '$NOW',
           fields: 'id,titel,beschreibung,punkte_wert,aktiv_bis',
           limit: '1',
           sort: '-aktiv_bis'
-        })}`),
+        })}`)),
         quizIds.length
-          ? fetch(`/api/quiz-status?quizIds=${quizIds.join(',')}`, { headers: authHeader })
+          ? fetch(apiUrl(`/api/quiz-status?quizIds=${quizIds.join(',')}`), { headers: authHeader })
           : Promise.resolve(null),
-        fetch(`/api/badges-summary?${qs({ user: userId })}`, { headers: authHeader }),
-        fetch('/api/badges', { headers: authHeader }),
-        fetch(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`, { headers: authHeader }),
-        fetch('/api/cardio/summary', { headers: authHeader }),
-        fetch(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', source_ref_from: weekDates[0], source_ref_to: weekDates[6], limit: '14' })}`, { headers: authHeader }),
-        fetch(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`, { headers: authHeader })
+        fetch(apiUrl(`/api/badges-summary?${qs({ user: userId })}`), { headers: authHeader }),
+        fetch(apiUrl('/api/badges'), { headers: authHeader }),
+        fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`), { headers: authHeader }),
+        fetch(apiUrl('/api/cardio/summary'), { headers: authHeader }),
+        fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', occurred_at_from: `${weekDates[0]}T00:00:00`, occurred_at_to: `${weekDates[6]}T23:59:59`, limit: '14' })}`), { headers: authHeader }),
+        fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`), { headers: authHeader })
       ]);
 
       if (ledgerRes.ok)  totalPoints  = Number((await ledgerRes.json()).total  ?? 0);
@@ -655,22 +661,14 @@
         {:else if healthConnected}
           <!-- Heute: Punkte + Schritte -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
-            <div class="text-3xl font-bold font-heading {stepsToday >= STEP_GOAL ? 'text-success' : 'text-secondary'}">{todayPoints}P</div>
+            <div class="text-3xl font-bold font-heading text-secondary">{todayPoints}P</div>
             <div class="text-2xl font-bold font-heading text-heading">
               {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
             </div>
           </div>
-          <!-- Fortschrittsbalken: amber (<Ziel), hellgrün (≥Ziel), dunkelgrün Überschuss -->
+          <!-- Fortschrittsbalken: lap-basiert (Orange <100%, Dunkelgrün =100%, Primary >100%, alternierend) -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
-            {#if stepPercent >= 100}
-              <div class="absolute inset-0 rounded-full bg-success"></div>
-              {#if bonusSteps > 0}
-                {@const excessPct = Math.min(55, Math.round((bonusSteps / STEP_GOAL) * 100))}
-                <div class="absolute inset-y-0 right-0 rounded-r-full bg-primary" style="width:{excessPct}%;"></div>
-              {/if}
-            {:else}
-              <div class="absolute inset-y-0 left-0 bg-secondary rounded-full transition-all duration-500" style="width:{stepPercent}%;"></div>
-            {/if}
+            <div class="absolute inset-y-0 left-0 {stepBarColor} rounded-full transition-all duration-500" style="width:{stepDisplayPercent}%;"></div>
           </div>
         {:else if showNativeFeatures}
           <div class="mb-4 rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-3">
@@ -692,14 +690,12 @@
             {@const dayData = weeklyStepData.find(d => d.date === date)}
             {@const pts = dayData?.points ?? 0}
             {@const isToday = date === todayStr}
-            {@const isGoal = isToday ? stepsToday >= STEP_GOAL : pts >= 40}
             {@const ringPercent = isToday
-              ? Math.min(100, Math.round((stepsToday / (STEP_GOAL * 2)) * 100))
-              : Math.min(100, Math.round((pts / 80) * 100))}
-            {@const ringColor = isGoal ? 'primary' : 'secondary'}
+              ? Math.round((stepsToday / STEP_GOAL) * 100)
+              : Math.round((pts / 40) * 100)}
             <div class="flex flex-col items-center gap-0.5">
               <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-              <CircleRing percent={ringPercent} color={ringColor} {isToday} />
+              <CircleRing percent={ringPercent} {isToday} />
             </div>
           {/each}
         </div>
@@ -750,24 +746,15 @@
         {:else}
           <!-- Heute: Minuten + Wochenziel -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
-            {#if cardioEqMinutes >= cardioTargets.full}
-              <div class="text-3xl font-bold font-heading text-success">{cardioPointsTotal}P</div>
-            {:else if cardioEqMinutes > 0}
-              <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
-            {:else}
-              <div class="text-3xl font-bold font-heading text-gray-300">0P</div>
-            {/if}
+            <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
             <div class="text-2xl font-bold font-heading text-heading">
               {cardioEqMinutes} / {cardioTargets.full} min
             </div>
           </div>
 
-          <!-- Fortschrittsbalken: amber (<Ziel), grün (≥Ziel) -->
+          <!-- Fortschrittsbalken: lap-basiert (Orange <100%, Dunkelgrün =100%, Primary >100%, alternierend) -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
-            <div
-              class="absolute inset-y-0 left-0 rounded-full transition-all duration-500 {cardioPercent >= 100 ? 'bg-success' : 'bg-secondary'}"
-              style="width:{cardioPercent}%;"
-            ></div>
+            <div class="absolute inset-y-0 left-0 {cardioBarColor} rounded-full transition-all duration-500" style="width:{cardioDisplayPercent}%;"></div>
           </div>
         {/if}
 
@@ -777,13 +764,11 @@
             {#each weekDates as date, i}
               {@const dayData = weeklyCardioData.find(d => d.date === date)}
               {@const mins = dayData?.minutes ?? 0}
-              {@const isGoal  = mins >= dailyCardioGoal}
               {@const isToday = date === todayStr}
-              {@const ringPercent = Math.min(100, Math.round((mins / ((dailyCardioGoal || 1) * 2)) * 100))}
-              {@const ringColor = isGoal ? 'primary' : 'secondary'}
+              {@const ringPercent = Math.round((mins / (dailyCardioGoal || 1)) * 100)}
               <div class="flex flex-col items-center gap-0.5">
                 <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-                <CircleRing percent={ringPercent} color={ringColor} {isToday} />
+                <CircleRing percent={ringPercent} {isToday} />
               </div>
             {/each}
           </div>

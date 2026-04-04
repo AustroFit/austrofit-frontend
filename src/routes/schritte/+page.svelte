@@ -6,6 +6,7 @@
   import { qs } from '$lib/utils/qs';
   import CircleRing from '$lib/components/CircleRing.svelte';
   import { toLocalDateString, buildCalendarDays, buildMonthDateRange, isValidDateString } from '$lib/utils/date';
+  import { apiUrl } from '$lib/utils/api';
 
   // ── State ────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -55,13 +56,13 @@
     const { dateFrom, dateTo } = buildMonthDateRange(viewYear, viewMonth + 1);
 
     const res = await fetch(
-      `/api/ledger-entries?${qs({
+      apiUrl(`/api/ledger-entries?${qs({
         user: userId,
         source_types: 'schritte,step',
-        source_ref_from: dateFrom,
-        source_ref_to: dateTo,
+        occurred_at_from: `${dateFrom}T00:00:00`,
+        occurred_at_to: `${dateTo}T23:59:59`,
         limit: '31'
-      })}`,
+      })}`),
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -96,7 +97,7 @@
   onMount(async () => {
     const token = await getValidAccessToken();
     if (!token) { goto('/login'); return; }
-    const profileRes = await fetch('/api/profile', {
+    const profileRes = await fetch(apiUrl('/api/profile'), {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!profileRes.ok) { goto('/login'); return; }
@@ -165,10 +166,9 @@
               {@const isGoal = pts >= 40}
               {@const isToday = date === todayStr}
               {@const dayNum = parseInt(date.split('-')[2])}
-              {@const ringPercent = Math.min(100, Math.round((pts / 80) * 100))}
-              {@const ringColor = isGoal ? 'primary' : 'secondary'}
+              {@const ringPercent = Math.round((pts / 40) * 100)}
               <div class="flex flex-col items-center gap-0.5 py-0.5">
-                <CircleRing percent={ringPercent} color={ringColor} {isToday} label={String(dayNum)} />
+                <CircleRing percent={ringPercent} {isToday} label={String(dayNum)} />
                 {#if steps > 0}
                   <span class="text-[9px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{steps.toLocaleString('de-AT')}</span>
                 {:else if pts > 0}
@@ -202,7 +202,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
             <span class="text-xl font-bold font-heading text-primary">{goalDays}</span>
-            <span class="text-[10px] text-gray-400 font-medium">Tagesziel erreicht</span>
+            <span class="text-[10px] text-gray-400 font-medium">Tagesziel ({STEP_GOAL.toLocaleString('de-AT')} Schritte)</span>
           </div>
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
             <span class="text-xl font-bold font-heading text-heading">{activeDays}</span>
