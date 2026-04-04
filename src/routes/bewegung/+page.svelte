@@ -6,6 +6,7 @@
   import { qs } from '$lib/utils/qs';
   import CircleRing from '$lib/components/CircleRing.svelte';
   import { toLocalDateString, buildCalendarDays } from '$lib/utils/date';
+  import { apiUrl } from '$lib/utils/api';
 
   // ── State ────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -53,10 +54,10 @@
     if (!token) { goto('/login'); return; }
 
     const res = await fetch(
-      `/api/cardio/history?${qs({
+      apiUrl(`/api/cardio/history?${qs({
         year:  String(viewYear),
         month: String(viewMonth + 1)
-      })}`,
+      })}`),
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -87,7 +88,7 @@
     // Load targets + month data in parallel
     const [, summaryRes] = await Promise.all([
       loadMonthData(),
-      fetch('/api/cardio/summary', { headers: { Authorization: `Bearer ${token}` } })
+      fetch(apiUrl('/api/cardio/summary'), { headers: { Authorization: `Bearer ${token}` } })
     ]);
     if (summaryRes.ok) {
       const sd = await summaryRes.json();
@@ -152,10 +153,9 @@
               {@const isGoal  = mins >= dailyGoal}
               {@const isToday = date === todayStr}
               {@const dayNum  = parseInt(date.split('-')[2])}
-              {@const ringPercent = Math.min(100, Math.round((mins / ((dailyGoal || 1) * 2)) * 100))}
-              {@const ringColor = isGoal ? 'primary' : 'secondary'}
+              {@const ringPercent = Math.round((mins / (dailyGoal || 1)) * 100)}
               <div class="flex flex-col items-center gap-0.5 py-0.5">
-                <CircleRing percent={ringPercent} color={ringColor} {isToday} label={String(dayNum)} />
+                <CircleRing percent={ringPercent} {isToday} label={String(dayNum)} />
                 {#if mins > 0}
                   <span class="text-[9px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{mins}m</span>
                 {:else}

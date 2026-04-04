@@ -44,8 +44,20 @@ export async function GET({ url, request, fetch }: { url: URL; request: Request;
     params.set('filter[source_type][_eq]', sourceType);
   }
 
-  if (sourceRefFrom) params.set('filter[source_ref][_gte]', sourceRefFrom);
-  if (sourceRefTo) params.set('filter[source_ref][_lte]', sourceRefTo);
+  // source_ref is a string field – Directus does not support _gte/_lte on strings.
+  // Generate explicit _in list for date ranges (max ~31 dates for a month view).
+  if (sourceRefFrom && sourceRefTo) {
+    const dates: string[] = [];
+    const cursor = new Date(sourceRefFrom + 'T00:00:00Z');
+    const stop = new Date(sourceRefTo + 'T00:00:00Z');
+    while (cursor <= stop && dates.length < 40) {
+      dates.push(cursor.toISOString().split('T')[0]);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    params.set('filter[source_ref][_in]', dates.join(','));
+  } else if (sourceRefFrom) {
+    params.set('filter[source_ref][_eq]', sourceRefFrom);
+  }
   if (occurredAtFrom) params.set('filter[occurred_at][_gte]', occurredAtFrom);
   if (occurredAtTo) params.set('filter[occurred_at][_lte]', occurredAtTo);
 

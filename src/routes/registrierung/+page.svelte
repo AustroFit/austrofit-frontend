@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { register, login } from '$lib/utils/auth';
   import { track } from '$lib/utils/mixpanel';
+  import { apiUrl } from '$lib/utils/api';
   import { env as dynPublicEnv } from '$env/dynamic/public';
   const PUBLIC_EMAIL_VERIFICATION = dynPublicEnv.PUBLIC_EMAIL_VERIFICATION;
 
@@ -134,7 +135,7 @@
     resendLoading = true;
     resendDone = false;
     try {
-      await fetch('/api/auth/resend-verification', {
+      await fetch(apiUrl('/api/auth/resend-verification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

@@ -6,6 +6,7 @@
   import { qs } from '$lib/utils/qs';
   import BuchungsZeile from '$lib/components/profil/BuchungsZeile.svelte';
   import type { LedgerEntry } from '$lib/components/profil/BuchungsZeile.svelte';
+  import { apiUrl } from '$lib/utils/api';
 
   type FilterKey = 'all' | 'education' | 'schritte' | 'cardio' | 'streak' | 'onboarding' | 'einloesung';
 
@@ -44,7 +45,7 @@
 
     loadingMore = true;
     try {
-      const res = await fetch(`/api/ledger-entries?${qs(params)}`, { headers: { Authorization: `Bearer ${await getValidAccessToken()}` } });
+      const res = await fetch(apiUrl(`/api/ledger-entries?${qs(params)}`), { headers: { Authorization: `Bearer ${await getValidAccessToken()}` } });
       if (!res.ok) { errorMsg = 'Aktivitäten konnten nicht geladen werden.'; return; }
       const data = await res.json();
       if (reset) {
@@ -71,14 +72,14 @@
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
-      const meRes = await fetch('/api/me', { headers: authHeader });
+      const meRes = await fetch(apiUrl('/api/me'),{ headers: authHeader });
       if (!meRes.ok) { goto('/login?next=/profil/aktivitaeten'); return; }
       const me = await meRes.json();
       const user = me?.data;
       if (!user?.id) { goto('/login?next=/profil/aktivitaeten'); return; }
       userId = user.id;
 
-      const entriesRes = await fetch(`/api/ledger-entries?${qs({ user: userId, limit: String(PAGE_SIZE) })}`, { headers: authHeader });
+      const entriesRes = await fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, limit: String(PAGE_SIZE) })}`), { headers: authHeader });
       if (entriesRes.ok) {
         const ed = await entriesRes.json();
         entries      = ed.data  ?? [];

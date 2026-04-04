@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { getAccessToken, logout as authAbmelden } from '$lib/utils/auth';
+  import { apiUrl } from '$lib/utils/api';
 
   let mobileMenuOpen = $state(false);
   let loggedIn = $state(false);
@@ -18,7 +19,7 @@
   async function fetchNavInitial() {
     try {
       const token = getAccessToken();
-      const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/me'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
         navInitial = data?.data?.first_name?.[0]?.toUpperCase() ?? '';

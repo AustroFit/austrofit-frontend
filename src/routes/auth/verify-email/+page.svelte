@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { onMount } from 'svelte';
+  import { apiUrl } from '$lib/utils/api';
 
   type VerifyState = 'loading' | 'success' | 'error';
   let verifyState: VerifyState = $state('loading');
@@ -15,7 +16,7 @@
     }
 
     try {
-      const res = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+      const res = await fetch(apiUrl(`/api/auth/verify-email?token=${encodeURIComponent(token)}`));
       if (res.ok || res.status === 204) {
         verifyState = 'success';
       } else {

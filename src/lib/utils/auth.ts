@@ -1,3 +1,5 @@
+import { apiUrl } from '$lib/utils/api';
+
 const TOKEN_KEY = 'austrofit_access_token';
 const REFRESH_TOKEN_KEY = 'austrofit_refresh_token';
 const EXPIRES_AT_KEY = 'austrofit_token_expires_at';
@@ -25,7 +27,7 @@ export async function refreshToken(): Promise<string | null> {
   const refresh = localStorage.getItem(REFRESH_TOKEN_KEY) ?? '';
   if (!refresh) return null;
   try {
-    const res = await fetch('/api/auth/refresh', {
+    const res = await fetch(apiUrl('/api/auth/refresh'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refresh })
@@ -92,7 +94,7 @@ export function logout() {
 }
 
 export async function login(email: string, password: string) {
-  const res = await fetch(`/api/auth/login`, {
+  const res = await fetch(apiUrl('/api/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -117,7 +119,7 @@ export async function register(email: string, password: string, first_name: stri
   if (first_name) payload.first_name = first_name;
   if (last_name) payload.last_name = last_name;
 
-  const res = await fetch(`/api/auth/register`, {
+  const res = await fetch(apiUrl('/api/auth/register'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)

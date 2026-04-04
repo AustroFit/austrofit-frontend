@@ -4,6 +4,7 @@
 import { browser } from '$app/environment';
 import { Capacitor } from '@capacitor/core';
 import { getAccessToken } from '$lib/utils/auth';
+import { apiUrl } from '$lib/utils/api';
 
 const LAST_SYNC_KEY = 'austrofit_last_step_sync';
 const SYNC_THROTTLE_MS = 15 * 60 * 1000; // 15 minutes
@@ -113,6 +114,12 @@ export async function registerBackgroundSync(): Promise<boolean> {
   return false;
 }
 
+// ── Concurrency guard ─────────────────────────────────────────────────────────
+// Prevents duplicate ledger entries from concurrent sync calls (e.g. background
+// sync + dashboard onMount firing at the same time).
+
+let _syncing = false;
+
 // ── Main sync function ────────────────────────────────────────────────────────
 
 export async function syncSteps(options: {
@@ -131,72 +138,80 @@ export async function syncSteps(options: {
   };
 
   if (!browser) return empty;
-
-  let isNative = false;
-  try {
-    isNative = Capacitor.isNativePlatform();
-  } catch { /* Capacitor not available */ }
-
-  if (!isNative) return empty;
-
-  const token = getAccessToken();
-  if (!token) return empty;
-
-  // Read steps from native health APIs
-  let stepData: Array<{ date: string; steps: number }> = [];
-  try {
-    const { getStepsForLastDays } = await import('$lib/services/health');
-    stepData = await getStepsForLastDays(days);
-  } catch (e) {
-    console.warn('[stepSync] getStepsForLastDays failed:', e);
+  if (_syncing) {
+    console.log('[stepSync] already syncing – skipping concurrent call');
     return empty;
   }
-
-  if (!stepData.length) return empty;
-
-  const result: SyncResult = {
-    synced: 0,
-    skipped: 0,
-    punkte_total: 0,
-    errors: [],
-    last_sync: new Date().toISOString()
-  };
-
-  for (let i = 0; i < stepData.length; i++) {
-    const { date, steps } = stepData[i];
-    onProgress?.(i + 1, stepData.length);
-
+  _syncing = true;
+  try {
+    let isNative = false;
     try {
-      const res = await fetch('/api/steps/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ date, steps, mode })
-      });
+      isNative = Capacitor.isNativePlatform();
+    } catch { /* Capacitor not available */ }
 
-      if (!res.ok) {
-        const errBody = await res.text().catch(() => '');
-        result.errors.push(`${date}: HTTP ${res.status} ${errBody}`);
-        continue;
-      }
+    if (!isNative) return empty;
 
-      const data = await res.json();
+    const token = getAccessToken();
+    if (!token) return empty;
 
-      if (data?.skipped) {
-        result.skipped++;
-      } else if (data?.success) {
-        result.synced++;
-        result.punkte_total += data.punkte ?? 0;
-      } else if (data?.error) {
-        result.errors.push(`${date}: ${data.error}`);
-      }
-    } catch (e: any) {
-      result.errors.push(`${date}: ${e?.message ?? 'Netzwerkfehler'}`);
+    // Read steps from native health APIs
+    let stepData: Array<{ date: string; steps: number }> = [];
+    try {
+      const { getStepsForLastDays } = await import('$lib/services/health');
+      stepData = await getStepsForLastDays(days);
+    } catch (e) {
+      console.warn('[stepSync] getStepsForLastDays failed:', e);
+      return empty;
     }
-  }
 
-  setLastSyncTime(result.last_sync);
-  return result;
+    if (!stepData.length) return empty;
+
+    const result: SyncResult = {
+      synced: 0,
+      skipped: 0,
+      punkte_total: 0,
+      errors: [],
+      last_sync: new Date().toISOString()
+    };
+
+    for (let i = 0; i < stepData.length; i++) {
+      const { date, steps } = stepData[i];
+      onProgress?.(i + 1, stepData.length);
+
+      try {
+        const res = await fetch(apiUrl('/api/steps/sync'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ date, steps, mode })
+        });
+
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => '');
+          result.errors.push(`${date}: HTTP ${res.status} ${errBody}`);
+          continue;
+        }
+
+        const data = await res.json();
+
+        if (data?.skipped) {
+          result.skipped++;
+        } else if (data?.success) {
+          result.synced++;
+          result.punkte_total += data.punkte ?? 0;
+        } else if (data?.error) {
+          result.errors.push(`${date}: ${data.error}`);
+        }
+      } catch (e: any) {
+        result.errors.push(`${date}: ${e?.message ?? 'Netzwerkfehler'}`);
+      }
+    }
+
+    setLastSyncTime(result.last_sync);
+    return result;
+  } finally {
+    _syncing = false;
+  }
 }

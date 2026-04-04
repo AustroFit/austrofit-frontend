@@ -5,6 +5,7 @@
   import { getOrCreateAnonymousId } from '$lib/utils/anonymous';
   import { getAccessToken, getValidAccessToken } from '$lib/utils/auth';
   import { track } from '$lib/utils/mixpanel';
+  import { apiUrl } from '$lib/utils/api';
 
   const { quiz, meta, ctaUrl, passPercent, quizId } = $props();
 
@@ -100,7 +101,7 @@
     // C) Quiz-Status vom Server laden (für eingeloggte User)
     if (token && (quizId ?? quiz?.id)) {
       try {
-        const statusRes = await fetch(`/api/quiz-status?quizId=${quizId ?? quiz?.id}`, {
+        const statusRes = await fetch(apiUrl(`/api/quiz-status?quizId=${quizId ?? quiz?.id}`), {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (statusRes.ok) {
@@ -136,7 +137,7 @@
       return false;
     }
 
-    const res = await fetch('/api/claim', {
+    const res = await fetch(apiUrl('/api/claim'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -563,7 +564,7 @@
         meta?.points ??
         40;
 
-      const res = await fetch('/api/quiz-attempts', {
+      const res = await fetch(apiUrl('/api/quiz-attempts'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

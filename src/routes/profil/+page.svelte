@@ -5,6 +5,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { getValidAccessToken, logout } from '$lib/utils/auth';
+  import { apiUrl } from '$lib/utils/api';
 
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -33,7 +34,7 @@
     exporting = true;
     try {
       const token = await getValidAccessToken();
-      const res = await fetch('/api/export', {
+      const res = await fetch(apiUrl('/api/export'), {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -96,8 +97,8 @@
 
     try {
       const [meRes, profileRes] = await Promise.all([
-        fetch('/api/me', { headers: authHeader }),
-        fetch('/api/profile', { headers: authHeader })
+        fetch(apiUrl('/api/me'), { headers: authHeader }),
+        fetch(apiUrl('/api/profile'), { headers: authHeader })
       ]);
 
       if (!meRes.ok) { goto('/login?next=/profil'); return; }
@@ -135,7 +136,7 @@
     saveError = '';
     try {
       const token = await getValidAccessToken();
-      const res = await fetch('/api/profile', {
+      const res = await fetch(apiUrl('/api/profile'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +199,7 @@
     savingGroup = true; saveGroupSuccess = false; saveGroupError = '';
     try {
       const token = await getValidAccessToken();
-      const res = await fetch('/api/profile', {
+      const res = await fetch(apiUrl('/api/profile'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ activity_group: editGroup })
@@ -259,7 +260,7 @@
     if (!browser) return;
     try {
       const token = await getValidAccessToken();
-      await fetch('/api/profile', {
+      await fetch(apiUrl('/api/profile'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -287,7 +288,7 @@
     deleteError = '';
     try {
       const token = await getValidAccessToken();
-      const res = await fetch('/api/profile/delete', {
+      const res = await fetch(apiUrl('/api/profile/delete'), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

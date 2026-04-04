@@ -2,6 +2,7 @@
 <!-- Manual cardio entry for dev/test mode. Builds a list of workouts, then posts all at once. -->
 <script lang="ts">
   import { getAccessToken } from '$lib/utils/auth';
+  import { apiUrl } from '$lib/utils/api';
 
   interface Props {
     onSave?: () => void;
@@ -111,7 +112,7 @@
     });
 
     try {
-      const res = await fetch('/api/cardio/sync', {
+      const res = await fetch(apiUrl('/api/cardio/sync'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ platform: 'android', workouts })

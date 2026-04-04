@@ -101,9 +101,11 @@ Die echten Health-Sync-Calls (Capacitor) laufen weiterhin nur wenn `isNativePlat
 
 **Directus `points_ledger.source_ref` is type `string`** — Directus rejects `_gte`/`_lte` on string fields with a 400 error. For date-range queries, generate an explicit `_in` list in the API route (see `/api/ledger-entries/+server.ts`). Max ~31 dates for a month view, ~7 for a week view.
 
+**Directus: two simultaneous `_in` filters on different fields returns empty** — When combining `filter[source_type][_in]` (for multiple source types) with `filter[source_ref][_in]` (for date ranges), Directus 11 returns `{"data":[],"total":0}`. Use `occurred_at_from`/`occurred_at_to` (datetime field, supports `_gte`/`_lte`) instead of `source_ref_from`/`source_ref_to` whenever `source_types` is also filtered.
+
 **`syncSteps()` concurrency** — The service has a module-level `_syncing` flag to block concurrent calls. Background sync + dashboard `onMount` can fire simultaneously; without this guard, multiple ledger entries for the same date accumulate (delta-correction entries). Do not call `syncSteps()` in parallel.
 
-**CircleRing color logic (lap-based)** — `percent` is uncapped (0–∞). Color alternates per lap of 100%: orange (<100%), dark forest green (=100%), primary green (101–200%), dark forest green (201–300%), … The `displayPercent` for SVG fill is `(percent - 1) % 100 + 1` per lap. Progress bars follow the same logic. The `color` prop is deprecated and ignored.
+**CircleRing color logic (lap-based)** — `percent` is uncapped (0–∞). Color logic lives in `$lib/utils/progress.ts` (`lapCssColor` for SVG rings, `lapTailwindBg` for progress bars): gray (<100%), primary green (=100%), alternating primary / primary-dark per additional lap. The `displayPercent` for SVG fill is `(percent - 1) % 100 + 1` per lap. The `color` prop is deprecated and ignored.
 
 **Back button on Android (Capacitor)** — `window.history.back()` is unreliable in the Capacitor WebView because SvelteKit's client router doesn't always populate `window.history` as expected. Use `goto(-1)` instead, with a fallback to `/dashboard`. Handler lives in `src/routes/+layout.svelte`.
 

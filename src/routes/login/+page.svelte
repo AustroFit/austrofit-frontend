@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { login, getAccessToken } from '$lib/utils/auth';
   import { identifyUser, track } from '$lib/utils/mixpanel';
+  import { apiUrl } from '$lib/utils/api';
 
   let email = $state('');
   let password = $state('');
@@ -22,7 +23,7 @@
 
       // Analytics: User-ID auflösen und Session verknüpfen
       try {
-        const meRes = await fetch('/api/me', {
+        const meRes = await fetch(apiUrl('/api/me'), {
           headers: { Authorization: `Bearer ${getAccessToken()}` }
         });
         if (meRes.ok) {
@@ -35,7 +36,7 @@
       // Init-Onboarding (idempotent): Booster + activity_group setzen
       try {
         const activityGroup = localStorage.getItem('austrofit_activity_group') ?? 'adult';
-        await fetch('/api/auth/init-onboarding', {
+        await fetch(apiUrl('/api/auth/init-onboarding'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +65,7 @@
     resendLoading = true;
     resendDone = false;
     try {
-      await fetch('/api/auth/resend-verification', {
+      await fetch(apiUrl('/api/auth/resend-verification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

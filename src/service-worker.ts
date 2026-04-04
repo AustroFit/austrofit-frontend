@@ -1,10 +1,22 @@
 // src/service-worker.ts
-// SvelteKit service worker – handles Periodic Background Sync for step tracking.
-// Note: Periodic Background Sync is only supported in Chrome/Android.
-//       On iOS (Safari), sync happens exclusively via Trigger A (app open).
+// SvelteKit service worker – App Shell Caching + Periodic Background Sync.
+//
+// Strategie:
+//   - App Shell (JS, CSS, HTML): Cache First → sofortige Navigation ohne Netzwerk
+//   - API-Calls (/api/*): Network Only → immer frische Daten
+//   - Sonstige Requests: Cache First, Fallback auf Network (runtime caching)
 
 /// <reference lib="webworker" />
+/// <reference types="@sveltejs/kit" />
+import { build, files, version } from '$service-worker';
+
 declare const self: ServiceWorkerGlobalScope;
+
+// Cache-Name enthält die Build-Version → bei neuem Deploy wird alter Cache automatisch geleert
+const CACHE_NAME = `austrofit-shell-${version}`;
+
+// App Shell = alle vom Build erzeugten Assets + statische Files
+const APP_SHELL = [...build, ...files];
 
 const IDB_NAME = 'austrofit-flags';
 const IDB_VERSION = 1;
@@ -35,13 +47,53 @@ async function setPendingSyncFlag(): Promise<void> {
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
-self.addEventListener('install', () => {
-  // Activate immediately without waiting for old SW to be removed
-  self.skipWaiting();
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  // Alte Cache-Versionen löschen
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+// ── Fetch handler ─────────────────────────────────────────────────────────────
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // API-Calls und externe Requests: immer Network Only (keine Caching)
+  if (url.pathname.startsWith('/api/') || url.origin !== self.location.origin) {
+    return; // pass-through
+  }
+
+  // App Shell: Cache First, Fallback auf Network
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(request).then((response) => {
+        // Nur erfolgreiche GET-Responses cachen
+        if (request.method !== 'GET' || !response.ok) return response;
+
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        return response;
+      });
+    })
+  );
 });
 
 // ── Periodic Background Sync ──────────────────────────────────────────────────
@@ -57,11 +109,4 @@ self.addEventListener('periodicsync', (event: any) => {
       )
     );
   }
-});
-
-// ── Fetch handler (pass-through, no caching) ──────────────────────────────────
-// Add caching strategies here if offline support is needed in the future.
-
-self.addEventListener('fetch', () => {
-  // pass-through: no caching implemented yet
 });

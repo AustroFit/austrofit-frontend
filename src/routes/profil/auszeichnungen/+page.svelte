@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { getValidAccessToken } from '$lib/utils/auth';
+  import { apiUrl } from '$lib/utils/api';
 
   let loading = $state(true);
   let errorMsg = $state('');
@@ -60,7 +61,7 @@
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
-      const directusRes = await fetch('/api/badges', { headers: authHeader });
+      const directusRes = await fetch(apiUrl('/api/badges'), { headers: authHeader });
       if (!directusRes.ok) {
         if (directusRes.status === 401) { goto('/login?next=/profil/auszeichnungen'); return; }
         throw new Error(`Fehler ${directusRes.status}`);

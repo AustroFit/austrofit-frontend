@@ -6,6 +6,7 @@
   import { getAccessToken } from '$lib/utils/auth';
   import { calculatePoints } from '$lib/utils/streak';
   import { track } from '$lib/utils/mixpanel';
+  import { apiUrl } from '$lib/utils/api';
 
   interface Props {
     userId: string;
@@ -74,7 +75,7 @@
     }
 
     try {
-      const res = await fetch(`/api/ledger-entries?user=${userId}&source_type=schritte&limit=30`);
+      const res = await fetch(apiUrl(`/api/ledger-entries?user=${userId}&source_type=schritte&limit=30`));
       if (res.ok) {
         const body = await res.json();
         // Build date → points_delta map from existing entries
@@ -106,7 +107,7 @@
 
     const token = getAccessToken();
     try {
-      const res = await fetch('/api/steps/manual', {
+      const res = await fetch(apiUrl('/api/steps/manual'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,7 +152,7 @@
 
     for (const entry of missing) {
       try {
-        const res = await fetch('/api/steps/manual', {
+        const res = await fetch(apiUrl('/api/steps/manual'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

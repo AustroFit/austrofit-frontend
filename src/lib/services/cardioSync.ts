@@ -5,6 +5,7 @@
 import { browser } from '$app/environment';
 import { Capacitor } from '@capacitor/core';
 import { getAccessToken } from '$lib/utils/auth';
+import { apiUrl } from '$lib/utils/api';
 
 const LAST_CARDIO_SYNC_KEY = 'austrofit_last_cardio_sync';
 const SYNC_THROTTLE_MS = 15 * 60 * 1000; // 15 minutes
@@ -85,7 +86,7 @@ export async function syncCardio(): Promise<CardioSyncClientResult | null> {
   } catch { /* default to android */ }
 
   try {
-    const res = await fetch('/api/cardio/sync', {
+    const res = await fetch(apiUrl('/api/cardio/sync'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

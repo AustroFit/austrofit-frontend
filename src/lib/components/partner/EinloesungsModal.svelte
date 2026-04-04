@@ -6,6 +6,7 @@
   import type { Gutschein } from './GutscheinScreen.svelte';
   import { getAccessToken } from '$lib/utils/auth';
   import { track } from '$lib/utils/mixpanel';
+  import { apiUrl } from '$lib/utils/api';
 
   interface Reward {
     id: string;
@@ -54,7 +55,7 @@
 
     try {
       const token = getAccessToken();
-      const res = await fetch('/api/redeem', {
+      const res = await fetch(apiUrl('/api/redeem'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

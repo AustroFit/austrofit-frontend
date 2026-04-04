@@ -11,6 +11,7 @@
   import AwinOnlineCode from '$lib/components/profil/AwinOnlineCode.svelte';
   import type { AwinUnlockEntry } from '$lib/components/profil/AwinOnlineCode.svelte';
   import { KATEGORIE_LABELS } from '$lib/data/categoryMaps';
+  import { apiUrl } from '$lib/utils/api';
 
   interface AwinPromotionPublic {
     id: string;
@@ -197,7 +198,7 @@
     // Gutscheine neu laden damit neuer Eintrag sofort in "Aktiv" erscheint
     const token = await getValidAccessToken();
     if (token) {
-      const res = await fetch('/api/gutscheine', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/gutscheine'), { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const d = await res.json();
         aktiv      = d.aktiv      ?? [];
@@ -220,13 +221,13 @@
 
     try {
       const [awinRes, tdRes, partnerRes, gutscheineRes, onlineRes, tdOnlineRes, ledgerRes] = await Promise.all([
-        fetch('/api/awin/programs'),
-        fetch('/api/tradedoubler/programs'),
-        fetch('/api/partner'),
-        authHeader ? fetch('/api/gutscheine', { headers: authHeader }) : Promise.resolve(null),
-        authHeader ? fetch('/api/awin/my-unlocks', { headers: authHeader }) : Promise.resolve(null),
-        authHeader ? fetch('/api/tradedoubler/my-unlocks', { headers: authHeader }) : Promise.resolve(null),
-        authHeader ? fetch('/api/ledger-total?me=true', { headers: authHeader }) : Promise.resolve(null)
+        fetch(apiUrl('/api/awin/programs')),
+        fetch(apiUrl('/api/tradedoubler/programs')),
+        fetch(apiUrl('/api/partner')),
+        authHeader ? fetch(apiUrl('/api/gutscheine'), { headers: authHeader }) : Promise.resolve(null),
+        authHeader ? fetch(apiUrl('/api/awin/my-unlocks'), { headers: authHeader }) : Promise.resolve(null),
+        authHeader ? fetch(apiUrl('/api/tradedoubler/my-unlocks'), { headers: authHeader }) : Promise.resolve(null),
+        authHeader ? fetch(apiUrl('/api/ledger-total?me=true'), { headers: authHeader }) : Promise.resolve(null)
       ]);
 
       if (awinRes.ok) {

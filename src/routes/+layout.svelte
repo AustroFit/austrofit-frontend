@@ -2,6 +2,7 @@
   import '../app.css';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { Capacitor } from '@capacitor/core';
   import MainNavbar from '$lib/components/MainNavbar.svelte';
   import Footer from '$lib/components/Footer.svelte';
@@ -11,6 +12,7 @@
   import { pwaPrompt } from '$lib/stores/pwa';
   import { levelDefs } from '$lib/stores/levels';
   import type { LevelDef } from '$lib/utils/level';
+  import { apiUrl } from '$lib/utils/api';
 
   const { children } = $props();
 
@@ -22,12 +24,12 @@
         StatusBar.setBackgroundColor({ color: '#F0FBF1' });  // passend zur Navbar (bg-light-grey)
       }).catch(() => { /* nicht-kritisch */ });
 
-      // Back-Geste / Hardware-Back-Button: zurück navigieren oder App beenden
-      // canGoBack ist im WebView immer false → pathname prüfen
+      // Back-Geste / Hardware-Back-Button: zurück navigieren oder App beenden.
+      // window.history.back() ist im Capacitor WebView unzuverlässig → goto(-1) mit Fallback.
       import('@capacitor/app').then(({ App }) => {
         App.addListener('backButton', () => {
           if (window.location.pathname !== '/dashboard') {
-            window.history.back();
+            goto(-1 as any).catch(() => goto('/dashboard'));
           } else {
             App.exitApp();
           }
@@ -47,7 +49,7 @@
     window.addEventListener('austrofit:consent', onConsent);
 
     // Level-Definitionen aus Directus laden (Fallback: hardcoded LEVEL_DEFS)
-    fetch('/api/levels')
+    fetch(apiUrl('/api/levels'))
       .then((r) => r.json())
       .then((body: { data: { level: number; name: string; min_points: number; max_points: number }[] }) => {
         if (body.data?.length) {

@@ -7,6 +7,7 @@
   import { levelDefs } from '$lib/stores/levels';
   import { qs } from '$lib/utils/qs';
   import LevelFortschritt from '$lib/components/profil/LevelFortschritt.svelte';
+  import { apiUrl } from '$lib/utils/api';
 
   let loading = $state(true);
   let errorMsg = $state('');
@@ -20,13 +21,13 @@
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
-      const meRes = await fetch('/api/me', { headers: authHeader });
+      const meRes = await fetch(apiUrl('/api/me'), { headers: authHeader });
       if (!meRes.ok) { goto('/login?next=/profil/level-roadmap'); return; }
       const me = await meRes.json();
       const userId = me?.data?.id;
       if (!userId) { goto('/login?next=/profil/level-roadmap'); return; }
 
-      const earnedRes = await fetch(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`, { headers: authHeader });
+      const earnedRes = await fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`), { headers: authHeader });
       if (earnedRes.ok) earnedPoints = Number((await earnedRes.json()).total ?? 0);
     } catch (e: unknown) {
       errorMsg = e instanceof Error ? e.message : 'Fehler beim Laden.';
