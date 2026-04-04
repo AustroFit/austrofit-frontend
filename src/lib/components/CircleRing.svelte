@@ -1,11 +1,15 @@
 <!-- src/lib/components/CircleRing.svelte -->
 <!-- Circular progress ring, fills clockwise from 12 o'clock. -->
+<!-- Lap-based color logic: orange (<100%), dark-forest-green (=100%),
+     then alternating primary-green / dark-forest-green for each additional lap. -->
 <script lang="ts">
+  import { lapDisplayPercent, lapCssColor } from '$lib/utils/progress';
+
   interface Props {
-    /** 0–100 fill percentage */
+    /** Raw progress percentage (0–∞). Laps every 100%. */
     percent: number;
-    /** Ring color when filling */
-    color?: 'primary' | 'secondary';
+    /** @deprecated color is now derived automatically from percent. Kept for backward compat. */
+    color?: string;
     /** Highlight today with a faint colored track */
     isToday?: boolean;
     /** Optional text label rendered inside the ring (e.g. day number) */
@@ -14,29 +18,25 @@
     size?: number;
   }
 
-  const { percent = 0, color = 'primary', isToday = false, label = '', size = 36 }: Props = $props();
+  const { percent = 0, isToday = false, label = '', size = 36 }: Props = $props();
 
   const STROKE_WIDTH = 4.5;
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = cx - STROKE_WIDTH / 2 - 1; // stays within bounds
-  const circumference = 2 * Math.PI * r;
+  const cx = $derived(size / 2);
+  const cy = $derived(size / 2);
+  const r = $derived(cx - STROKE_WIDTH / 2 - 1); // stays within bounds
+  const circumference = $derived(2 * Math.PI * r);
 
-  const dashOffset = $derived(
-    circumference - (Math.min(100, Math.max(0, percent)) / 100) * circumference
-  );
+  const raw = $derived(Math.max(0, percent));
+  const displayPercent = $derived(lapDisplayPercent(raw));
+  const dashOffset = $derived(circumference - (displayPercent / 100) * circumference);
+  const strokeColor = $derived(lapCssColor(raw));
 
-  const strokeColor = $derived(
-    color === 'secondary' ? 'var(--color-secondary)'
-    : percent >= 100 ? 'var(--color-success)'
-    : 'var(--color-primary)'
-  );
-  // Track: faint primary for today, light gray otherwise
-  const trackColor = $derived(isToday ? '#1B7A44' : '#C8E6C9');
-  const trackOpacity = $derived(isToday ? 0.3 : 1);
+  // Neutral track: same gray for all days including today
+  const trackColor = '#e0e0e0';
+
   const labelFill = $derived(
-    percent === 0
-      ? (isToday ? '#1B7A44' : '#6B8F6C')
+    raw === 0
+      ? (isToday ? '#1B7A44' : '#9CA3AF')
       : strokeColor
   );
 </script>
@@ -49,12 +49,11 @@
     r={r}
     fill="none"
     stroke={trackColor}
-    stroke-opacity={trackOpacity}
     stroke-width={STROKE_WIDTH}
   />
 
   <!-- progress arc, starting at 12 o'clock, clockwise -->
-  {#if percent > 0}
+  {#if raw > 0}
     <circle
       {cx}
       {cy}

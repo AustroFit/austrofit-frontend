@@ -38,11 +38,9 @@
   // Steps / day goal
   let stepsToday = $state(0);
   const STEP_GOAL = 7000;
-  const stepPercent = $derived(Math.round((stepsToday / STEP_GOAL) * 100));
-  const stepDisplayPercent = $derived(lapDisplayPercent(stepPercent));
-  const stepBarColor = $derived(lapTailwindBg(stepPercent));
+  const STEP_WEEK_GOAL = 7 * STEP_GOAL; // 49000
+  let stepView = $state<'tag' | 'woche'>('tag');
   const todayPoints = $derived(calculatePoints(stepsToday));
-  const bonusSteps = $derived(stepsToday > STEP_GOAL ? stepsToday - STEP_GOAL : 0);
 
   // Points breakdown
   let quizPunkte = $state(0);
@@ -57,19 +55,35 @@
   const cardioBarColor = $derived(lapTailwindBg(cardioPercent));
   const dailyCardioGoal = $derived(Math.round(cardioTargets.full / 7)); // ≈21 min for full=150
 
+  const todayStr = toLocalDateString();
+
   // Weekly cardio data (current ISO week, per day)
   interface DayCardioData { date: string; minutes: number; }
   let weeklyCardioData = $state<DayCardioData[]>([]);
+  let cardioView = $state<'tag' | 'woche'>('woche');
+  const todayCardioMinutes = $derived(weeklyCardioData.find(d => d.date === todayStr)?.minutes ?? 0);
+  const cardioViewEqMinutes = $derived(cardioView === 'woche' ? cardioEqMinutes : todayCardioMinutes);
+  const cardioViewGoal = $derived(cardioView === 'woche' ? cardioTargets.full : dailyCardioGoal);
+  const cardioViewPercent = $derived(Math.round((cardioViewEqMinutes / (cardioViewGoal || 1)) * 100));
+  const cardioViewDisplayPercent = $derived(lapDisplayPercent(cardioViewPercent));
+  const cardioViewBarColor = $derived(lapTailwindBg(cardioViewPercent));
 
   // Streak
   let streakDays = $state(0);
   let quizStreakDays = $state(0);
 
   // Weekly step data (current ISO week)
-  interface DayStepData { date: string; points: number; }
+  interface DayStepData { date: string; points: number; steps?: number; }
   let weeklyStepData = $state<DayStepData[]>([]);
+  const weeklyStepsTotal = $derived(weeklyStepData.reduce((sum, d) => sum + (d.steps ?? 0), 0));
+  const stepPercent = $derived(
+    stepView === 'tag'
+      ? Math.round((stepsToday / STEP_GOAL) * 100)
+      : Math.round((weeklyStepsTotal / STEP_WEEK_GOAL) * 100)
+  );
+  const stepDisplayPercent = $derived(lapDisplayPercent(stepPercent));
+  const stepBarColor = $derived(lapTailwindBg(stepPercent));
   const weekDates = getISOWeekDates();
-  const todayStr = toLocalDateString();
   const WEEK_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const;
 
   // Streak next milestones
@@ -290,12 +304,20 @@
     }
     if (weeklyStepsRes.ok) {
       const ws = await weeklyStepsRes.json();
-      const byDate: Record<string, number> = {};
+      const byDate: Record<string, { points: number; steps: number }> = {};
       for (const e of (ws.data ?? [])) {
         const d = String(e.source_ref ?? '');
-        if (isValidDateString(d)) byDate[d] = (byDate[d] ?? 0) + (e.points_delta ?? 0);
+        if (isValidDateString(d)) {
+          if (!byDate[d]) byDate[d] = { points: 0, steps: 0 };
+          byDate[d].points += e.points_delta ?? 0;
+          byDate[d].steps += Number(e.meta?.steps ?? 0);
+        }
       }
-      weeklyStepData = weekDates.map((date: string) => ({ date, points: byDate[date] ?? 0 }));
+      weeklyStepData = weekDates.map((date: string) => ({
+        date,
+        points: byDate[date]?.points ?? 0,
+        steps: byDate[date]?.steps ?? 0
+      }));
     }
     if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
     await loadStepsFromHealth();
@@ -651,22 +673,31 @@
             <span class="text-lg">👟</span>
             <span class="text-xs font-semibold uppercase tracking-widest text-gray-400">Schritte</span>
           </div>
-          <a href="/schritte" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
-            {formatCardDateLabel()} →
-          </a>
+          <div class="flex items-center gap-2">
+            <div class="flex rounded-lg border border-black/10 overflow-hidden text-[11px] font-semibold">
+              <button onclick={() => stepView = 'tag'} class="px-2 py-0.5 transition-colors {stepView === 'tag' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Tag</button>
+              <button onclick={() => stepView = 'woche'} class="px-2 py-0.5 transition-colors {stepView === 'woche' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Woche</button>
+            </div>
+            <a href="/schritte" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
+              {formatCardDateLabel()} →
+            </a>
+          </div>
         </div>
 
         {#if testMode}
           <ManuelleSchrittEingabe {userId} onSave={refreshDashboardData} />
         {:else if healthConnected}
-          <!-- Heute: Punkte + Schritte -->
+          <!-- Schritte + Ziel -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
             <div class="text-3xl font-bold font-heading text-secondary">{todayPoints}P</div>
             <div class="text-2xl font-bold font-heading text-heading">
-              {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
+              {#if stepView === 'tag'}
+                {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
+              {:else}
+                {weeklyStepsTotal.toLocaleString('de-AT')} / {STEP_WEEK_GOAL.toLocaleString('de-AT')}
+              {/if}
             </div>
           </div>
-          <!-- Fortschrittsbalken: lap-basiert (Orange <100%, Dunkelgrün =100%, Primary >100%, alternierend) -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
             <div class="absolute inset-y-0 left-0 {stepBarColor} rounded-full transition-all duration-500" style="width:{stepDisplayPercent}%;"></div>
           </div>
@@ -710,9 +741,15 @@
             <span class="text-lg">🏃</span>
             <span class="text-xs font-semibold uppercase tracking-widest text-gray-400">Bewegung</span>
           </div>
-          <a href="/bewegung" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
-            {formatCardDateLabel()} →
-          </a>
+          <div class="flex items-center gap-2">
+            <div class="flex rounded-lg border border-black/10 overflow-hidden text-[11px] font-semibold">
+              <button onclick={() => cardioView = 'tag'} class="px-2 py-0.5 transition-colors {cardioView === 'tag' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Tag</button>
+              <button onclick={() => cardioView = 'woche'} class="px-2 py-0.5 transition-colors {cardioView === 'woche' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Woche</button>
+            </div>
+            <a href="/bewegung" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
+              {formatCardDateLabel()} →
+            </a>
+          </div>
         </div>
 
         {#if cardioTestMode}
@@ -744,17 +781,15 @@
             </div>
           {/if}
         {:else}
-          <!-- Heute: Minuten + Wochenziel -->
+          <!-- Minuten + Ziel (Tag oder Woche) -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
             <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
             <div class="text-2xl font-bold font-heading text-heading">
-              {cardioEqMinutes} / {cardioTargets.full} min
+              {cardioViewEqMinutes} / {cardioViewGoal} min
             </div>
           </div>
-
-          <!-- Fortschrittsbalken: lap-basiert (Orange <100%, Dunkelgrün =100%, Primary >100%, alternierend) -->
           <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
-            <div class="absolute inset-y-0 left-0 {cardioBarColor} rounded-full transition-all duration-500" style="width:{cardioDisplayPercent}%;"></div>
+            <div class="absolute inset-y-0 left-0 {cardioViewBarColor} rounded-full transition-all duration-500" style="width:{cardioViewDisplayPercent}%;"></div>
           </div>
         {/if}
 

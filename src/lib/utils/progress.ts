@@ -13,7 +13,7 @@ export function lapDisplayPercent(raw: number): number {
  * <100%: bg-secondary (orange), =100%: bg-darkblue, >100%: alternating bg-primary / bg-darkblue
  */
 export function lapTailwindBg(raw: number): string {
-  if (raw < 100) return 'bg-gray-300';
+  if (raw < 100) return 'bg-[#9CA3AF]';
   if (raw === 100) return 'bg-primary';
   const lap = Math.floor((raw - 1) / 100);
   return lap % 2 === 1 ? 'bg-primary' : 'bg-primary-dark';
@@ -23,7 +23,7 @@ export function lapTailwindBg(raw: number): string {
  * Lap-based CSS variable stroke color for SVG rings.
  */
 export function lapCssColor(raw: number): string {
-  if (raw < 100) return 'var(--color-gray-300)';
+  if (raw < 100) return '#9CA3AF';
   if (raw === 100) return 'var(--color-primary)';
   const lap = Math.floor((raw - 1) / 100);
   return lap % 2 === 1 ? 'var(--color-primary)' : 'var(--color-primary-dark)';

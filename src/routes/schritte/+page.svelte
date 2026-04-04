@@ -170,9 +170,7 @@
               <div class="flex flex-col items-center gap-0.5 py-0.5">
                 <CircleRing percent={ringPercent} {isToday} label={String(dayNum)} />
                 {#if steps > 0}
-                  <span class="text-[9px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-secondary'}">{steps.toLocaleString('de-AT')}</span>
-                {:else if pts > 0}
-                  <span class="text-[9px] font-bold leading-tight text-secondary">{pts}P</span>
+                  <span class="text-[9px] font-bold leading-tight {isGoal ? 'text-primary' : 'text-gray-400'}">{steps.toLocaleString('de-AT')}</span>
                 {:else}
                   <span class="text-[9px] leading-tight text-transparent select-none">–</span>
                 {/if}
