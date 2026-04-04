@@ -15,6 +15,7 @@
   import SyncToast from '$lib/components/SyncToast.svelte';
   import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
   import ManuelleCardioEingabe from '$lib/components/dashboard/ManuelleCardioEingabe.svelte';
+  import BadgeUnlockOverlay from '$lib/components/dashboard/BadgeUnlockOverlay.svelte';
   import CircleRing from '$lib/components/CircleRing.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
@@ -102,12 +103,16 @@
   interface DirectusBadge {
     id: number;
     name: string;
+    description: string;
     typ: string;
     step_threshold: number;
     image_url: string | null;
     earned: boolean;
   }
   let directusBadges = $state<DirectusBadge[]>([]);
+
+  // Newly unlocked badges → shown in overlay
+  let newlyUnlockedBadges = $state<DirectusBadge[]>([]);
 
   // Earned badges sorted by threshold desc (highest = most recently unlocked), then first unearned
   const dashboardBadges = $derived.by(() => {
@@ -308,6 +313,18 @@
       }));
     }
     if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
+
+    // Reload badges and detect newly unlocked ones
+    const prevEarnedIds = new Set(directusBadges.filter(b => b.earned).map(b => b.id));
+    const badgesRefresh = await fetch(apiUrl('/api/badges'), { headers: authHeader });
+    if (badgesRefresh.ok) {
+      const db = await badgesRefresh.json();
+      const freshBadges: DirectusBadge[] = db.badges ?? [];
+      const justUnlocked = freshBadges.filter(b => b.earned && !prevEarnedIds.has(b.id));
+      if (justUnlocked.length > 0) newlyUnlockedBadges = justUnlocked;
+      directusBadges = freshBadges;
+    }
+
     await loadStepsFromHealth();
   }
 
@@ -545,6 +562,13 @@
   </div>
 {/if}
 
+{#if newlyUnlockedBadges.length > 0}
+  <BadgeUnlockOverlay
+    badges={newlyUnlockedBadges}
+    onDismissAll={() => { newlyUnlockedBadges = []; }}
+  />
+{/if}
+
 <main
   class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24"
   style="overscroll-behavior-y: contain;"
@@ -635,12 +659,6 @@
         <div class="mt-4">
           <LevelFortschritt punkte={earnedPoints} />
         </div>
-
-        {#if quizPunkte > 0}
-          <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-            <span>📚 Quizze: <span class="font-semibold text-gray-700">{quizPunkte.toLocaleString('de-AT')}P</span></span>
-          </div>
-        {/if}
 
         <div class="mt-4 pt-4 border-t border-black/5 flex items-center gap-4">
           <a
