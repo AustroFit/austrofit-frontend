@@ -44,8 +44,9 @@ export async function GET({
   const logsParams = new URLSearchParams({
     'filter[user_id][_eq]': userId,
     'filter[week_key][_eq]': weekKey,
+    'filter[start_date][_nnull]': 'true',
     fields: 'date,equivalent_minutes',
-    limit: '100'
+    limit: '200'
   });
   const ledgerParams = new URLSearchParams({
     'filter[user][_eq]': userId,

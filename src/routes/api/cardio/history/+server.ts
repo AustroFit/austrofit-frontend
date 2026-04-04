@@ -34,6 +34,7 @@ export async function GET({
   const logsParams = new URLSearchParams({
     'filter[user_id][_eq]': userId,
     'filter[date][_between]': JSON.stringify([dateFrom, dateTo]),
+    'filter[start_date][_nnull]': 'true',
     fields: 'date,equivalent_minutes',
     limit: '500'
   });

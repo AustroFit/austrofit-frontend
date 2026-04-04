@@ -223,16 +223,16 @@ export async function recordCardioEntry(params: {
     };
   }
 
-  // ── Step 1: Write activity_logs first (dedup by workout_type+date+weekKey) ──
+  // ── Step 1: Write activity_logs (one entry per session, deduped via start_date) ──
   // Must happen before points calculation so the DB reflects the full cumulative week total.
+  // Each Health Connect session gets its own row, identified by start_date.
+  // Old-style entries (no start_date) are excluded from the Step 2 sum — clean migration.
   let activityLogsCreated = 0;
   for (const w of scoreable) {
     const eqMin = getEquivalentMinutes(w.workoutType, w.durationSeconds, activityGroup, intenseTypes, moderateTypes);
     const logDupParams = new URLSearchParams({
       'filter[user_id][_eq]': userId,
-      'filter[workout_type][_eq]': w.workoutType,
-      'filter[date][_eq]': w.date,
-      'filter[week_key][_eq]': weekKey,
+      'filter[start_date][_eq]': w.startDate,
       fields: 'id',
       limit: '1'
     });
@@ -242,7 +242,7 @@ export async function recordCardioEntry(params: {
       });
       if (logDupRes.ok) {
         const logDupBody = await logDupRes.json();
-        if ((logDupBody.data ?? []).length > 0) continue; // already logged
+        if ((logDupBody.data ?? []).length > 0) continue; // session already logged
       }
     } catch {
       /* non-critical */
@@ -259,6 +259,7 @@ export async function recordCardioEntry(params: {
           workout_type: w.workoutType,
           duration_seconds: w.durationSeconds,
           equivalent_minutes: eqMin,
+          start_date: w.startDate,
           source,
           imported_at: new Date().toISOString()
         })
@@ -277,8 +278,9 @@ export async function recordCardioEntry(params: {
     const weekLogsParams = new URLSearchParams({
       'filter[user_id][_eq]': userId,
       'filter[week_key][_eq]': weekKey,
+      'filter[start_date][_nnull]': 'true',
       fields: 'equivalent_minutes',
-      limit: '100'
+      limit: '200'
     });
     const weekLogsRes = await fetchFn(`${cmsUrl}/items/activity_logs?${weekLogsParams}`, {
       headers: adminHeaders
