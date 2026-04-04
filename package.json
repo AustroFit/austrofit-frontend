@@ -12,10 +12,13 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
     "format": "prettier --write .",
     "lint": "prettier --check . && eslint .",
+    "test": "vitest run",
     "generate-safelist": "node scripts/generate-safelist.js",
     "cap:sync": "npx cap sync android && node -e \"const fs=require('fs');const path=require('path');function del(d){if(!fs.existsSync(d))return;for(const f of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,f.name);if(f.isDirectory())del(p);else if(f.name.endsWith('.gz'))fs.unlinkSync(p);}}del('android/app/src/main/assets');console.log('Removed .gz files from Android assets');\"",
     "cap:open": "npx cap open android",
-    "cap:run": "npx cap run android"
+    "cap:run": "npx cap run android",
+    "cap:build": "npm run generate-safelist && BUILD_TARGET=capacitor PUBLIC_API_BASE=https://austrofit.at vite build && npx cap sync android",
+    "cap:build:dev": "npm run generate-safelist && BUILD_TARGET=capacitor PUBLIC_API_BASE=https://dev.austrofit.at vite build && npx cap sync android"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.5",
@@ -23,6 +26,7 @@
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/adapter-node": "^5.5.4",
+    "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/adapter-vercel": "^6.1.2",
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
@@ -41,7 +45,8 @@
     "svelte-check": "^4.0.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.0.0",
-    "vite": "^6.2.6"
+    "vite": "^6.2.6",
+    "vitest": "^4.1.2"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
