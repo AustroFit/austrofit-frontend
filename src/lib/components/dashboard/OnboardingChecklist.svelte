@@ -68,7 +68,7 @@
   >
     <div class="flex items-center gap-2">
       <span class="text-base">🚀</span>
-      <span class="text-sm font-semibold text-heading">Erste Schritte</span>
+      <span class="text-sm font-semibold text-primary">Erste Schritte</span>
       <span class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
         {completedCount}/{items.length}
       </span>

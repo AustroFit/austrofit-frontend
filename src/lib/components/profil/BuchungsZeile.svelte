@@ -9,6 +9,7 @@
     occurred_at: string | null;
     created_at: string | null;
     meta?: { steps?: number } | null;
+    description?: string | null;
   }
 
   interface Props {
@@ -21,23 +22,25 @@
   const SOURCE_MAP: Record<string, { icon: string; label: string }> = {
     education:   { icon: '📚', label: 'Quiz abgeschlossen' },
     onboarding:  { icon: '🎁', label: 'Onboarding-Bonus' },
-    streak:      { icon: '🔥', label: 'Streak-Bonus' },
-    streak_tag:  { icon: '🔥', label: 'Tages-Streak' },
-    streak_quiz: { icon: '🧠', label: 'Quiz-Streak' },
-    cardio:      { icon: '🏃', label: 'Wochenaktivität' },
+    streak:      { icon: '🔥', label: 'Wochen-Streak-Bonus' },
+    streak_tag:  { icon: '🔥', label: 'Tages-Streak-Bonus' },
+    streak_quiz: { icon: '🧠', label: 'Quiz-Streak-Bonus' },
+    cardio:      { icon: '🏃', label: 'Bewegung' },
     milestone:   { icon: '🏅', label: 'Meilenstein' },
     einloesung:  { icon: '🎫', label: 'Gutschein eingelöst' },
     awin_unlock: { icon: '🔓', label: 'Online-Rabattcode freigeschaltet' },
   };
 
   const mapped = $derived.by(() => {
-    // Schritte: ≥40P = Tagesziel erreicht (7.000 Schritte), <40P = Extra Schritte (Delta-Korrektur)
+    // Schritte: ≥40P = Tagesziel erreicht (7.000 Schritte), <40P = Schritte-Bonus (Delta-Korrektur)
     if (buchung.source_type === 'schritte' || buchung.source_type === 'step') {
-      return buchung.points_delta >= 40
+      const base = buchung.points_delta >= 40
         ? { icon: '👟', label: 'Tagesziel erreicht' }
-        : { icon: '👟', label: 'Extra Schritte' };
+        : { icon: '👟', label: 'Schritte-Bonus' };
+      return buchung.description ? { ...base, label: buchung.description } : base;
     }
-    return SOURCE_MAP[buchung.source_type] ?? { icon: '⚡', label: buchung.source_type };
+    const base = SOURCE_MAP[buchung.source_type] ?? { icon: '⚡', label: buchung.source_type };
+    return buchung.description ? { ...base, label: buchung.description } : base;
   });
   const isPositive = $derived(buchung.points_delta >= 0);
 

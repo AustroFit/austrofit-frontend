@@ -50,23 +50,26 @@
 
   async function loadMonthData() {
     loading = true;
-    const token = await getValidAccessToken();
-    if (!token) { goto('/login'); return; }
+    try {
+      const token = await getValidAccessToken();
+      if (!token) { goto('/login'); return; }
 
-    const res = await fetch(
-      apiUrl(`/api/cardio/history?${qs({
-        year:  String(viewYear),
-        month: String(viewMonth + 1)
-      })}`),
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      const res = await fetch(
+        apiUrl(`/api/cardio/history?${qs({
+          year:  String(viewYear),
+          month: String(viewMonth + 1)
+        })}`),
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    if (res.ok) {
-      const body = await res.json();
-      monthData = (body.dailyMinutes ?? []) as DayData[];
-      totalMonthPoints = Number(body.totalMonthPoints ?? 0);
+      if (res.ok) {
+        const body = await res.json();
+        monthData = (body.dailyMinutes ?? []) as DayData[];
+        totalMonthPoints = Number(body.totalMonthPoints ?? 0);
+      }
+    } catch { /* non-critical – leere Ansicht zeigen */ } finally {
+      loading = false;
     }
-    loading = false;
   }
 
   function prevMonth() {
@@ -82,18 +85,20 @@
 
   // ── Load ─────────────────────────────────────────────────────────────────
   onMount(async () => {
-    const token = await getValidAccessToken();
-    if (!token) { goto('/login'); return; }
+    try {
+      const token = await getValidAccessToken();
+      if (!token) { goto('/login'); return; }
 
-    // Load targets + month data in parallel
-    const [, summaryRes] = await Promise.all([
-      loadMonthData(),
-      fetch(apiUrl('/api/cardio/summary'), { headers: { Authorization: `Bearer ${token}` } })
-    ]);
-    if (summaryRes.ok) {
-      const sd = await summaryRes.json();
-      if (sd.targets) targets = sd.targets;
-    }
+      // Load targets + month data in parallel
+      const [, summaryRes] = await Promise.all([
+        loadMonthData(),
+        fetch(apiUrl('/api/cardio/summary'), { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      if (summaryRes.ok) {
+        const sd = await summaryRes.json();
+        if (sd.targets) targets = sd.targets;
+      }
+    } catch { /* non-critical */ }
   });
 </script>
 

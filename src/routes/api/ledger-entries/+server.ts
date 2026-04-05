@@ -28,7 +28,7 @@ export async function GET({ url, request, fetch }: { url: URL; request: Request;
   const params = new URLSearchParams({
     'filter[user][_eq]': userId,
     'filter[points_delta][_neq]': '0',
-    fields: 'id,points_delta,source_type,source_ref,occurred_at,created_at,meta',
+    fields: 'id,points_delta,source_type,source_ref,occurred_at,created_at,meta,description',
     sort: '-occurred_at,-created_at',
     limit: String(limit),
     offset: String(offset),

@@ -57,12 +57,6 @@
     <!-- Header -->
     <div class="bg-darkblue text-white">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-14">
-        <a
-          href="/dashboard"
-          class="mb-4 inline-flex items-center gap-1.5 text-sm opacity-70 hover:opacity-100 transition-opacity"
-        >
-          ← Dashboard
-        </a>
         <h1 class="text-2xl font-bold font-heading">Level-Roadmap</h1>
         <p class="mt-1 text-sm opacity-70">
           {levelInfo.current.name} · {earnedPoints.toLocaleString('de-AT')} Punkte verdient

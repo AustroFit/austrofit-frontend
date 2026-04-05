@@ -465,12 +465,20 @@
       }
       if (weeklyStepsRes2?.ok) {
         const ws2 = await weeklyStepsRes2.json();
-        const byDate2: Record<string, number> = {};
+        const byDate2: Record<string, { points: number; steps: number }> = {};
         for (const e of (ws2.data ?? [])) {
           const d = String(e.source_ref ?? '');
-          if (/^\d{4}-\d{2}-\d{2}$/.test(d)) byDate2[d] = (byDate2[d] ?? 0) + (e.points_delta ?? 0);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+            if (!byDate2[d]) byDate2[d] = { points: 0, steps: 0 };
+            byDate2[d].points += e.points_delta ?? 0;
+            byDate2[d].steps += Number(e.meta?.steps ?? 0);
+          }
         }
-        weeklyStepData = weekDates.map((date: string) => ({ date, points: byDate2[date] ?? 0 }));
+        weeklyStepData = weekDates.map((date: string) => ({
+          date,
+          points: byDate2[date]?.points ?? 0,
+          steps: byDate2[date]?.steps ?? 0
+        }));
       }
       if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
 
@@ -612,15 +620,8 @@
     <div class="bg-darkblue text-white">
       <div class="mx-auto max-w-2xl px-4 pt-8 pb-16">
         <div>
-          <p class="text-sm font-medium opacity-80">
-            {new Date().toLocaleDateString('de-AT', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long'
-            })}
-          </p>
-          <h1 class="mt-1 text-3xl font-bold font-heading">
-            {#if firstName}Servus, {firstName}!{:else}Willkommen!{/if}
+          <h1 class="text-3xl font-bold font-heading">
+            {#if firstName}Servas, {firstName}!{:else}Servas!{/if}
           </h1>
           <p class="mt-1 text-sm opacity-80">Bereit, heute aktiv zu werden?</p>
         </div>
@@ -759,14 +760,11 @@
         </div>
         <div class="flex items-start justify-between gap-4">
           <div>
-            <div class="text-5xl font-bold leading-none font-heading text-primary" aria-live="polite" aria-atomic="true">
+            <div class="text-5xl font-bold leading-none font-heading text-secondary" aria-live="polite" aria-atomic="true">
               {totalPoints.toLocaleString('de-AT')}
             </div>
             <div class="mt-1 text-sm text-gray-500">
               verfügbare Punkte
-              {#if earnedPoints !== totalPoints}
-                <span class="text-gray-400">· {earnedPoints.toLocaleString('de-AT')} verdient</span>
-              {/if}
             </div>
           </div>
           <a
@@ -820,7 +818,7 @@
             <div class="flex items-center gap-3">
               <div class="text-3xl {cardioStreakWeeks > 0 ? '' : 'opacity-25'}">🏃</div>
               <div class="flex-1">
-                <div class="text-xs font-medium text-gray-400 mb-0.5">Cardio-Streak</div>
+                <div class="text-xs font-medium text-gray-400 mb-0.5">Bewegungs-Streak</div>
                 {#if cardioStreakWeeks >= 2}
                   <div class="text-xl font-bold">{cardioStreakWeeks} Wochen in Folge</div>
                   <div class="mt-0.5 text-xs text-gray-500">

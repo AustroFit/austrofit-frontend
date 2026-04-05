@@ -28,7 +28,7 @@
     { key: 'all',        label: 'Alle' },
     { key: 'education',  label: '📚 Quizze' },
     { key: 'schritte',   label: '👟 Schritte' },
-    { key: 'cardio',     label: '🏃 Cardio' },
+    { key: 'cardio',     label: '🏃 Bewegung' },
     { key: 'streak',     label: '🔥 Streak' },
     { key: 'onboarding', label: '🎁 Onboarding' },
     { key: 'einloesung', label: '🎫 Einlösung' }
@@ -113,10 +113,6 @@
     <!-- Minimal header without dark background -->
     <div class="bg-white border-b border-black/5">
       <div class="mx-auto max-w-2xl px-4 py-4 flex items-center gap-3">
-        <a
-          href="/dashboard"
-          class="text-sm text-gray-500 hover:text-gray-800 transition-colors"
-        >← Dashboard</a>
       </div>
     </div>
 

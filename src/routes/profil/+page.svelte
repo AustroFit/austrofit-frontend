@@ -318,7 +318,6 @@
     <!-- ── Header – sofort sichtbar ─────────────────────────────────────── -->
     <div class="bg-darkblue text-white">
       <div class="mx-auto max-w-2xl px-4 pt-4 pb-14">
-        <a href="/dashboard" class="mb-4 inline-flex items-center text-xs text-white/60 hover:text-white/90 transition-colors">← Dashboard</a>
         {#if loading}
           <!-- Skeleton Avatar + Name -->
           <div class="flex items-center gap-4 animate-pulse">
