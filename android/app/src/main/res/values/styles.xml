@@ -13,6 +13,9 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Statusleiste: eigene Fläche, nicht über WebView -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:statusBarColor">#0D2E18</item>
     </style>
 
 

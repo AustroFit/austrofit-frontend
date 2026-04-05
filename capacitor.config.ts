@@ -29,9 +29,9 @@ const config: CapacitorConfig = {
 
   plugins: {
     StatusBar: {
-      // LIGHT = dunkle Icons → lesbar auf hellem Hintergrund (#F0FBF1 Navbar)
-      style: 'LIGHT',
-      backgroundColor: '#F0FBF1'
+      style: 'DARK',           // DARK = weiße Icons – lesbar auf dunkelgrünem Hintergrund
+      backgroundColor: '#0D2E18',  // bg-darkblue – tiefes Waldgrün
+      overlaysWebView: false   // Statusleiste bekommt eigene Fläche, scrollt nicht mit
     }
   }
 };
