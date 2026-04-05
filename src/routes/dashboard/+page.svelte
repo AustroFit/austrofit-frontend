@@ -16,6 +16,7 @@
   import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
   import ManuelleCardioEingabe from '$lib/components/dashboard/ManuelleCardioEingabe.svelte';
   import BadgeUnlockOverlay from '$lib/components/dashboard/BadgeUnlockOverlay.svelte';
+  import OnboardingChecklist from '$lib/components/dashboard/OnboardingChecklist.svelte';
   import CircleRing from '$lib/components/CircleRing.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
   import { syncCardio, shouldSyncCardio } from '$lib/services/cardioSync';
@@ -93,6 +94,7 @@
 
   // Health
   let healthConnected = $state(false);
+  let showChecklist = $state(false);
   let testMode = $state(false);
 
   // Badges
@@ -108,6 +110,8 @@
     step_threshold: number;
     image_url: string | null;
     earned: boolean;
+    earned_at: string | null;
+    new_unlock: boolean;
   }
   let directusBadges = $state<DirectusBadge[]>([]);
 
@@ -202,6 +206,15 @@
   let syncToastPunkte = $state(0);
   let isNativePlatform = $state(false);
 
+  // Haptic feedback when points toast appears (native only)
+  $effect(() => {
+    if (showSyncToast && isNativePlatform) {
+      import('@capacitor/haptics').then(({ Haptics, ImpactStyle }) => {
+        Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
+      }).catch(() => {});
+    }
+  });
+
   // Pull-to-refresh
   let pullRefreshing = $state(false);
   let pullOffset = $state(0);
@@ -281,6 +294,7 @@
       streakDays     = Number(profileData?.data?.streak_days     ?? 0);
       quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
       longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
+      showChecklist  = !profileData?.data?.onboarding_checklist_completed_at;
     }
     if (cardioRes.ok) {
       const cd = await cardioRes.json();
@@ -314,14 +328,12 @@
     }
     if (quizPunkteRes.ok) quizPunkte = Number((await quizPunkteRes.json()).total ?? 0);
 
-    // Reload badges and detect newly unlocked ones
-    const prevEarnedIds = new Set(directusBadges.filter(b => b.earned).map(b => b.id));
+    // Reload badges – new_unlock-Flag kommt vom Server (user_earned_badges.shown_at=null)
     const badgesRefresh = await fetch(apiUrl('/api/badges'), { headers: authHeader });
     if (badgesRefresh.ok) {
       const db = await badgesRefresh.json();
       const freshBadges: DirectusBadge[] = db.badges ?? [];
-      const justUnlocked = freshBadges.filter(b => b.earned && !prevEarnedIds.has(b.id));
-      if (justUnlocked.length > 0) newlyUnlockedBadges = justUnlocked;
+      newlyUnlockedBadges = freshBadges.filter(b => b.new_unlock);
       directusBadges = freshBadges;
     }
 
@@ -330,6 +342,19 @@
 
   function handleSyncToastHide() {
     showSyncToast = false;
+  }
+
+  async function handleBadgeDismissAll() {
+    const ids = newlyUnlockedBadges.map(b => b.id);
+    newlyUnlockedBadges = [];
+    if (ids.length === 0) return;
+    const token = await getValidAccessToken().catch(() => null);
+    if (!token) return;
+    fetch(apiUrl('/api/badges'), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ badge_ids: ids })
+    }).catch(() => { /* non-critical */ });
   }
 
   // ── Pull-to-Refresh: non-passive touch listener (e.preventDefault() nötig) ──
@@ -380,6 +405,7 @@
       streakDays     = Number(profileData?.data?.streak_days     ?? 0);
       quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
       longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
+      showChecklist  = !profileData?.data?.onboarding_checklist_completed_at;
 
       // Quiz-IDs für Status-Batch ermitteln
       const allQuizzes: any[] = quizzesRes.ok ? ((await quizzesRes.json())?.data ?? []) : [];
@@ -565,7 +591,7 @@
 {#if newlyUnlockedBadges.length > 0}
   <BadgeUnlockOverlay
     badges={newlyUnlockedBadges}
-    onDismissAll={() => { newlyUnlockedBadges = []; }}
+    onDismissAll={handleBadgeDismissAll}
   />
 {/if}
 
@@ -631,46 +657,17 @@
 
     {:else}
 
-      <!-- 1. Punkte & Level -->
-      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
-        <div class="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
-          Punkte &amp; Level
-        </div>
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <div class="text-5xl font-bold leading-none font-heading text-primary">
-              {totalPoints.toLocaleString('de-AT')}
-            </div>
-            <div class="mt-1 text-sm text-gray-500">
-              verfügbare Punkte
-              {#if earnedPoints !== totalPoints}
-                <span class="text-gray-400">· {earnedPoints.toLocaleString('de-AT')} verdient</span>
-              {/if}
-            </div>
-          </div>
-          <a
-            href="/belohnung"
-            class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
-          >
-            🎁 Belohnungen
-          </a>
-        </div>
+      <!-- Onboarding-Checkliste (nur wenn noch nicht geschlossen) -->
+      {#if showChecklist}
+        <OnboardingChecklist
+          {healthConnected}
+          hasCompletedFirstQuiz={quizPunkte > 0}
+          {streakDays}
+          onDismiss={() => (showChecklist = false)}
+        />
+      {/if}
 
-        <div class="mt-4">
-          <LevelFortschritt punkte={earnedPoints} />
-        </div>
-
-        <div class="mt-4 pt-4 border-t border-black/5 flex items-center gap-4">
-          <a
-            href="/profil/level-roadmap"
-            class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Level-Roadmap →
-          </a>
-        </div>
-      </div>
-
-      <!-- 2. Schritte -->
+      <!-- 1. Schritte -->
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-5">
         <!-- Header -->
         <div class="flex items-center justify-between mb-3">
@@ -703,9 +700,22 @@
               {/if}
             </div>
           </div>
-          <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
+          <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-2">
             <div class="absolute inset-y-0 left-0 {stepBarColor} rounded-full transition-all duration-500" style="width:{stepDisplayPercent}%;"></div>
           </div>
+          {#if stepView === 'tag'}
+            {#if stepsToday >= STEP_GOAL}
+              <p class="mb-4 text-xs font-medium text-primary">🎉 Tagesziel erreicht!</p>
+            {:else}
+              <p class="mb-4 text-xs text-body/60">Noch {(STEP_GOAL - stepsToday).toLocaleString('de-AT')} Schritte bis zum Tagesziel</p>
+            {/if}
+          {:else}
+            {#if weeklyStepsTotal >= STEP_WEEK_GOAL}
+              <p class="mb-4 text-xs font-medium text-primary">🎉 Wochenziel erreicht!</p>
+            {:else}
+              <p class="mb-4 text-xs text-body/60">Noch {(STEP_WEEK_GOAL - weeklyStepsTotal).toLocaleString('de-AT')} Schritte bis zum Wochenziel</p>
+            {/if}
+          {/if}
         {:else if showNativeFeatures}
           <div class="mb-4 rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-3">
             <p class="flex-1 text-sm text-body leading-snug">
@@ -731,159 +741,57 @@
               : Math.round((pts / 40) * 100)}
             <div class="flex flex-col items-center gap-0.5">
               <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-              <CircleRing percent={ringPercent} {isToday} />
+              <CircleRing
+                percent={ringPercent}
+                {isToday}
+                ariaLabel="{WEEK_LABELS[i]}: {isToday ? stepsToday.toLocaleString('de-AT') : (weeklyStepData.find(d => d.date === date)?.steps ?? 0).toLocaleString('de-AT')} von {STEP_GOAL.toLocaleString('de-AT')} Schritten ({ringPercent}%)"
+              />
             </div>
           {/each}
         </div>
 
       </div>
 
-      <!-- 3. Bewegung -->
-      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-5">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-1.5">
-            <span class="text-lg">🏃</span>
-            <span class="text-xs font-semibold uppercase tracking-widest text-gray-400">Bewegung</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <div class="flex rounded-lg border border-black/10 overflow-hidden text-[11px] font-semibold">
-              <button onclick={() => cardioView = 'tag'} class="px-2 py-0.5 transition-colors {cardioView === 'tag' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Tag</button>
-              <button onclick={() => cardioView = 'woche'} class="px-2 py-0.5 transition-colors {cardioView === 'woche' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Woche</button>
-            </div>
-            <a href="/bewegung" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors">
-              {formatCardDateLabel()} →
-            </a>
-          </div>
-        </div>
-
-        {#if cardioTestMode}
-          <ManuelleCardioEingabe onSave={refreshDashboardData} />
-        {:else if !healthConnected}
-          {#if showNativeFeatures}
-            <!-- Native: connect to Health Connect -->
-            <div class="rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-3">
-              <p class="flex-1 text-sm text-body leading-snug">
-                Verbinde Health Connect, um Laufen, Radfahren & Co. zu tracken und Punkte zu verdienen.
-              </p>
-              <button
-                onclick={() => (showHealthPrompt = true)}
-                class="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
-              >
-                Verbinden
-              </button>
-            </div>
-          {:else}
-            <!-- PWA: coming soon -->
-            <div class="rounded-xl bg-gray-50 border border-black/10 p-4">
-              <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-sm font-semibold text-heading">Bewegungs-Tracking</span>
-                <span class="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Kommt bald</span>
-              </div>
-              <p class="text-sm text-gray-500 leading-relaxed">
-                Die AustroFit Android App mit automatischem Bewegungs-Tracking erscheint in Kürze im Play Store.
-              </p>
-            </div>
-          {/if}
-        {:else}
-          <!-- Minuten + Ziel (Tag oder Woche) -->
-          <div class="flex items-baseline justify-between gap-2 mb-2">
-            <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
-            <div class="text-2xl font-bold font-heading text-heading">
-              {cardioViewEqMinutes} / {cardioViewGoal} min
-            </div>
-          </div>
-          <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
-            <div class="absolute inset-y-0 left-0 {cardioViewBarColor} rounded-full transition-all duration-500" style="width:{cardioViewDisplayPercent}%;"></div>
-          </div>
-        {/if}
-
-        <!-- Wochenkreise (immer sichtbar wenn health connected oder testMode) -->
-        {#if healthConnected || cardioTestMode}
-          <div class="grid grid-cols-7 gap-0.5">
-            {#each weekDates as date, i}
-              {@const dayData = weeklyCardioData.find(d => d.date === date)}
-              {@const mins = dayData?.minutes ?? 0}
-              {@const isToday = date === todayStr}
-              {@const ringPercent = Math.round((mins / (dailyCardioGoal || 1)) * 100)}
-              <div class="flex flex-col items-center gap-0.5">
-                <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
-                <CircleRing percent={ringPercent} {isToday} />
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-
-      <!-- 4. Aktive Challenges (Hybrid) -->
+      <!-- 2. Punkte & Level -->
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
-        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
-          Aktive Challenges
+        <div class="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
+          Punkte &amp; Level
+        </div>
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="text-5xl font-bold leading-none font-heading text-primary" aria-live="polite" aria-atomic="true">
+              {totalPoints.toLocaleString('de-AT')}
+            </div>
+            <div class="mt-1 text-sm text-gray-500">
+              verfügbare Punkte
+              {#if earnedPoints !== totalPoints}
+                <span class="text-gray-400">· {earnedPoints.toLocaleString('de-AT')} verdient</span>
+              {/if}
+            </div>
+          </div>
+          <a
+            href="/belohnung"
+            class="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+          >
+            🎁 Belohnungen
+          </a>
         </div>
 
-        {#if openSystemChallenges.length > 0 || challenge}
-          <div class="flex flex-col gap-3">
-            <!-- System-Challenges (Onboarding) -->
-            {#each openSystemChallenges as sc (sc.id)}
-              <div class="flex items-start gap-3 rounded-xl border border-black/8 bg-gray-50 px-4 py-3">
-                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg">
-                  {sc.icon}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="font-semibold text-sm leading-snug">{sc.titel}</div>
-                  <div class="text-xs text-gray-500 mt-0.5">{sc.beschreibung}</div>
-                </div>
-                {#if sc.actionType === 'health'}
-                  <button
-                    onclick={() => (showHealthPrompt = true)}
-                    class="shrink-0 rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    Verbinden
-                  </button>
-                {:else if sc.href}
-                  <a
-                    href={sc.href}
-                    class="shrink-0 rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    Starten →
-                  </a>
-                {/if}
-              </div>
-            {/each}
+        <div class="mt-4">
+          <LevelFortschritt punkte={earnedPoints} />
+        </div>
 
-            <!-- Directus-Challenge -->
-            {#if challenge}
-              <div class="flex items-start gap-3 rounded-xl border border-black/8 bg-gray-50 px-4 py-3">
-                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-lg">
-                  🏆
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="font-semibold text-sm leading-snug">{challenge.titel}</div>
-                  {#if challenge.beschreibung}
-                    <div class="text-xs text-gray-500 mt-0.5">{challenge.beschreibung}</div>
-                  {/if}
-                  <div class="mt-2 flex flex-wrap items-center gap-2">
-                    {#if challenge.punkte_wert}
-                      <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary">
-                        +{challenge.punkte_wert} Punkte
-                      </span>
-                    {/if}
-                    {#if challenge.aktiv_bis}
-                      <span class="text-xs text-gray-400">bis {formatDateMonthOnly(challenge.aktiv_bis)}</span>
-                    {/if}
-                  </div>
-                </div>
-              </div>
-            {/if}
-          </div>
-        {:else}
-          <div class="rounded-xl border border-dashed border-gray-200 py-6 text-center text-sm text-gray-400">
-            Alle Challenges erledigt – großartig! 🎉
-          </div>
-        {/if}
+        <div class="mt-4 pt-4 border-t border-black/5 flex items-center gap-4">
+          <a
+            href="/profil/level-roadmap"
+            class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Level-Roadmap →
+          </a>
+        </div>
       </div>
 
-      <!-- 4. Streak (2 Reihen) -->
+      <!-- 3. Streak -->
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Streak</div>
         <div class="flex flex-col gap-4">
@@ -953,6 +861,167 @@
         {#if showNativeFeatures && longestStreak > 0}
           <div class="mt-4 pt-4 border-t border-black/5 text-sm text-gray-400">
             Längster Schritte-Streak: <span class="font-semibold text-gray-600">{longestStreak} Tage</span>
+          </div>
+        {/if}
+      </div>
+
+      <!-- 4. Bewegung (Accordion, default eingeklappt) -->
+      <details class="group rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm">
+        <summary class="flex cursor-pointer list-none items-center justify-between p-5 select-none">
+          <div class="flex items-center gap-1.5">
+            <span class="text-lg">🏃</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-gray-400">Bewegung</span>
+            {#if healthConnected && cardioPointsTotal > 0}
+              <span class="rounded-full bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">{cardioPointsTotal}P</span>
+            {/if}
+          </div>
+          <div class="flex items-center gap-2">
+            {#if healthConnected}
+              <a href="/bewegung" class="text-xs font-medium text-gray-400 hover:text-primary transition-colors" onclick={(e) => e.stopPropagation()}>
+                {formatCardDateLabel()} →
+              </a>
+            {/if}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+              class="h-4 w-4 text-gray-400 transition-transform group-open:rotate-180">
+              <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+            </svg>
+          </div>
+        </summary>
+
+        <div class="px-5 pb-5">
+          {#if cardioTestMode}
+            <ManuelleCardioEingabe onSave={refreshDashboardData} />
+          {:else if !healthConnected}
+            {#if showNativeFeatures}
+              <!-- Native: connect to Health Connect -->
+              <div class="rounded-xl bg-primary/5 border border-primary/20 p-3 flex items-center gap-3">
+                <p class="flex-1 text-sm text-body leading-snug">
+                  Verbinde Health Connect, um Laufen, Radfahren & Co. zu tracken und Punkte zu verdienen.
+                </p>
+                <button
+                  onclick={() => (showHealthPrompt = true)}
+                  class="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
+                >
+                  Verbinden
+                </button>
+              </div>
+            {:else}
+              <!-- Web: Teaser -->
+              <div class="rounded-xl bg-gray-50 border border-black/10 p-4 flex items-start gap-3">
+                <span class="text-2xl">📱</span>
+                <div>
+                  <p class="text-sm font-semibold text-heading">Automatisches Bewegungs-Tracking</p>
+                  <p class="mt-0.5 text-sm text-gray-500 leading-relaxed">
+                    Mit der AustroFit App auf Android verbindest du Health Connect und sammelst Punkte für Laufen, Radfahren & Co.
+                  </p>
+                </div>
+              </div>
+            {/if}
+          {:else}
+            <!-- Minuten + Ziel -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex rounded-lg border border-black/10 overflow-hidden text-[11px] font-semibold">
+                <button onclick={() => cardioView = 'tag'} class="px-2 py-0.5 transition-colors {cardioView === 'tag' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Tag</button>
+                <button onclick={() => cardioView = 'woche'} class="px-2 py-0.5 transition-colors {cardioView === 'woche' ? 'bg-primary text-white' : 'text-gray-400 hover:text-primary'}">Woche</button>
+              </div>
+            </div>
+            <div class="flex items-baseline justify-between gap-2 mb-2">
+              <div class="text-3xl font-bold font-heading text-secondary">{cardioPointsTotal > 0 ? `${cardioPointsTotal}P` : '0P'}</div>
+              <div class="text-2xl font-bold font-heading text-heading">
+                {cardioViewEqMinutes} / {cardioViewGoal} min
+              </div>
+            </div>
+            <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
+              <div class="absolute inset-y-0 left-0 {cardioViewBarColor} rounded-full transition-all duration-500" style="width:{cardioViewDisplayPercent}%;"></div>
+            </div>
+          {/if}
+
+          <!-- Wochenkreise (nur wenn health connected oder testMode) -->
+          {#if healthConnected || cardioTestMode}
+            <div class="grid grid-cols-7 gap-0.5">
+              {#each weekDates as date, i}
+                {@const dayData = weeklyCardioData.find(d => d.date === date)}
+                {@const mins = dayData?.minutes ?? 0}
+                {@const isToday = date === todayStr}
+                {@const ringPercent = Math.round((mins / (dailyCardioGoal || 1)) * 100)}
+                <div class="flex flex-col items-center gap-0.5">
+                  <span class="text-[10px] text-gray-400 font-medium">{WEEK_LABELS[i]}</span>
+                  <CircleRing
+                    percent={ringPercent}
+                    {isToday}
+                    ariaLabel="{WEEK_LABELS[i]}: {mins} von {dailyCardioGoal} Minuten ({ringPercent}%)"
+                  />
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      </details>
+
+      <!-- 4. Aktive Challenges (Hybrid) -->
+      <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
+        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+          Aktive Challenges
+        </div>
+
+        {#if openSystemChallenges.length > 0 || challenge}
+          <div class="flex flex-col gap-3">
+            <!-- System-Challenges (Onboarding) -->
+            {#each openSystemChallenges as sc (sc.id)}
+              <div class="flex items-start gap-3 rounded-xl border border-black/8 bg-gray-50 px-4 py-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg">
+                  {sc.icon}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm leading-snug">{sc.titel}</div>
+                  <div class="text-xs text-gray-500 mt-0.5">{sc.beschreibung}</div>
+                </div>
+                {#if sc.actionType === 'health'}
+                  <button
+                    onclick={() => (showHealthPrompt = true)}
+                    class="shrink-0 rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    Verbinden
+                  </button>
+                {:else if sc.href}
+                  <a
+                    href={sc.href}
+                    class="shrink-0 rounded-lg border border-primary/30 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    Starten →
+                  </a>
+                {/if}
+              </div>
+            {/each}
+
+            <!-- Directus-Challenge -->
+            {#if challenge}
+              <div class="flex items-start gap-3 rounded-xl border border-black/8 bg-gray-50 px-4 py-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-lg">
+                  🏆
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-sm leading-snug">{challenge.titel}</div>
+                  {#if challenge.beschreibung}
+                    <div class="text-xs text-gray-500 mt-0.5">{challenge.beschreibung}</div>
+                  {/if}
+                  <div class="mt-2 flex flex-wrap items-center gap-2">
+                    {#if challenge.punkte_wert}
+                      <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary">
+                        +{challenge.punkte_wert} Punkte
+                      </span>
+                    {/if}
+                    {#if challenge.aktiv_bis}
+                      <span class="text-xs text-gray-400">bis {formatDateMonthOnly(challenge.aktiv_bis)}</span>
+                    {/if}
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <div class="rounded-xl border border-dashed border-gray-200 py-6 text-center text-sm text-gray-400">
+            Alle Challenges erledigt – großartig! 🎉
           </div>
         {/if}
       </div>

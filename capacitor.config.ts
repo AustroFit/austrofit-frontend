@@ -21,11 +21,11 @@ const config: CapacitorConfig = {
 
   // Live Server Mode – Standard für tägliche Entwicklung.
   // Für Local Build Mode (Release-Test): diesen Block auskommentieren + npm run cap:build:dev
-  server: {
-    url: 'https://dev.austrofit.at',   // dev branch → nach Push + Vercel Deploy
-    // url: 'https://austrofit.at',    // production (main branch)
-    cleartext: false
-  },
+  // server: {
+  //   url: 'https://dev.austrofit.at',   // dev branch → nach Push + Vercel Deploy
+  //   // url: 'https://austrofit.at',    // production (main branch)
+  //   cleartext: false
+  // },
 
   plugins: {
     StatusBar: {

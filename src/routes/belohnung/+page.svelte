@@ -176,17 +176,29 @@
     [...new Set(direktusAngebote.flatMap((a) => a.partner.kategorie))]
   );
 
-  const filteredDirektusAngebote = $derived(
-    filterKategorieDirektus
+  const filteredDirektusAngebote = $derived.by(() => {
+    const base = filterKategorieDirektus
       ? direktusAngebote.filter((a) => a.partner.kategorie.includes(filterKategorieDirektus))
-      : direktusAngebote
-  );
+      : direktusAngebote;
+    if (!isLoggedIn) return base;
+    return [...base].sort((a, b) => {
+      const aNeed = Math.max(0, a.reward.punkte_kosten - userPoints);
+      const bNeed = Math.max(0, b.reward.punkte_kosten - userPoints);
+      return aNeed - bNeed;
+    });
+  });
 
   const gefilterteOffeneOffers = $derived.by(() => {
     const base = filterLeistbar
       ? offeneOffers.filter((o) => o.promo.pointsCost <= userPoints)
       : offeneOffers;
-    return filterAwinKategorie ? base.filter((o) => o.program.category === filterAwinKategorie) : base;
+    const filtered = filterAwinKategorie ? base.filter((o) => o.program.category === filterAwinKategorie) : base;
+    if (!isLoggedIn) return filtered;
+    return [...filtered].sort((a, b) => {
+      const aNeed = Math.max(0, a.promo.pointsCost - userPoints);
+      const bNeed = Math.max(0, b.promo.pointsCost - userPoints);
+      return aNeed - bNeed;
+    });
   });
 
   function handleUnlocked(pointsSpent: number) {

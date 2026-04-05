@@ -1,5 +1,5 @@
 <!-- Auto-generated Tailwind safelist - DO NOT EDIT -->
-<!-- Generated: 2026-04-04T12:38:26.065Z -->
+<!-- Generated: 2026-04-04T18:52:16.882Z -->
 <!-- Classes: bg-light-white bg-dark-green bg-light-grey	 bg-light-green bg-beige text-white text-slate-900 text-slate-800 -->
 
 <script>

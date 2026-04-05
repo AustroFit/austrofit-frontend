@@ -16,9 +16,13 @@
     label?: string;
     /** SVG size in px (default 36 = h-9 w-9) */
     size?: number;
+    /** Accessible description for screen readers, e.g. "Schritte heute: 6.240 von 8.000 (78%)" */
+    ariaLabel?: string;
   }
 
-  const { percent = 0, isToday = false, label = '', size = 36 }: Props = $props();
+  const { percent = 0, isToday = false, label = '', size = 36, ariaLabel = '' }: Props = $props();
+
+  const titleId = $derived(ariaLabel ? `ring-title-${Math.random().toString(36).slice(2, 7)}` : '');
 
   const STROKE_WIDTH = 4.5;
   const cx = $derived(size / 2);
@@ -41,7 +45,17 @@
   );
 </script>
 
-<svg width={size} height={size} viewBox="0 0 {size} {size}" aria-hidden="true">
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 {size} {size}"
+  aria-hidden={ariaLabel ? undefined : 'true'}
+  aria-labelledby={ariaLabel ? titleId : undefined}
+  role={ariaLabel ? 'img' : undefined}
+>
+  {#if ariaLabel}
+    <title id={titleId}>{ariaLabel}</title>
+  {/if}
   <!-- background track -->
   <circle
     {cx}

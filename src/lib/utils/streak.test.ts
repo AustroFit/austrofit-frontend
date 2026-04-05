@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { calculatePoints, calculateStreakDays, lookupTierBonus, FALLBACK_STREAK_TIERS } from './streak';
+
+const tiers = FALLBACK_STREAK_TIERS;
 
 // ── calculatePoints ────────────────────────────────────────────────────────────
 
@@ -18,7 +20,6 @@ describe('calculatePoints', () => {
   });
 
   it('6999 Schritte → 35 Punkte (letzte Stufe vor 7k)', () => {
-    // floor((6999-4000)/500) = floor(5.998) = 5 → 10 + 5*5 = 35
     expect(calculatePoints(6999)).toBe(35);
   });
 
@@ -31,7 +32,6 @@ describe('calculatePoints', () => {
   });
 
   it('10000 Schritte → 70 Punkte', () => {
-    // floor((10000-7000)/500) = 6 → 40 + 6*5 = 70
     expect(calculatePoints(10000)).toBe(70);
   });
 });
@@ -39,7 +39,6 @@ describe('calculatePoints', () => {
 // ── lookupTierBonus ────────────────────────────────────────────────────────────
 
 describe('lookupTierBonus – step_tag', () => {
-  const tiers = FALLBACK_STREAK_TIERS;
 
   it('Tag 1 → 0 Punkte (kein Bonus am ersten Tag)', () => {
     expect(lookupTierBonus(1, tiers, 'step_tag')).toBe(0);
@@ -79,7 +78,6 @@ describe('lookupTierBonus – step_tag', () => {
 });
 
 describe('lookupTierBonus – quiz_tag', () => {
-  const tiers = FALLBACK_STREAK_TIERS;
 
   it('Tag 2–6 → 5P (Tier 1)', () => {
     expect(lookupTierBonus(2, tiers, 'quiz_tag')).toBe(5);
@@ -103,7 +101,6 @@ describe('lookupTierBonus – quiz_tag', () => {
 });
 
 describe('lookupTierBonus – cardio_week', () => {
-  const tiers = FALLBACK_STREAK_TIERS;
 
   it('Woche 1 → 0P (kein Bonus in Woche 1)', () => {
     expect(lookupTierBonus(1, tiers, 'cardio_week')).toBe(0);
@@ -133,29 +130,25 @@ describe('lookupTierBonus – cardio_week', () => {
 // ── calculateStreakDays ────────────────────────────────────────────────────────
 
 describe('calculateStreakDays', () => {
+  beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
   it('erster Tag → Streak 1', () => {
-    vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-04T10:00:00Z'));
     expect(calculateStreakDays([], '2026-04-04')).toBe(1);
   });
 
   it('zwei aufeinanderfolgende Tage → Streak 2', () => {
-    vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-04T10:00:00Z'));
     expect(calculateStreakDays(['2026-04-03'], '2026-04-04')).toBe(2);
   });
 
   it('Lücke im Datum bricht Streak', () => {
-    vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-04T10:00:00Z'));
-    // 02. April fehlt → Streak ist nur 1 (nur heute)
     expect(calculateStreakDays(['2026-04-01'], '2026-04-04')).toBe(1);
   });
 
   it('7-Tage-Streak wird korrekt gezählt', () => {
-    vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-07T10:00:00Z'));
     const existing = ['2026-04-01', '2026-04-02', '2026-04-03', '2026-04-04', '2026-04-05', '2026-04-06'];
     expect(calculateStreakDays(existing, '2026-04-07')).toBe(7);

@@ -2,6 +2,7 @@
 // GET:  Basisinfo aus directus_users + Erweiterung aus user_profiles zusammenführen
 // PATCH: first_name/last_name → PATCH /users/me
 //        health_connected      → PATCH /items/user_profiles/{id}
+//        onboarding_checklist_completed_at → PATCH /items/user_profiles/{id}
 //
 // DIRECTUS: "User" Policy braucht:
 //   directus_users  → read  (filter: id = $CURRENT_USER, fields: *)
@@ -14,7 +15,9 @@ import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { extractBearerToken } from '$lib/server/auth';
 
 const USER_FIELDS = 'id,first_name,last_name,email,date_created,avatar';
-const PROFILE_FIELDS = 'id,streak_days,longest_streak,quiz_streak_days,health_connected,onboarding_completed,activity_group';
+const PROFILE_FIELDS = 'id,streak_days,longest_streak,quiz_streak_days,health_connected,onboarding_completed,onboarding_checklist_completed_at,activity_group';
+
+const HEALTH_CONNECT_BONUS_POINTS = 20;
 
 export async function GET({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) {
   const token = extractBearerToken(request) ?? '';
@@ -53,6 +56,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
       quiz_streak_days: profile.quiz_streak_days ?? 0,
       health_connected: profile.health_connected ?? false,
       onboarding_completed: profile.onboarding_completed ?? false,
+      onboarding_checklist_completed_at: profile.onboarding_checklist_completed_at ?? null,
       activity_group: profile.activity_group ?? 'adult'
     }
   });
@@ -71,6 +75,9 @@ export async function PATCH({ request, fetch }: { request: Request; fetch: typeo
   if (typeof body.first_name === 'string') userPatch.first_name = body.first_name.trim();
   if (typeof body.last_name === 'string') userPatch.last_name = body.last_name.trim();
   if (typeof body.health_connected === 'boolean') profilePatch.health_connected = body.health_connected;
+  if (body.onboarding_checklist_completed_at === null || typeof body.onboarding_checklist_completed_at === 'string') {
+    profilePatch.onboarding_checklist_completed_at = body.onboarding_checklist_completed_at;
+  }
   if (['adult', 'senior', 'pregnant', 'chronic'].includes(body.activity_group)) {
     profilePatch.activity_group = body.activity_group;
   }
@@ -155,6 +162,35 @@ export async function PATCH({ request, fetch }: { request: Request; fetch: typeo
         { error: errBody?.errors?.[0]?.message ?? `Fehler (${patchRes.status})` },
         { status: patchRes.status }
       );
+    }
+
+    // Health-Connect-Bonus: +20P einmalig beim ersten Verbinden
+    if (profilePatch.health_connected === true) {
+      const dedupParams = new URLSearchParams({
+        'filter[user][_eq]': cachedUserId!,
+        'filter[source_type][_eq]': 'onboarding_checklist',
+        'filter[source_ref][_eq]': 'checklist-health-connected',
+        fields: 'id',
+        limit: '1'
+      });
+      const dedupRes = await fetch(
+        `${PUBLIC_CMSURL}/items/points_ledger?${dedupParams}`,
+        { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` } }
+      );
+      const dedupData = dedupRes.ok ? await dedupRes.json().catch(() => null) : null;
+      if ((dedupData?.data?.length ?? 0) === 0) {
+        await fetch(`${PUBLIC_CMSURL}/items/points_ledger`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` },
+          body: JSON.stringify({
+            user: cachedUserId,
+            points_delta: HEALTH_CONNECT_BONUS_POINTS,
+            source_type: 'onboarding_checklist',
+            source_ref: 'checklist-health-connected',
+            occurred_at: new Date().toISOString()
+          })
+        }).catch(() => { /* non-critical */ });
+      }
     }
   }
 

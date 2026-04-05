@@ -18,6 +18,8 @@
 
 {#if show}
   <div
+    role="status"
+    aria-live="polite"
     class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-lg bg-primary"
     style="animation: slideInUp 250ms ease-out;"
   >

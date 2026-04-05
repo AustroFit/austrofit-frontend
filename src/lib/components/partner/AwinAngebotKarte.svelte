@@ -143,6 +143,8 @@
   const formatDate = formatDateNumeric;
 
   const canAfford = $derived(userPoints >= (promo?.pointsCost ?? 0));
+  const pointsNeeded = $derived(promo ? Math.max(0, promo.pointsCost - userPoints) : 0);
+  const nearlyAffordable = $derived(promo ? pointsNeeded <= promo.pointsCost * 0.2 : false);
 
   const labelText = $derived(category ? (AWIN_KATEGORIE_LABELS[category] ?? category) : null);
 
@@ -233,10 +235,17 @@
               <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
             </svg>
           </div>
-          <p class="mt-1 text-xs text-gray-400">
-            Rabattcode gesperrt
-            {#if promo.endDate}· Gültig bis {formatDate(promo.endDate)}{/if}
-          </p>
+          <div class="mt-1 flex items-center justify-between gap-2">
+            <p class="text-xs text-gray-400">
+              Rabattcode gesperrt
+              {#if promo.endDate}· Gültig bis {formatDate(promo.endDate)}{/if}
+            </p>
+            {#if isLoggedIn && !canAfford}
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold {nearlyAffordable ? 'bg-primary-light text-primary' : 'bg-gray-100 text-gray-500'}">
+                Noch {pointsNeeded.toLocaleString('de-AT')}P
+              </span>
+            {/if}
+          </div>
         </div>
 
         {#if unlockError}

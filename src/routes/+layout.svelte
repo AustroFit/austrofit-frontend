@@ -5,6 +5,7 @@
   import { goto } from '$app/navigation';
   import { Capacitor } from '@capacitor/core';
   import MainNavbar from '$lib/components/MainNavbar.svelte';
+  import BottomNav from '$lib/components/BottomNav.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import ConsentBanner from '$lib/components/dashboard/ConsentBanner.svelte';
   import { initAnalytics } from '$lib/utils/mixpanel';
@@ -12,11 +13,15 @@
   import { pwaPrompt } from '$lib/stores/pwa';
   import { levelDefs } from '$lib/stores/levels';
   import type { LevelDef } from '$lib/utils/level';
+  import { appConfig } from '$lib/stores/appConfig';
   import { apiUrl } from '$lib/utils/api';
 
   const { children } = $props();
 
+  let isNative = $state(false);
+
   onMount(() => {
+    isNative = Capacitor.isNativePlatform();
     // Statusleiste konfigurieren (nur native App)
     if (browser && Capacitor.isNativePlatform()) {
       import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
@@ -60,6 +65,12 @@
       })
       .catch(() => { /* Fallback bleibt aktiv */ });
 
+    // App-Konfiguration aus Directus laden (Fallback: sichere Defaults im Store)
+    fetch(apiUrl('/api/app-config'))
+      .then((r) => r.json())
+      .then((cfg) => { if (cfg) appConfig.set(cfg); })
+      .catch(() => { /* Fallback bleibt aktiv */ });
+
     const handler = (e: Event) => {
       e.preventDefault();
       pwaPrompt.set(e);
@@ -72,10 +83,18 @@
   });
 </script>
 
-<MainNavbar />
+{#if !isNative}
+  <MainNavbar />
+{/if}
 
-{@render children()}
+<div class={isNative ? 'pb-20' : ''}>
+  {@render children()}
+</div>
 
-<Footer />
+{#if isNative}
+  <BottomNav />
+{:else}
+  <Footer />
+{/if}
 
 <ConsentBanner />
