@@ -23,31 +23,24 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
   const token = extractBearerToken(request) ?? '';
   if (!token) return json({ error: 'unauthorized' }, { status: 401 });
 
-  // 1) User-ID via JWT ermitteln (Auth-Check)
-  const meRes = await fetch(`${PUBLIC_CMSURL}/users/me?fields=id`, {
+  // 1) User-Daten via JWT – kein ?fields= damit Directus keine Felder ausblendet
+  const userRes = await fetch(`${PUBLIC_CMSURL}/users/me`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  if (!meRes.ok) {
-    return new Response(await meRes.text(), {
-      status: meRes.status,
+  if (!userRes.ok) {
+    return new Response(await userRes.text(), {
+      status: userRes.status,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  const meData = await meRes.json().catch(() => null);
-  const userId = meData?.data?.id ?? null;
-  if (!userId) return json({ error: 'Benutzer-ID nicht ermittelbar.' }, { status: 400 });
-
-  // 2) Vollständige User-Daten via PRIVATE_CMS_STATIC_TOKEN (umgeht Feld-Restriktionen der User-Policy)
-  const userRes = await fetch(`${PUBLIC_CMSURL}/users/${userId}?fields=${USER_FIELDS}`, {
-    headers: { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` }
-  });
-
   const userData = await userRes.json().catch(() => null);
   const user = userData?.data ?? {};
+  const userId = user.id ?? null;
+  if (!userId) return json({ error: 'Benutzer-ID nicht ermittelbar.' }, { status: 400 });
 
-  // 3) Erweiterte Felder aus user_profiles (per user-ID filtern)
+  // 2) Erweiterte Felder aus user_profiles via PRIVATE_CMS_STATIC_TOKEN
   const profileRes = await fetch(
     `${PUBLIC_CMSURL}/items/user_profiles?filter[user][_eq]=${userId}&fields=${PROFILE_FIELDS}&limit=1`,
     { headers: { Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}` } }
@@ -56,7 +49,7 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
   const profileData = profileRes.ok ? await profileRes.json().catch(() => null) : null;
   const profile = profileData?.data?.[0] ?? {};
 
-  // 4) Zusammenführen und zurückgeben
+  // 3) Zusammenführen und zurückgeben
   return json({
     data: {
       ...user,
