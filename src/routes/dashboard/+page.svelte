@@ -16,6 +16,7 @@
   import ManuelleSchrittEingabe from '$lib/components/dashboard/ManuelleSchrittEingabe.svelte';
   import ManuelleCardioEingabe from '$lib/components/dashboard/ManuelleCardioEingabe.svelte';
   import BadgeUnlockOverlay from '$lib/components/dashboard/BadgeUnlockOverlay.svelte';
+  import LevelUpOverlay from '$lib/components/dashboard/LevelUpOverlay.svelte';
   import OnboardingChecklist from '$lib/components/dashboard/OnboardingChecklist.svelte';
   import CircleRing from '$lib/components/CircleRing.svelte';
   import { syncSteps, shouldSync, checkPendingSyncFlag, clearPendingSyncFlag } from '$lib/services/stepSync';
@@ -23,6 +24,9 @@
   import { formatDateMonthOnly, getISOWeekDates, formatCardDateLabel, toLocalDateString, isValidDateString } from '$lib/utils/date';
   import { apiUrl } from '$lib/utils/api';
   import { lapDisplayPercent, lapTailwindBg } from '$lib/utils/progress';
+  import { getLevelInfo } from '$lib/utils/level';
+  import { get } from 'svelte/store';
+  import { levelDefs } from '$lib/stores/levels';
 
   // ── State ─────────────────────────────────────────────────────────────────
   let loading = $state(true);
@@ -204,7 +208,13 @@
   // Sync state
   let showSyncToast = $state(false);
   let syncToastPunkte = $state(0);
+  let syncToastType = $state<'schritte' | 'streak'>('schritte');
+  let showStreakToast = $state(false);
+  let streakToastPunkte = $state(0);
   let isNativePlatform = $state(false);
+
+  // Level-Up Overlay
+  let levelUpInfo = $state<{ name: string; level: number } | null>(null);
 
   // Haptic feedback when points toast appears (native only)
   $effect(() => {
@@ -273,8 +283,9 @@
     }
   }
 
-  async function refreshDashboardData() {
+  async function refreshDashboardData(checkLevelUp = false) {
     if (!userId) return;
+    const prevLevel = checkLevelUp ? getLevelInfo(earnedPoints, get(levelDefs)).current.level : 0;
     const token = await getValidAccessToken();
     const authHeader = { Authorization: `Bearer ${token}` };
     const [ledgerRes, earnedRes, entriesRes, profileRes, cardioRes, weeklyStepsRes, quizPunkteRes] = await Promise.all([
@@ -338,6 +349,31 @@
     }
 
     await loadStepsFromHealth();
+
+    // Level-Up erkennen
+    if (checkLevelUp && earnedPoints > 0) {
+      const newLevel = getLevelInfo(earnedPoints, get(levelDefs)).current.level;
+      if (newLevel > prevLevel) {
+        const info = getLevelInfo(earnedPoints, get(levelDefs));
+        levelUpInfo = { name: info.current.name, level: info.current.level };
+      }
+    }
+
+    // Streak-Bonus aus den letzten Einträgen erkennen (streak_tag, streak, streak_quiz)
+    if (checkLevelUp && entriesRes.ok) {
+      const todayStr2 = toLocalDateString();
+      const allEntries: LedgerEntry[] = recentEntries;
+      const streakBonus = allEntries
+        .filter(e =>
+          ['streak_tag', 'streak', 'streak_quiz'].includes(e.source_type) &&
+          (e.occurred_at ?? e.created_at ?? '').startsWith(todayStr2)
+        )
+        .reduce((sum, e) => sum + (e.points_delta ?? 0), 0);
+      if (streakBonus > 0) {
+        streakToastPunkte = streakBonus;
+        showStreakToast = true;
+      }
+    }
   }
 
   function handleSyncToastHide() {
@@ -533,14 +569,14 @@
         syncSteps({ days: 1, mode: 'automatic' })
           .then((r) => {
             if (r.punkte_total > 0) { syncToastPunkte = r.punkte_total; showSyncToast = true; }
-            if (r.synced > 0) void refreshDashboardData();
+            if (r.synced > 0) void refreshDashboardData(true);
           })
           .catch((e) => console.warn('[dashboard] SW-triggered sync failed:', e));
       } else if (shouldSync()) {
         syncSteps({ days: 7, mode: 'automatic' })
           .then((r) => {
             if (r.punkte_total > 0) { syncToastPunkte = r.punkte_total; showSyncToast = true; }
-            if (r.synced > 0) void refreshDashboardData();
+            if (r.synced > 0) void refreshDashboardData(true);
           })
           .catch((e) => console.warn('[dashboard] auto sync failed:', e));
       }
@@ -552,7 +588,7 @@
             if (r && r.pointsDelta > 0) {
               syncToastPunkte = (syncToastPunkte ?? 0) + r.pointsDelta;
               showSyncToast = true;
-              void refreshDashboardData();
+              void refreshDashboardData(true);
             }
           })
           .catch((e) => console.warn('[dashboard] cardio sync failed:', e));
@@ -602,6 +638,21 @@
     onDismissAll={handleBadgeDismissAll}
   />
 {/if}
+
+{#if levelUpInfo}
+  <LevelUpOverlay
+    levelName={levelUpInfo.name}
+    levelNumber={levelUpInfo.level}
+    onDismiss={() => (levelUpInfo = null)}
+  />
+{/if}
+
+<SyncToast
+  punkte={streakToastPunkte}
+  show={showStreakToast}
+  type="streak"
+  onHide={() => (showStreakToast = false)}
+/>
 
 <main
   class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24"
