@@ -25,6 +25,7 @@
     // Statusleiste konfigurieren (nur native App)
     if (browser && Capacitor.isNativePlatform()) {
       import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+        StatusBar.setOverlaysWebView({ overlay: false });    // stabile Statusleiste, scrollt nicht mit
         StatusBar.setStyle({ style: Style.Dark });           // weiße Icons – lesbar auf dunkelgrünem Header
         StatusBar.setBackgroundColor({ color: '#0D2E18' });  // bg-darkblue – tiefes Waldgrün
       }).catch(() => { /* nicht-kritisch */ });
