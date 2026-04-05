@@ -138,14 +138,6 @@
 <!-- ─── Hero ──────────────────────────────────────────────────────────────── -->
 <section class="bg-darkblue text-white">
   <div class="mx-auto max-w-[var(--max-width-standard)] px-[var(--spacing-container-x)] lg:px-[var(--spacing-container-x-lg)] py-10 lg:py-14">
-    {#if isLoggedIn}
-      <a
-        href="/dashboard"
-        class="mb-4 inline-flex items-center gap-1.5 text-sm opacity-70 hover:opacity-100 transition-opacity"
-      >
-        ← Dashboard
-      </a>
-    {/if}
     <h1 class="font-heading text-3xl font-bold md:text-4xl leading-tight mb-4">
       Deine Gesundheitskompetenz. Dein Weg.
     </h1>

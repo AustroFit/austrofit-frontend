@@ -283,7 +283,7 @@
       fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`), { headers: authHeader }),
       fetch(apiUrl('/api/profile'), { headers: authHeader }),
       fetch(apiUrl('/api/cardio/summary'), { headers: authHeader }),
-      fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', occurred_at_from: `${weekDates[0]}T00:00:00`, occurred_at_to: `${weekDates[6]}T23:59:59`, limit: '14' })}`), { headers: authHeader }),
+      fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', occurred_at_from: `${weekDates[0]}T00:00:00`, occurred_at_to: `${weekDates[6]}T23:59:59`, limit: '50' })}`), { headers: authHeader }),
       fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`), { headers: authHeader })
     ]);
     if (ledgerRes.ok) totalPoints = Number((await ledgerRes.json()).total ?? 0);
@@ -429,7 +429,7 @@
         fetch(apiUrl('/api/badges'), { headers: authHeader }),
         fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, limit: '3' })}`), { headers: authHeader }),
         fetch(apiUrl('/api/cardio/summary'), { headers: authHeader }),
-        fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', occurred_at_from: `${weekDates[0]}T00:00:00`, occurred_at_to: `${weekDates[6]}T23:59:59`, limit: '14' })}`), { headers: authHeader }),
+        fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, source_types: 'schritte,step', occurred_at_from: `${weekDates[0]}T00:00:00`, occurred_at_to: `${weekDates[6]}T23:59:59`, limit: '50' })}`), { headers: authHeader }),
         fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, source_types: 'education', positive_only: 'true' })}`), { headers: authHeader })
       ]);
 
@@ -498,7 +498,7 @@
           }));
       }
     } catch (e: any) {
-      errorMsg = e?.message ?? 'Fehler beim Laden des Dashboards.';
+      errorMsg = 'Verbindungsfehler – bitte versuche es nochmal.';
     } finally {
       loading = false;
     }
@@ -608,10 +608,14 @@
   style="overscroll-behavior-y: contain;"
 >
   {#if errorMsg}
-    <div class="mx-auto max-w-lg px-4 py-16">
-      <div class="rounded-[var(--radius-card)] border border-error/30 bg-error/5 p-6 text-sm text-error">
-        {errorMsg}
-      </div>
+    <div class="mx-auto max-w-lg px-4 py-16 flex flex-col items-center gap-4">
+      <p class="text-sm text-error text-center">{errorMsg}</p>
+      <button
+        onclick={async () => { errorMsg = ''; loading = true; location.reload(); }}
+        class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+      >
+        Nochmal versuchen
+      </button>
     </div>
 
   {:else}
@@ -929,9 +933,14 @@
                 {cardioViewEqMinutes} / {cardioViewGoal} min
               </div>
             </div>
-            <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-4">
+            <div class="relative h-3.5 w-full rounded-full bg-gray-100 overflow-hidden mb-2">
               <div class="absolute inset-y-0 left-0 {cardioViewBarColor} rounded-full transition-all duration-500" style="width:{cardioViewDisplayPercent}%;"></div>
             </div>
+            {#if cardioViewEqMinutes >= cardioViewGoal}
+              <p class="mb-4 text-xs font-medium text-primary">🎉 {cardioView === 'woche' ? 'Wochenziel' : 'Tagesziel'} erreicht!</p>
+            {:else}
+              <p class="mb-4 text-xs text-body/60">Noch {cardioViewGoal - cardioViewEqMinutes} min bis zum {cardioView === 'woche' ? 'Wochen' : 'Tages'}ziel</p>
+            {/if}
           {/if}
 
           <!-- Wochenkreise (nur wenn health connected oder testMode) -->
