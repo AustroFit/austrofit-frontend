@@ -25,8 +25,8 @@
     // Statusleiste konfigurieren (nur native App)
     if (browser && Capacitor.isNativePlatform()) {
       import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-        StatusBar.setStyle({ style: Style.Light });          // dunkle Icons auf hellem Hintergrund
-        StatusBar.setBackgroundColor({ color: '#F0FBF1' });  // passend zur Navbar (bg-light-grey)
+        StatusBar.setStyle({ style: Style.Dark });           // weiße Icons – lesbar auf dunkelgrünem Header
+        StatusBar.setBackgroundColor({ color: '#0D2E18' });  // bg-darkblue – tiefes Waldgrün
       }).catch(() => { /* nicht-kritisch */ });
 
       // Back-Geste / Hardware-Back-Button: zurück navigieren oder App beenden.

@@ -77,7 +77,7 @@
 </script>
 
 {#if visible && healthState !== 'granted' && healthState !== 'checking'}
-  <div class="fixed inset-x-0 bottom-0 z-40 px-4 pb-6 sm:pb-8">
+  <div class="fixed inset-x-0 bottom-0 z-50 px-4 pb-20" style="padding-bottom: calc(env(safe-area-inset-bottom) + 80px)">
     <div class="mx-auto max-w-lg rounded-2xl bg-white p-5 shadow-xl border border-black/10">
       <div class="flex items-start gap-4">
         <!-- Icon -->
