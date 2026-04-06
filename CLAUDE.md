@@ -120,6 +120,10 @@ Die echten Health-Sync-Calls (Capacitor) laufen weiterhin nur wenn `isNativePlat
 
 **`adapter-static` import in `svelte.config.js`** — Do not statically import `@sveltejs/adapter-static` at the top of `svelte.config.js`. Vercel installs only `devDependencies` that are needed for its build and may not have `adapter-static`. Use a conditional dynamic import: `const adapterStatic = isCapacitor ? (await import('@sveltejs/adapter-static')).default : null`.
 
+**Directus field query with invalid field name breaks entire response** — If a `?fields=` list includes a field that doesn't exist in the Directus schema (e.g. `description` on `points_ledger`), Directus rejects the entire query and returns `{"data":[]}` with no error. Always verify field names via MCP `get_fields` before adding them to a query.
+
+**`PRIVATE_CMS_STATIC_TOKEN` cannot access `directus_users`** — This token's policy covers only custom collections (`points_ledger`, `user_profiles`, `Badges`, etc.), not Directus system collections. Calling `/users/me` or `/users/{id}` with this token returns an error. To read user data (first_name, email, etc.), always use the user's own JWT. Use `/users/me` **without** a `?fields=` parameter — field selection can cause Directus to silently omit fields that the user's role technically has access to.
+
 ### Deployment
 
 - `dev` branch → Vercel preview → `dev.austrofit.at`
