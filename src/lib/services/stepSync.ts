@@ -122,23 +122,14 @@ let _syncing = false;
 
 // ── Main sync function ────────────────────────────────────────────────────────
 
-/** Calculates how many days to sync based on time since last sync. */
-function calcSyncDays(explicitDays?: number): number {
-  if (explicitDays !== undefined) return explicitDays;
-  const last = getLastSyncTime();
-  if (!last) return 90; // First ever sync: go back as far as possible
-  const daysSince = Math.ceil((Date.now() - new Date(last).getTime()) / 86_400_000);
-  // Always cover at least 7 days (catch timezone edge cases), cap at 90
-  return Math.min(Math.max(daysSince + 1, 7), 90);
-}
-
 export async function syncSteps(options: {
   days?: number;
   mode?: 'automatic' | 'manual';
   onProgress?: (day: number, total: number) => void;
 } = {}): Promise<SyncResult> {
-  const { days: explicitDays, mode = 'automatic', onProgress } = options;
-  const days = calcSyncDays(explicitDays);
+  // Default: always 90 days. Server dedup (skipped:true) handles already-synced days efficiently.
+  // A smaller explicit value (e.g. days:1 from the SW trigger) is still respected.
+  const { days = 90, mode = 'automatic', onProgress } = options;
 
   const empty: SyncResult = {
     synced: 0,

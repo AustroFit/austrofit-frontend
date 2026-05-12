@@ -44,18 +44,9 @@ export function shouldSyncCardio(): boolean {
 
 // ── Main sync function ─────────────────────────────────────────────────────
 
-/** Calculates how many days of workouts to fetch based on time since last sync. */
-function calcCardioDays(): number {
-  const last = getLastCardioSyncTime();
-  if (!last) return 90; // First ever sync: go back as far as possible
-  const daysSince = Math.ceil((Date.now() - new Date(last).getTime()) / 86_400_000);
-  // Always cover at least 9 days (current week + 2-day overlap), cap at 90
-  return Math.min(Math.max(daysSince + 2, 9), 90);
-}
-
 /**
  * Reads workout sessions and posts them to /api/cardio/sync.
- * The look-back window grows automatically after periods of inactivity.
+ * Always fetches 90 days; server dedup skips already-processed weeks.
  */
 export async function syncCardio(): Promise<CardioSyncClientResult | null> {
   if (!browser) return null;
@@ -70,7 +61,7 @@ export async function syncCardio(): Promise<CardioSyncClientResult | null> {
   const token = getAccessToken();
   if (!token) return null;
 
-  const days = calcCardioDays();
+  const days = 90;
 
   let workouts: Array<{
     workoutType: string;
