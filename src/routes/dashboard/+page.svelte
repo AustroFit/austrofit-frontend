@@ -80,6 +80,8 @@
   interface DayStepData { date: string; points: number; steps?: number; }
   let weeklyStepData = $state<DayStepData[]>([]);
   const weeklyStepsTotal = $derived(weeklyStepData.reduce((sum, d) => sum + (d.steps ?? 0), 0));
+  const weeklyStepPoints = $derived(weeklyStepData.reduce((sum, d) => sum + d.points, 0));
+  const displayStepPoints = $derived(stepView === 'tag' ? todayPoints : weeklyStepPoints);
   const stepPercent = $derived(
     stepView === 'tag'
       ? Math.round((stepsToday / STEP_GOAL) * 100)
@@ -87,6 +89,11 @@
   );
   const stepDisplayPercent = $derived(lapDisplayPercent(stepPercent));
   const stepBarColor = $derived(lapTailwindBg(stepPercent));
+  const greeting = $derived(
+    stepsToday >= STEP_GOAL  ? 'Tagesziel erreicht – du bist Spitze!' :
+    stepsToday >= 2000       ? 'Super, mach weiter so!'               :
+                               'Bereit, heute aktiv zu werden?'
+  );
   const weekDates = getISOWeekDates();
   const WEEK_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const;
 
@@ -253,7 +260,7 @@
       try {
         if (isNativePlatform) {
           await Promise.all([
-            syncSteps({ days: 7, mode: 'automatic' })
+            syncSteps({ mode: 'automatic' })
               .then(r => { if (r.punkte_total > 0) { syncToastPunkte = r.punkte_total; showSyncToast = true; } })
               .catch(() => {}),
             syncCardio().catch(() => {})
@@ -328,7 +335,7 @@
         if (isValidDateString(d)) {
           if (!byDate[d]) byDate[d] = { points: 0, steps: 0 };
           byDate[d].points += e.points_delta ?? 0;
-          byDate[d].steps += Number(e.meta?.steps ?? 0);
+          byDate[d].steps = Math.max(byDate[d].steps, Number(e.meta?.steps ?? 0));
         }
       }
       weeklyStepData = weekDates.map((date: string) => ({
@@ -507,7 +514,7 @@
           if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
             if (!byDate2[d]) byDate2[d] = { points: 0, steps: 0 };
             byDate2[d].points += e.points_delta ?? 0;
-            byDate2[d].steps += Number(e.meta?.steps ?? 0);
+            byDate2[d].steps = Math.max(byDate2[d].steps, Number(e.meta?.steps ?? 0));
           }
         }
         weeklyStepData = weekDates.map((date: string) => ({
@@ -573,7 +580,7 @@
           })
           .catch((e) => console.warn('[dashboard] SW-triggered sync failed:', e));
       } else if (shouldSync()) {
-        syncSteps({ days: 7, mode: 'automatic' })
+        syncSteps({ mode: 'automatic' })
           .then((r) => {
             if (r.punkte_total > 0) { syncToastPunkte = r.punkte_total; showSyncToast = true; }
             if (r.synced > 0) void refreshDashboardData(true);
@@ -621,8 +628,8 @@
 <!-- Pull-to-refresh indicator -->
 {#if pullOffset > 0 || pullRefreshing}
   <div
-    class="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-150"
-    style="height: {pullRefreshing ? 48 : pullOffset}px; opacity: {pullRefreshing ? 1 : Math.min(1, pullOffset / 40)};"
+    class="fixed left-0 right-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm transition-all duration-150"
+    style="top: var(--sat, env(safe-area-inset-top, 0px)); height: {pullRefreshing ? 48 : pullOffset}px; opacity: {pullRefreshing ? 1 : Math.min(1, pullOffset / 40)};"
   >
     {#if pullRefreshing}
       <span class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
@@ -678,7 +685,7 @@
           <h1 class="text-3xl font-bold font-heading">
             {#if firstName}Servas, {firstName}!{:else}Servas!{/if}
           </h1>
-          <p class="mt-1 text-sm opacity-80">Bereit, heute aktiv zu werden?</p>
+          <p class="mt-1 text-sm opacity-80">{greeting}</p>
         </div>
       </div>
     </div>
@@ -747,7 +754,7 @@
         {:else if healthConnected}
           <!-- Schritte + Ziel -->
           <div class="flex items-baseline justify-between gap-2 mb-2">
-            <div class="text-3xl font-bold font-heading text-secondary">{todayPoints}P</div>
+            <div class="text-3xl font-bold font-heading text-secondary">{displayStepPoints}P</div>
             <div class="text-2xl font-bold font-heading text-heading">
               {#if stepView === 'tag'}
                 {stepsToday.toLocaleString('de-AT')} / {STEP_GOAL.toLocaleString('de-AT')}
@@ -836,7 +843,7 @@
 
         <div class="mt-4 pt-4 border-t border-black/5 flex items-center gap-4">
           <a
-            href="/profil/level-roadmap"
+            href="/level-roadmap"
             class="text-sm font-medium underline underline-offset-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             Level-Roadmap →
@@ -1088,7 +1095,7 @@
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="mb-3 flex items-center justify-between">
           <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">Auszeichnungen</div>
-          <a href="/profil/auszeichnungen" class="text-xs text-gray-500 underline hover:text-gray-700">
+          <a href="/auszeichnungen" class="text-xs text-gray-500 underline hover:text-gray-700">
             alle anzeigen →
           </a>
         </div>
@@ -1145,7 +1152,7 @@
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
         <div class="mb-1 flex items-center justify-between">
           <div class="text-xs font-semibold uppercase tracking-widest text-gray-400">Letzte Aktivität</div>
-          <a href="/profil/aktivitaeten" class="text-xs text-gray-500 underline hover:text-gray-700">
+          <a href="/aktivitaeten" class="text-xs text-gray-500 underline hover:text-gray-700">
             Alle Aktivitäten →
           </a>
         </div>

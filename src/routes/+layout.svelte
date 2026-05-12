@@ -18,26 +18,45 @@
 
   const { children } = $props();
 
-  let isNative = $state(false);
+  // Synchron erkennen: kein Flash beim ersten Render auf native.
+  // browser-Guard nötig weil SSR kein window.Capacitor kennt.
+  let isNative = $state(browser && Capacitor.isNativePlatform());
 
   onMount(() => {
     isNative = Capacitor.isNativePlatform();
     // Statusleiste konfigurieren (nur native App)
-    if (browser && Capacitor.isNativePlatform()) {
+    if (isNative) {
       import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-        StatusBar.setOverlaysWebView({ overlay: false });    // stabile Statusleiste, scrollt nicht mit
-        StatusBar.setStyle({ style: Style.Dark });           // weiße Icons – lesbar auf dunkelgrünem Header
-        StatusBar.setBackgroundColor({ color: '#0D2E18' });  // bg-darkblue – tiefes Waldgrün
+        StatusBar.setOverlaysWebView({ overlay: true });  // WebView füllt gesamten Screen
+        StatusBar.setStyle({ style: Style.Dark });        // weiße Icons – CSS-Overlay ist dunkelgrün
       }).catch(() => { /* nicht-kritisch */ });
 
-      // Back-Geste / Hardware-Back-Button: zurück navigieren oder App beenden.
-      // window.history.back() ist im Capacitor WebView unzuverlässig → goto(-1) mit Fallback.
+      // env(safe-area-inset-top) ist bei erstem Render manchmal noch 0 →
+      // JS-Probe misst echten Wert und setzt --sat als zuverlässige Fallback-Variable.
+      const probe = () => {
+        const el = document.createElement('div');
+        el.style.cssText = 'position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);pointer-events:none;visibility:hidden;';
+        document.body.appendChild(el);
+        const sat = parseFloat(getComputedStyle(el).paddingTop) || 0;
+        document.body.removeChild(el);
+        if (sat > 0) {
+          document.documentElement.style.setProperty('--sat', sat + 'px');
+        }
+      };
+      requestAnimationFrame(probe);
+
+      // Back-Geste / Hardware-Back-Button.
+      // NICHT goto(-1): Das würde zur URL "/-1" navigieren (→ [slug]-Route → __data.json-Fehler).
+      // canGoBack (Capacitor) prüft ob History-Stack vorhanden → dann history.back(),
+      // sonst goto('/dashboard') als sicherer Fallback.
       import('@capacitor/app').then(({ App }) => {
-        App.addListener('backButton', () => {
-          if (window.location.pathname !== '/dashboard') {
-            goto(-1 as any).catch(() => goto('/dashboard'));
-          } else {
+        App.addListener('backButton', ({ canGoBack }) => {
+          if (window.location.pathname === '/dashboard') {
             App.exitApp();
+          } else if (canGoBack) {
+            history.back();
+          } else {
+            goto('/dashboard');
           }
         });
       }).catch(() => { /* nicht-kritisch */ });
@@ -88,7 +107,17 @@
   <MainNavbar />
 {/if}
 
-<div class={isNative ? 'pb-20' : ''}>
+{#if isNative}
+  <!-- Festes dunkelgrünes Overlay für Statusleisten-Fläche (overlaysWebView=true).
+       --sat wird von JS gemessen (Fallback: env direkt). Überdeckt immer die Statusleiste,
+       egal was darunter scrollt. -->
+  <div
+    class="fixed top-0 left-0 right-0 z-[9999]"
+    style="height: var(--sat, env(safe-area-inset-top, 0px)); background-color: #0D2E18;"
+  ></div>
+{/if}
+
+<div class={isNative ? 'pb-20' : ''} style={isNative ? 'padding-top: var(--sat, env(safe-area-inset-top, 0px))' : ''}>
   {@render children()}
 </div>
 

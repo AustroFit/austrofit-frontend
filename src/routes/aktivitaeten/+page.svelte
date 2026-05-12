@@ -1,4 +1,4 @@
-<!-- src/routes/profil/aktivitaeten/+page.svelte -->
+<!-- src/routes/aktivitaeten/+page.svelte -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -68,15 +68,15 @@
 
   onMount(async () => {
     const token = await getValidAccessToken();
-    if (!token) { goto('/login?next=/profil/aktivitaeten'); return; }
+    if (!token) { goto('/login?next=/aktivitaeten'); return; }
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
       const meRes = await fetch(apiUrl('/api/me'),{ headers: authHeader });
-      if (!meRes.ok) { goto('/login?next=/profil/aktivitaeten'); return; }
+      if (!meRes.ok) { goto('/login?next=/aktivitaeten'); return; }
       const me = await meRes.json();
       const user = me?.data;
-      if (!user?.id) { goto('/login?next=/profil/aktivitaeten'); return; }
+      if (!user?.id) { goto('/login?next=/aktivitaeten'); return; }
       userId = user.id;
 
       const entriesRes = await fetch(apiUrl(`/api/ledger-entries?${qs({ user: userId, limit: String(PAGE_SIZE) })}`), { headers: authHeader });
@@ -95,7 +95,32 @@
 
 <svelte:head><title>Alle Aktivitäten – AustroFit</title></svelte:head>
 
-<main class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24">
+<main class="min-h-screen bg-gray-50 pb-24">
+
+  <!-- Header -->
+  <div class="bg-darkblue text-white">
+    <div class="mx-auto max-w-2xl px-4 pt-8 pb-14 flex items-center gap-3">
+      <a
+        href="/dashboard"
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors text-sm"
+      >←</a>
+      <h1 class="text-xl font-bold font-heading">Alle Aktivitäten</h1>
+    </div>
+  </div>
+
+  <!-- Filter-Chips (immer sichtbar, horizontal scrollbar) -->
+  <div class="flex gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mx-auto max-w-2xl -mt-6">
+    {#each filters as f}
+      <button
+        class="shrink-0 rounded-full border px-3 py-1.5 text-sm transition-colors
+          {activeFilter === f.key
+            ? 'border-primary bg-primary text-white'
+            : 'border-black/15 bg-white hover:bg-black/5'}"
+        onclick={() => setFilter(f.key)}
+      >{f.label}</button>
+    {/each}
+  </div>
+
   {#if loading}
     <div class="flex items-center justify-center py-32">
       <div class="flex flex-col items-center gap-4">
@@ -105,32 +130,12 @@
     </div>
 
   {:else if errorMsg}
-    <div class="mx-auto max-w-lg px-4 py-16">
+    <div class="mx-auto max-w-lg px-4 py-4">
       <div class="rounded-[var(--radius-card)] border border-error/30 bg-error/5 p-6 text-sm text-error">{errorMsg}</div>
     </div>
 
   {:else}
-    <!-- Minimal header without dark background -->
-    <div class="bg-white border-b border-black/5">
-      <div class="mx-auto max-w-2xl px-4 py-4 flex items-center gap-3">
-      </div>
-    </div>
-
-    <div class="mx-auto max-w-2xl px-4 pt-6 flex flex-col gap-4 pb-4">
-      <h1 class="text-xl font-bold font-heading text-heading">Alle Aktivitäten</h1>
-
-      <!-- Filter-Chips -->
-      <div class="flex flex-wrap gap-2">
-        {#each filters as f}
-          <button
-            class="rounded-full border px-3 py-1.5 text-sm transition-colors
-              {activeFilter === f.key
-                ? 'border-primary bg-primary text-white'
-                : 'border-black/15 hover:bg-black/5'}"
-            onclick={() => setFilter(f.key)}
-          >{f.label}</button>
-        {/each}
-      </div>
+    <div class="mx-auto max-w-2xl px-4 flex flex-col gap-4 pb-4">
 
       <!-- Einträge -->
       <div class="rounded-2xl border border-black/10 bg-white shadow-sm">

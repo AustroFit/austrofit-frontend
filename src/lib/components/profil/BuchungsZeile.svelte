@@ -26,9 +26,30 @@
     streak_tag:  { icon: '🔥', label: 'Tages-Streak-Bonus' },
     streak_quiz: { icon: '🧠', label: 'Quiz-Streak-Bonus' },
     cardio:      { icon: '🏃', label: 'Bewegung' },
-    milestone:   { icon: '🏅', label: 'Meilenstein' },
+    milestone:   { icon: '🏅', label: 'Erster Erfolg' }, // Fallback; slug-spezifisch unten überschrieben
     einloesung:  { icon: '🎫', label: 'Gutschein eingelöst' },
     awin_unlock: { icon: '🔓', label: 'Online-Rabattcode freigeschaltet' },
+  };
+
+  const MILESTONE_LABELS: Record<string, { icon: string; label: string }> = {
+    first_step:                { icon: '👟', label: 'Erstes Tagesziel erreicht' },
+    first_step_streak_day:     { icon: '🔥', label: 'Erster Schritte-Streak-Tag' },
+    first_streak_4:            { icon: '🔥', label: '4 Tage Schritte-Streak' },
+    first_step_streak_week:    { icon: '🏅', label: 'Erste Schritte-Streak-Woche' },
+    second_step_streak_week:   { icon: '🏅', label: '2 Schritte-Streak-Wochen' },
+    third_step_streak_week:    { icon: '🏅', label: '3 Schritte-Streak-Wochen' },
+    fourth_step_streak_week:   { icon: '🏅', label: '1 Monat Schritte-Streak' },
+    first_cardio:              { icon: '🏃', label: 'Erste Bewegungswoche' },
+    first_cardio_streak_week:  { icon: '🏃', label: '2 Bewegungswochen am Stück' },
+    second_cardio_streak_week: { icon: '🏃', label: '3 Bewegungswochen am Stück' },
+    third_cardio_streak_week:  { icon: '🏃', label: '1 Monat Bewegungs-Streak' },
+    first_quiz:                { icon: '📚', label: 'Erstes Quiz abgeschlossen' },
+    first_quiz_streak_day:     { icon: '🧠', label: 'Erster Quiz-Streak-Tag' },
+    first_quiz_streak_4:       { icon: '🧠', label: '4 Tage Quiz-Streak' },
+    first_quiz_streak_week:    { icon: '🧠', label: 'Erste Quiz-Streak-Woche' },
+    second_quiz_streak_week:   { icon: '🧠', label: '2 Quiz-Streak-Wochen' },
+    third_quiz_streak_week:    { icon: '🧠', label: '3 Quiz-Streak-Wochen' },
+    fourth_quiz_streak_week:   { icon: '🧠', label: '1 Monat Quiz-Streak' },
   };
 
   const mapped = $derived.by(() => {
@@ -38,6 +59,12 @@
         ? { icon: '👟', label: 'Tagesziel erreicht' }
         : { icon: '👟', label: 'Schritte-Bonus' };
       return buchung.description ? { ...base, label: buchung.description } : base;
+    }
+    // Milestone: slug aus source_ref extrahieren (Format: "milestone-{slug}")
+    if (buchung.source_type === 'milestone') {
+      const slug = String(buchung.source_ref ?? '').replace(/^milestone-/, '');
+      const milestoneEntry = MILESTONE_LABELS[slug] ?? { icon: '🏅', label: 'Erster Erfolg' };
+      return buchung.description ? { ...milestoneEntry, label: buchung.description } : milestoneEntry;
     }
     const base = SOURCE_MAP[buchung.source_type] ?? { icon: '⚡', label: buchung.source_type };
     return buchung.description ? { ...base, label: buchung.description } : base;

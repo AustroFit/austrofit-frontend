@@ -4,7 +4,7 @@
 import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
-import { extractBearerToken, resolveUserId } from '$lib/server/auth';
+import { extractBearerToken, resolveUserInfo } from '$lib/server/auth';
 import { recordCardioEntry, type ActivityGroup, type WorkoutInput } from '$lib/server/cardioService';
 
 export async function POST({
@@ -17,15 +17,20 @@ export async function POST({
   const userToken = extractBearerToken(request);
   if (!userToken) return json({ error: 'Nicht autorisiert' }, { status: 401 });
 
-  const userId = await resolveUserId(userToken, PUBLIC_CMSURL, fetch);
-  if (!userId) return json({ error: 'Nicht autorisiert' }, { status: 401 });
+  const userInfo = await resolveUserInfo(userToken, PUBLIC_CMSURL, fetch);
+  if (!userInfo) return json({ error: 'Nicht autorisiert' }, { status: 401 });
+  const userId = userInfo.id;
 
   const body = await request.json().catch(() => null);
   if (!body || !Array.isArray(body.workouts)) {
     return json({ error: 'Ungültige Anfrage' }, { status: 400 });
   }
 
-  const workouts: WorkoutInput[] = body.workouts;
+  // Filter out workouts before user registration date
+  const registrationDate = userInfo.date_created ? userInfo.date_created.split('T')[0] : null;
+  const workouts: WorkoutInput[] = registrationDate
+    ? (body.workouts as WorkoutInput[]).filter((w) => w.date >= registrationDate)
+    : body.workouts;
   const platform: string = body.platform ?? 'android';
   const source = platform === 'ios' ? 'healthkit' : 'health_connect';
 

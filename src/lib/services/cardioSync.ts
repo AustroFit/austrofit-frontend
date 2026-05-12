@@ -44,9 +44,18 @@ export function shouldSyncCardio(): boolean {
 
 // ── Main sync function ─────────────────────────────────────────────────────
 
+/** Calculates how many days of workouts to fetch based on time since last sync. */
+function calcCardioDays(): number {
+  const last = getLastCardioSyncTime();
+  if (!last) return 90; // First ever sync: go back as far as possible
+  const daysSince = Math.ceil((Date.now() - new Date(last).getTime()) / 86_400_000);
+  // Always cover at least 9 days (current week + 2-day overlap), cap at 90
+  return Math.min(Math.max(daysSince + 2, 9), 90);
+}
+
 /**
- * Reads workout sessions for the last 9 days (covers current ISO week + 2-day buffer),
- * then posts them to /api/cardio/sync for server-side aggregation + points.
+ * Reads workout sessions and posts them to /api/cardio/sync.
+ * The look-back window grows automatically after periods of inactivity.
  */
 export async function syncCardio(): Promise<CardioSyncClientResult | null> {
   if (!browser) return null;
@@ -61,7 +70,8 @@ export async function syncCardio(): Promise<CardioSyncClientResult | null> {
   const token = getAccessToken();
   if (!token) return null;
 
-  // Read workouts from native health APIs (9 days = current week + 2-day overlap)
+  const days = calcCardioDays();
+
   let workouts: Array<{
     workoutType: string;
     durationSeconds: number;
@@ -73,7 +83,7 @@ export async function syncCardio(): Promise<CardioSyncClientResult | null> {
 
   try {
     const { getWorkoutsForLastDays } = await import('$lib/services/health');
-    workouts = await getWorkoutsForLastDays(9);
+    workouts = await getWorkoutsForLastDays(days);
   } catch (e) {
     console.warn('[cardioSync] getWorkoutsForLastDays failed:', e);
     return null;

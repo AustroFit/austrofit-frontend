@@ -6,7 +6,12 @@
 
   const currentPath = $derived(page.url?.pathname ?? '');
 
+  const DASHBOARD_SUBPATHS = ['/schritte', '/bewegung', '/level-roadmap', '/auszeichnungen', '/aktivitaeten'];
+
   function isActive(href: string): boolean {
+    if (href === '/dashboard') {
+      return currentPath === '/dashboard' || DASHBOARD_SUBPATHS.some(p => currentPath === p || currentPath.startsWith(p + '/'));
+    }
     return currentPath === href || (href !== '/' && currentPath.startsWith(href));
   }
 

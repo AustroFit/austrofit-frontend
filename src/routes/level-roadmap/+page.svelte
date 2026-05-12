@@ -1,4 +1,4 @@
-<!-- src/routes/profil/level-roadmap/+page.svelte -->
+<!-- src/routes/level-roadmap/+page.svelte -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -17,15 +17,15 @@
 
   onMount(async () => {
     const token = await getValidAccessToken();
-    if (!token) { goto('/login?next=/profil/level-roadmap'); return; }
+    if (!token) { goto('/login?next=/level-roadmap'); return; }
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
       const meRes = await fetch(apiUrl('/api/me'), { headers: authHeader });
-      if (!meRes.ok) { goto('/login?next=/profil/level-roadmap'); return; }
+      if (!meRes.ok) { goto('/login?next=/level-roadmap'); return; }
       const me = await meRes.json();
       const userId = me?.data?.id;
-      if (!userId) { goto('/login?next=/profil/level-roadmap'); return; }
+      if (!userId) { goto('/login?next=/level-roadmap'); return; }
 
       const earnedRes = await fetch(apiUrl(`/api/ledger-total?${qs({ user: userId, positive_only: 'true' })}`), { headers: authHeader });
       if (earnedRes.ok) earnedPoints = Number((await earnedRes.json()).total ?? 0);
@@ -39,7 +39,19 @@
 
 <svelte:head><title>Level-Roadmap – AustroFit</title></svelte:head>
 
-<main class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24">
+<main class="min-h-screen bg-gray-50 pb-24">
+
+  <!-- Header -->
+  <div class="bg-darkblue text-white">
+    <div class="mx-auto max-w-2xl px-4 pt-8 pb-14 flex items-center gap-3">
+      <a
+        href="/dashboard"
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors text-sm"
+      >←</a>
+      <h1 class="text-xl font-bold font-heading">Level-Roadmap</h1>
+    </div>
+  </div>
+
   {#if loading}
     <div class="flex items-center justify-center py-32">
       <div class="flex flex-col items-center gap-4">
@@ -49,28 +61,21 @@
     </div>
 
   {:else if errorMsg}
-    <div class="mx-auto max-w-lg px-4 py-16">
+    <div class="mx-auto max-w-lg px-4 py-4">
       <div class="rounded-[var(--radius-card)] border border-error/30 bg-error/5 p-6 text-sm text-error">{errorMsg}</div>
     </div>
 
   {:else}
-    <!-- Header -->
-    <div class="bg-darkblue text-white">
-      <div class="mx-auto max-w-2xl px-4 pt-8 pb-14">
-        <h1 class="text-2xl font-bold font-heading">Level-Roadmap</h1>
-        <p class="mt-1 text-sm opacity-70">
-          {levelInfo.current.name} · {earnedPoints.toLocaleString('de-AT')} Punkte verdient
-        </p>
-      </div>
-    </div>
-
     <div class="mx-auto -mt-8 flex max-w-2xl flex-col gap-4 px-4">
 
       <!-- Aktueller Fortschritt -->
       <div class="rounded-[var(--radius-card)] border border-black/10 bg-white p-6 shadow-sm">
-        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
           Dein Fortschritt
         </div>
+        <p class="text-sm text-gray-500 mb-4">
+          {levelInfo.current.name} · {earnedPoints.toLocaleString('de-AT')} Punkte verdient
+        </p>
         <LevelFortschritt punkte={earnedPoints} />
       </div>
 

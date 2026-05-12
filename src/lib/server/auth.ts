@@ -14,10 +14,25 @@ export async function resolveUserId(
   cmsUrl: string,
   fetchFn: typeof globalThis.fetch
 ): Promise<string | null> {
-  const res = await fetchFn(`${cmsUrl}/users/me?fields=id`, {
+  const info = await resolveUserInfo(token, cmsUrl, fetchFn);
+  return info?.id ?? null;
+}
+
+/** Löst User-ID und Registrierungsdatum via /users/me auf. */
+export async function resolveUserInfo(
+  token: string,
+  cmsUrl: string,
+  fetchFn: typeof globalThis.fetch
+): Promise<{ id: string; date_created: string | null } | null> {
+  const res = await fetchFn(`${cmsUrl}/users/me`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) return null;
   const body = await res.json();
-  return (body?.data?.id as string) || null;
+  const id = body?.data?.id as string | undefined;
+  if (!id) return null;
+  return {
+    id,
+    date_created: (body?.data?.date_created as string) ?? null
+  };
 }

@@ -9,7 +9,7 @@ import { env } from '$env/dynamic/private';
 const SCHRITTE_FLOW_ID = env.SCHRITTE_FLOW_ID;
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { recordStepEntry } from '$lib/server/stepsService';
-import { extractBearerToken, resolveUserId } from '$lib/server/auth';
+import { extractBearerToken, resolveUserInfo } from '$lib/server/auth';
 
 export async function POST({
   request,
@@ -22,9 +22,10 @@ export async function POST({
   const userToken = extractBearerToken(request);
   if (!userToken) return json({ error: 'Nicht autorisiert' }, { status: 401 });
 
-  // 2. Resolve user_id
-  const userId = await resolveUserId(userToken, PUBLIC_CMSURL, fetch);
-  if (!userId) return json({ error: 'Nicht autorisiert' }, { status: 401 });
+  // 2. Resolve user info (id + registration date)
+  const userInfo = await resolveUserInfo(userToken, PUBLIC_CMSURL, fetch);
+  if (!userInfo) return json({ error: 'Nicht autorisiert' }, { status: 401 });
+  const userId = userInfo.id;
 
   // 3. Parse body
   let body: any;
@@ -47,15 +48,15 @@ export async function POST({
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
-  const minDate = new Date();
-  minDate.setDate(minDate.getDate() - 30);
-  const minDateStr = minDate.toISOString().split('T')[0];
 
   if (date > tomorrowStr) {
     return json({ error: 'Datum darf nicht in der Zukunft liegen' }, { status: 400 });
   }
-  if (date < minDateStr) {
-    return json({ skipped: true, reason: 'date_too_old' });
+
+  // Reject dates before user registration (no points for pre-signup activity)
+  const registrationDate = userInfo.date_created ? userInfo.date_created.split('T')[0] : null;
+  if (registrationDate && date < registrationDate) {
+    return json({ skipped: true, reason: 'before_registration' });
   }
 
   // 5. Validate steps

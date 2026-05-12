@@ -35,8 +35,8 @@
   const dashOffset = $derived(circumference - (displayPercent / 100) * circumference);
   const strokeColor = $derived(lapCssColor(raw));
 
-  // Neutral track: same gray for all days including today
-  const trackColor = '#e0e0e0';
+  // Track: hellgrün wenn Ziel erreicht (≥100%), sonst grau
+  const trackColor = $derived(raw >= 100 ? 'var(--color-primary-light)' : '#e0e0e0');
 
   const labelFill = $derived(
     raw === 0

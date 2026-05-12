@@ -42,6 +42,11 @@
   const activeDays  = $derived(monthData.filter(d => d.minutes > 0).length);
   const goalDays    = $derived(monthData.filter(d => d.minutes >= dailyGoal).length);
 
+  // Durchschnitte
+  const weeksInMonth = $derived(Math.ceil((new Date(viewYear, viewMonth + 1, 0).getDate() + ((new Date(viewYear, viewMonth, 1).getDay() + 6) % 7)) / 7));
+  const avgMinutesPerActiveDay = $derived(activeDays > 0 ? Math.round(totalMonthMinutes / activeDays) : 0);
+  const avgMinutesPerWeek = $derived(weeksInMonth > 0 ? Math.round(totalMonthMinutes / weeksInMonth) : 0);
+
   // ── Helpers ───────────────────────────────────────────────────────────────
   function getDayMinutes(date: string | null): number {
     if (!date) return 0;
@@ -189,7 +194,7 @@
             <span class="text-[10px] text-gray-400 font-medium">Punkte gesamt</span>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-3 mb-3">
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
             <span class="text-xl font-bold font-heading text-primary">{goalDays}</span>
             <span class="text-[10px] text-gray-400 font-medium">Tagesziel ({dailyGoal} min)</span>
@@ -197,6 +202,16 @@
           <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
             <span class="text-xl font-bold font-heading text-heading">{activeDays}</span>
             <span class="text-[10px] text-gray-400 font-medium">Aktive Tage</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
+            <span class="text-xl font-bold font-heading text-heading">{avgMinutesPerActiveDay} min</span>
+            <span class="text-[10px] text-gray-400 font-medium">Ø Minuten / aktiver Tag</span>
+          </div>
+          <div class="flex flex-col items-center gap-0.5 rounded-xl bg-gray-50 py-3">
+            <span class="text-xl font-bold font-heading text-heading">{avgMinutesPerWeek} min</span>
+            <span class="text-[10px] text-gray-400 font-medium">Ø Minuten / Woche</span>
           </div>
         </div>
       </div>

@@ -30,8 +30,7 @@ const config: CapacitorConfig = {
   plugins: {
     StatusBar: {
       style: 'DARK',           // DARK = weiße Icons – lesbar auf dunkelgrünem Hintergrund
-      backgroundColor: '#0D2E18',  // bg-darkblue – tiefes Waldgrün
-      overlaysWebView: false   // Statusleiste bekommt eigene Fläche, scrollt nicht mit
+      overlaysWebView: true    // WebView füllt gesamten Screen; CSS-Overlay übernimmt Statusleisten-Fläche
     }
   }
 };

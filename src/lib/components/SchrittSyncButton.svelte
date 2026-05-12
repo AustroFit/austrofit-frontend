@@ -45,7 +45,7 @@
     if (syncState === 'syncing') return;
     syncState = 'syncing';
     try {
-      const result = await syncSteps({ days: 7, mode: 'automatic' });
+      const result = await syncSteps({ mode: 'automatic' });
       lastPunkte = result.punkte_total;
       syncState = 'success';
       lastSyncDisplay = formatLastSync(getLastSyncTime());

@@ -1,4 +1,4 @@
-<!-- src/routes/profil/auszeichnungen/+page.svelte -->
+<!-- src/routes/auszeichnungen/+page.svelte -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -57,13 +57,13 @@
 
   onMount(async () => {
     const token = await getValidAccessToken();
-    if (!token) { goto('/login?next=/profil/auszeichnungen'); return; }
+    if (!token) { goto('/login?next=/auszeichnungen'); return; }
     const authHeader = { Authorization: `Bearer ${token}` };
 
     try {
       const directusRes = await fetch(apiUrl('/api/badges'), { headers: authHeader });
       if (!directusRes.ok) {
-        if (directusRes.status === 401) { goto('/login?next=/profil/auszeichnungen'); return; }
+        if (directusRes.status === 401) { goto('/login?next=/auszeichnungen'); return; }
         throw new Error(`Fehler ${directusRes.status}`);
       }
       const db = await directusRes.json();
@@ -79,7 +79,27 @@
 
 <svelte:head><title>Auszeichnungen – AustroFit</title></svelte:head>
 
-<main class="min-h-[calc(100vh-75px)] bg-gray-50 pb-24">
+<main class="min-h-screen bg-gray-50 pb-24">
+
+  <!-- Header -->
+  <div class="bg-darkblue text-white">
+    <div class="mx-auto max-w-2xl px-4 pt-8 pb-14 flex items-center gap-3">
+      <a
+        href="/dashboard"
+        class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors text-sm"
+      >←</a>
+      <div>
+        <h1 class="text-xl font-bold font-heading">Auszeichnungen</h1>
+        {#if !loading}
+          <p class="text-sm opacity-70">{totalEarned} von {totalCount} Badges verdient</p>
+          {#if totalSteps > 0}
+            <p class="text-xs opacity-50">{totalSteps.toLocaleString('de-AT')} Schritte gesamt</p>
+          {/if}
+        {/if}
+      </div>
+    </div>
+  </div>
+
   {#if loading}
     <div class="flex items-center justify-center py-32">
       <div class="flex flex-col items-center gap-4">
@@ -89,22 +109,11 @@
     </div>
 
   {:else if errorMsg}
-    <div class="mx-auto max-w-lg px-4 py-16">
+    <div class="mx-auto max-w-lg px-4 py-4">
       <div class="rounded-[var(--radius-card)] border border-error/30 bg-error/5 p-6 text-sm text-error">{errorMsg}</div>
     </div>
 
   {:else}
-    <!-- Header -->
-    <div class="bg-darkblue text-white">
-      <div class="mx-auto max-w-2xl px-4 pt-8 pb-14">
-        <h1 class="text-2xl font-bold font-heading">Auszeichnungen</h1>
-        <p class="mt-1 text-sm opacity-70">{totalEarned} von {totalCount} Badges verdient</p>
-        {#if totalSteps > 0}
-          <p class="mt-0.5 text-xs opacity-50">{totalSteps.toLocaleString('de-AT')} Schritte gesamt</p>
-        {/if}
-      </div>
-    </div>
-
     <div class="mx-auto -mt-8 flex max-w-2xl flex-col gap-4 px-4">
 
       {#if directusByTyp.length === 0}
