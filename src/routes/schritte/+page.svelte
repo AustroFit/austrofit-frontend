@@ -60,13 +60,13 @@
 
     const { dateFrom, dateTo } = buildMonthDateRange(viewYear, viewMonth + 1);
 
+    // No occurred_at filter: historical catch-up syncs set occurred_at = sync time,
+    // not the step date. Client-side source_ref filter below ensures correct month.
     const res = await fetch(
       apiUrl(`/api/ledger-entries?${qs({
         user: userId,
         source_types: 'schritte,step',
-        occurred_at_from: `${dateFrom}T00:00:00`,
-        occurred_at_to: `${dateTo}T23:59:59`,
-        limit: '200'
+        limit: '500'
       })}`),
       { headers: { Authorization: `Bearer ${token}` } }
     );
