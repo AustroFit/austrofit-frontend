@@ -200,20 +200,17 @@ export async function recordCardioEntry(params: {
   // Konfiguration aus Directus laden (Fallback: hardcoded Werte)
   const { weeklyTargets, intenseTypes, moderateTypes } = await getCardioConfig(cmsUrl, adminToken, fetchFn);
 
-  const weekKey = getWeekKey();
-  const sourceRef = `cardio-${weekKey}`;
+  const currentWeekKey = getWeekKey();
 
-  // Filter to only workouts from the current ISO week
-  const currentWeekStart = getWeekStartDate();
-  const scoreable = workouts.filter((w) => {
-    if (getEquivalentMinutes(w.workoutType, w.durationSeconds, activityGroup, intenseTypes, moderateTypes) === 0) return false;
-    return w.date >= currentWeekStart;
-  });
+  // All scoreable workouts across all weeks (including historical)
+  const allScoreable = workouts.filter(
+    (w) => getEquivalentMinutes(w.workoutType, w.durationSeconds, activityGroup, intenseTypes, moderateTypes) > 0
+  );
 
-  if (scoreable.length === 0) {
+  if (allScoreable.length === 0) {
     return {
       success: true,
-      weekKey,
+      weekKey: currentWeekKey,
       equivalentMinutes: 0,
       pointsTotal: 0,
       pointsDelta: 0,
@@ -223,184 +220,197 @@ export async function recordCardioEntry(params: {
     };
   }
 
-  // ── Step 1: Write activity_logs (one entry per session, deduped via start_date) ──
-  // Must happen before points calculation so the DB reflects the full cumulative week total.
-  // Each Health Connect session gets its own row, identified by start_date.
-  // Old-style entries (no start_date) are excluded from the Step 2 sum — clean migration.
-  let activityLogsCreated = 0;
-  for (const w of scoreable) {
-    const eqMin = getEquivalentMinutes(w.workoutType, w.durationSeconds, activityGroup, intenseTypes, moderateTypes);
-    const logDupParams = new URLSearchParams({
-      'filter[user_id][_eq]': userId,
-      'filter[start_date][_eq]': w.startDate,
-      fields: 'id',
-      limit: '1'
-    });
-    try {
-      const logDupRes = await fetchFn(`${cmsUrl}/items/activity_logs?${logDupParams}`, {
-        headers: adminHeaders
-      });
-      if (logDupRes.ok) {
-        const logDupBody = await logDupRes.json();
-        if ((logDupBody.data ?? []).length > 0) continue; // session already logged
-      }
-    } catch {
-      /* non-critical */
-    }
-
-    try {
-      const logRes = await fetchFn(`${cmsUrl}/items/activity_logs`, {
-        method: 'POST',
-        headers: adminHeaders,
-        body: JSON.stringify({
-          user_id: userId,
-          date: w.date,
-          week_key: weekKey,
-          workout_type: w.workoutType,
-          duration_seconds: w.durationSeconds,
-          equivalent_minutes: eqMin,
-          start_date: w.startDate,
-          source,
-          imported_at: new Date().toISOString()
-        })
-      });
-      if (logRes.ok) activityLogsCreated++;
-    } catch {
-      /* non-critical */
-    }
+  // Group workouts by ISO week so historical weeks are processed too
+  const weekGroups = new Map<string, WorkoutInput[]>();
+  for (const w of allScoreable) {
+    const wk = getWeekKey(new Date(w.date));
+    if (!weekGroups.has(wk)) weekGroups.set(wk, []);
+    weekGroups.get(wk)!.push(w);
   }
 
-  // ── Step 2: Query cumulative eq minutes from all activity_logs this week ──
-  // This makes points accumulate correctly across multiple syncs (e.g. manual test entries
-  // submitted one at a time, or multiple health sync calls throughout the day).
-  let totalEqMinutes: number | null = null;
-  try {
-    const weekLogsParams = new URLSearchParams({
-      'filter[user_id][_eq]': userId,
-      'filter[week_key][_eq]': weekKey,
-      'filter[start_date][_nnull]': 'true',
-      fields: 'equivalent_minutes',
-      limit: '200'
-    });
-    const weekLogsRes = await fetchFn(`${cmsUrl}/items/activity_logs?${weekLogsParams}`, {
-      headers: adminHeaders
-    });
-    if (weekLogsRes.ok) {
-      const weekLogsBody = await weekLogsRes.json();
-      totalEqMinutes = (weekLogsBody.data ?? []).reduce(
-        (sum: number, log: { equivalent_minutes: number }) => sum + Number(log.equivalent_minutes ?? 0),
+  let totalActivityLogsCreated = 0;
+  let currentWeekEqMinutes = 0;
+  let currentWeekPointsTotal = 0;
+  let currentWeekPointsDelta = 0;
+  let currentWeekLedgerEntryId: string | null = null;
+  let anyNewLedgerEntry = false;
+
+  for (const [wk, weekWorkouts] of weekGroups) {
+    const isCurrentWeek = wk === currentWeekKey;
+    const sourceRef = `cardio-${wk}`;
+
+    // ── Write activity_logs (one entry per session, deduped via start_date) ──
+    for (const w of weekWorkouts) {
+      const eqMin = getEquivalentMinutes(w.workoutType, w.durationSeconds, activityGroup, intenseTypes, moderateTypes);
+      const logDupParams = new URLSearchParams({
+        'filter[user_id][_eq]': userId,
+        'filter[start_date][_eq]': w.startDate,
+        fields: 'id',
+        limit: '1'
+      });
+      try {
+        const logDupRes = await fetchFn(`${cmsUrl}/items/activity_logs?${logDupParams}`, {
+          headers: adminHeaders
+        });
+        if (logDupRes.ok) {
+          const logDupBody = await logDupRes.json();
+          if ((logDupBody.data ?? []).length > 0) continue; // session already logged
+        }
+      } catch {
+        /* non-critical */
+      }
+
+      try {
+        const logRes = await fetchFn(`${cmsUrl}/items/activity_logs`, {
+          method: 'POST',
+          headers: adminHeaders,
+          body: JSON.stringify({
+            user_id: userId,
+            date: w.date,
+            week_key: wk,
+            workout_type: w.workoutType,
+            duration_seconds: w.durationSeconds,
+            equivalent_minutes: eqMin,
+            start_date: w.startDate,
+            source,
+            imported_at: new Date().toISOString()
+          })
+        });
+        if (logRes.ok) totalActivityLogsCreated++;
+      } catch {
+        /* non-critical */
+      }
+    }
+
+    // ── Query cumulative eq minutes from all activity_logs for this week ──
+    let totalEqMinutes: number | null = null;
+    try {
+      const weekLogsParams = new URLSearchParams({
+        'filter[user_id][_eq]': userId,
+        'filter[week_key][_eq]': wk,
+        'filter[start_date][_nnull]': 'true',
+        fields: 'equivalent_minutes',
+        limit: '200'
+      });
+      const weekLogsRes = await fetchFn(`${cmsUrl}/items/activity_logs?${weekLogsParams}`, {
+        headers: adminHeaders
+      });
+      if (weekLogsRes.ok) {
+        const weekLogsBody = await weekLogsRes.json();
+        totalEqMinutes = (weekLogsBody.data ?? []).reduce(
+          (sum: number, log: { equivalent_minutes: number }) => sum + Number(log.equivalent_minutes ?? 0),
+          0
+        );
+      }
+    } catch {
+      /* fallback below */
+    }
+
+    // Fallback: sum from current input if DB query failed
+    if (totalEqMinutes === null) {
+      totalEqMinutes = weekWorkouts.reduce(
+        (sum, w) => sum + getEquivalentMinutes(w.workoutType, w.durationSeconds, activityGroup, intenseTypes, moderateTypes),
         0
       );
     }
-  } catch {
-    /* fallback below */
-  }
 
-  // Fallback: sum from current input if DB query failed
-  if (totalEqMinutes === null) {
-    totalEqMinutes = scoreable.reduce(
-      (sum, w) => sum + getEquivalentMinutes(w.workoutType, w.durationSeconds, activityGroup, intenseTypes, moderateTypes),
-      0
-    );
-  }
+    const pointsTotal = calculateCardioPoints(totalEqMinutes, activityGroup, weeklyTargets);
 
-  const pointsTotal = calculateCardioPoints(totalEqMinutes, activityGroup, weeklyTargets);
+    // ── Check existing ledger entry for this week ──
+    const dupParams = new URLSearchParams({
+      'filter[user][_eq]': userId,
+      'filter[source_type][_eq]': 'cardio',
+      'filter[source_ref][_eq]': sourceRef,
+      fields: 'id,points_delta',
+      limit: '1'
+    });
+    const dupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dupParams}`, {
+      headers: adminHeaders
+    });
 
-  // ── Step 3: Check existing ledger entry for this week ──
-  const dupParams = new URLSearchParams({
-    'filter[user][_eq]': userId,
-    'filter[source_type][_eq]': 'cardio',
-    'filter[source_ref][_eq]': sourceRef,
-    fields: 'id,points_delta',
-    limit: '1'
-  });
-  const dupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dupParams}`, {
-    headers: adminHeaders
-  });
+    let existingPoints = 0;
+    let existingLedgerId: string | null = null;
+    if (dupRes.ok) {
+      const dupBody = await dupRes.json();
+      const existing = dupBody.data?.[0];
+      if (existing) {
+        existingPoints = Number(existing.points_delta ?? 0);
+        existingLedgerId = existing.id ?? null;
+      }
+    }
 
-  let existingPoints = 0;
-  let existingLedgerId: string | null = null;
-  if (dupRes.ok) {
-    const dupBody = await dupRes.json();
-    const existing = dupBody.data?.[0];
-    if (existing) {
-      existingPoints = Number(existing.points_delta ?? 0);
-      existingLedgerId = existing.id ?? null;
+    const pointsDelta = pointsTotal - existingPoints;
+
+    if (isCurrentWeek) {
+      currentWeekEqMinutes = totalEqMinutes;
+      currentWeekPointsTotal = pointsTotal;
+    }
+
+    if (pointsDelta === 0) {
+      if (isCurrentWeek) currentWeekLedgerEntryId = existingLedgerId;
+      continue;
+    }
+
+    let ledgerEntryId: string | null = existingLedgerId;
+
+    if (existingLedgerId === null) {
+      // First entry for this week
+      const ledgerRes = await fetchFn(`${cmsUrl}/items/points_ledger`, {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          user: userId,
+          points_delta: pointsTotal,
+          source_type: 'cardio',
+          source_ref: sourceRef,
+          occurred_at: new Date().toISOString()
+        })
+      });
+      if (isCurrentWeek && !ledgerRes.ok) throw new Error('Cardio-Ledger-Eintrag konnte nicht gespeichert werden');
+      if (ledgerRes.ok) {
+        const lb = await ledgerRes.json();
+        ledgerEntryId = lb?.data?.id ?? null;
+        anyNewLedgerEntry = true;
+      }
+    } else if (isCurrentWeek) {
+      // Current week only: update existing entry with new total (PATCH / Option C)
+      await fetchFn(`${cmsUrl}/items/points_ledger/${existingLedgerId}`, {
+        method: 'PATCH',
+        headers: adminHeaders,
+        body: JSON.stringify({ points_delta: pointsTotal })
+      });
+    }
+    // Historical weeks with existing entries: skip (don't overwrite)
+
+    if (isCurrentWeek) {
+      currentWeekPointsDelta = pointsDelta;
+      currentWeekLedgerEntryId = ledgerEntryId;
     }
   }
 
-  const pointsDelta = pointsTotal - existingPoints;
-
-  // Write/update points_ledger entry
-  let ledgerEntryId: string | null = existingLedgerId;
-
-  if (pointsDelta === 0) {
-    // No change – nothing to write
-    return {
-      success: true,
-      weekKey,
-      equivalentMinutes: totalEqMinutes,
-      pointsTotal,
-      pointsDelta: 0,
-      activityLogsCreated,
-      ledgerEntryId,
-      skipped: false
-    };
-  }
-
-  if (existingLedgerId === null) {
-    // First entry for this week
-    const ledgerRes = await fetchFn(`${cmsUrl}/items/points_ledger`, {
-      method: 'POST',
-      headers: adminHeaders,
-      body: JSON.stringify({
-        user: userId,
-        points_delta: pointsTotal,
-        source_type: 'cardio',
-        source_ref: sourceRef,
-        occurred_at: new Date().toISOString()
-      })
-    });
-    if (!ledgerRes.ok) throw new Error('Cardio-Ledger-Eintrag konnte nicht gespeichert werden');
-    const lb = await ledgerRes.json();
-    ledgerEntryId = lb?.data?.id ?? null;
-  } else {
-    // Update existing entry with new total (PATCH)
-    await fetchFn(`${cmsUrl}/items/points_ledger/${existingLedgerId}`, {
-      method: 'PATCH',
-      headers: adminHeaders,
-      body: JSON.stringify({ points_delta: pointsTotal })
-    });
-  }
-
   // Milestone: Erste gewertete Cardio-Woche – einmalig
-  awardMilestoneIfNew({ userId, slug: 'first_cardio', cmsUrl, token: adminToken, fetchFn });
+  if (anyNewLedgerEntry) {
+    awardMilestoneIfNew({ userId, slug: 'first_cardio', cmsUrl, token: adminToken, fetchFn });
+  }
 
-  // Cardio streak bonuses
-  await awardCardioStreakBonuses({ userId, weekKey, cmsUrl, adminToken: adminToken, fetchFn });
+  // Cardio streak bonuses: only for current week
+  if (weekGroups.has(currentWeekKey) && currentWeekPointsDelta !== 0) {
+    await awardCardioStreakBonuses({ userId, weekKey: currentWeekKey, cmsUrl, adminToken: adminToken, fetchFn });
+  }
 
   return {
     success: true,
-    weekKey,
-    equivalentMinutes: totalEqMinutes,
-    pointsTotal,
-    pointsDelta,
-    activityLogsCreated,
-    ledgerEntryId,
+    weekKey: currentWeekKey,
+    equivalentMinutes: currentWeekEqMinutes,
+    pointsTotal: currentWeekPointsTotal,
+    pointsDelta: currentWeekPointsDelta,
+    activityLogsCreated: totalActivityLogsCreated,
+    ledgerEntryId: currentWeekLedgerEntryId,
     skipped: false
   };
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-/** Returns YYYY-MM-DD of the Monday starting the current ISO week */
-function getWeekStartDate(): string {
-  const now = new Date();
-  const day = now.getDay() || 7; // Sunday = 7
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (day - 1));
-  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
-}
 
 /**
  * Awards the weekly cardio streak bonus.
@@ -422,7 +432,7 @@ async function awardCardioStreakBonuses(opts: {
     'filter[user][_eq]': userId,
     'filter[source_type][_eq]': 'cardio',
     fields: 'points_delta,source_ref',
-    sort: '-occurred_at',
+    sort: '-source_ref',
     limit: '15'
   });
 

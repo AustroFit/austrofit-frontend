@@ -6,6 +6,7 @@ import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
+import { getWeekKey } from '$lib/server/cardioService';
 import { isValidDateString } from '$lib/utils/date';
 
 export async function GET({
@@ -38,11 +39,19 @@ export async function GET({
     fields: 'date,equivalent_minutes',
     limit: '500'
   });
+  // Generate source_refs for all ISO weeks that overlap this month.
+  // Using source_ref[_in] instead of occurred_at range because historical syncs
+  // set occurred_at = sync time, not the workout week date.
+  const weekKeySet = new Set<string>();
+  for (let day = 1; day <= lastDay; day++) {
+    weekKeySet.add(getWeekKey(new Date(year, month - 1, day)));
+  }
+  const sourceRefs = [...weekKeySet].map((wk) => `cardio-${wk}`);
+
   const ledgerParams = new URLSearchParams({
     'filter[user][_eq]': userId,
     'filter[source_type][_eq]': 'cardio',
-    'filter[occurred_at][_gte]': `${dateFrom}T00:00:00`,
-    'filter[occurred_at][_lte]': `${dateTo}T23:59:59`,
+    'filter[source_ref][_in]': JSON.stringify(sourceRefs),
     fields: 'points_delta',
     limit: '500'
   });
