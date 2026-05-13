@@ -66,7 +66,7 @@
         source_types: 'schritte,step',
         occurred_at_from: `${dateFrom}T00:00:00`,
         occurred_at_to: `${dateTo}T23:59:59`,
-        limit: '31'
+        limit: '200'
       })}`),
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -76,7 +76,8 @@
       const byDate: Record<string, { points: number; steps: number }> = {};
       for (const e of (body.data ?? [])) {
         const d = String(e.source_ref ?? '');
-        if (isValidDateString(d)) {
+        // Guard: only count entries whose step-date belongs to the viewed month
+        if (isValidDateString(d) && d >= dateFrom && d <= dateTo) {
           if (!byDate[d]) byDate[d] = { points: 0, steps: 0 };
           byDate[d].points += e.points_delta ?? 0;
           byDate[d].steps = Math.max(byDate[d].steps, Number(e.meta?.steps ?? 0));
