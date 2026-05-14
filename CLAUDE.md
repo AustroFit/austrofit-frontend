@@ -101,7 +101,9 @@ Die echten Health-Sync-Calls (Capacitor) laufen weiterhin nur wenn `isNativePlat
 
 **Directus `points_ledger.source_ref` is type `string`** — Directus rejects `_gte`/`_lte` on string fields with a 400 error. For date-range queries, generate an explicit `_in` list in the API route (see `/api/ledger-entries/+server.ts`). Max ~31 dates for a month view, ~7 for a week view.
 
-**Directus: two simultaneous `_in` filters on different fields returns empty** — When combining `filter[source_type][_in]` (for multiple source types) with `filter[source_ref][_in]` (for date ranges), Directus 11 returns `{"data":[],"total":0}`. Use `occurred_at_from`/`occurred_at_to` (datetime field, supports `_gte`/`_lte`) instead of `source_ref_from`/`source_ref_to` whenever `source_types` is also filtered.
+**Directus: two simultaneous `_in` filters on different fields returns empty** — When combining `filter[source_type][_in]` (for multiple source types) with `filter[source_ref][_in]` (for date ranges), Directus 11 returns `{"data":[],"total":0}`. Fix: switch `source_type` to `_eq` (not `_in`) when filtering a single type — then `source_ref[_in]` works. Avoid `occurred_at[_gte/_lte]` as a workaround (see next gotcha).
+
+**`occurred_at` unreliable for retroactive syncs** — Historical catch-up syncs set `occurred_at = NOW()` (sync time), not the activity date/week. Month-view queries using `occurred_at` ranges silently miss retroactively synced entries. (1) **Schritte** (`schritte/+page.svelte`): fetch all entries without date filter (`limit: 500`, no `occurred_at`), filter client-side by `source_ref` (= step date YYYY-MM-DD). (2) **Cardio** (`cardio/history/+server.ts`): `source_ref = 'cardio-YYYY-Wnn'` — generate ISO week keys for the viewed month and filter with `source_ref[_in]` (safe since `source_type` uses `_eq`, avoiding the two-`_in` clash).
 
 **`syncSteps()` concurrency** — The service has a module-level `_syncing` flag to block concurrent calls. Background sync + dashboard `onMount` can fire simultaneously; without this guard, multiple ledger entries for the same date accumulate (delta-correction entries). Do not call `syncSteps()` in parallel.
 
