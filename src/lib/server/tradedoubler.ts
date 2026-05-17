@@ -91,9 +91,9 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 Minuten
 export async function fetchTdVouchers(
   fetchFn: typeof globalThis.fetch = fetch
 ): Promise<TdVoucherInternal[]> {
-  const token = env.TRADEDOUBLER_TOKEN ?? '';
+  const token = env.TRADEDOUBLER_VOUCHER_TOKEN ?? '';
   if (!token) {
-    console.warn('[TD] TRADEDOUBLER_TOKEN fehlt – keine Voucher geladen');
+    console.warn('[TD] TRADEDOUBLER_VOUCHER_TOKEN fehlt – keine Voucher geladen');
     return [];
   }
 

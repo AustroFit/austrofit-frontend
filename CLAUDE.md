@@ -22,6 +22,12 @@ npm run cap:build:dev   # Static SPA build for dev testing → build/ + cap sync
 
 No test suite is configured in this project.
 
+## Project Documentation
+
+- `docs/features.yaml` — Maschinenlesbare Feature-Registry (54 Features, 12 Kategorien). Primäre Referenz für Roadmap, Feature-Status (implemented/in-progress/planned/to-discuss/rejected) und regulatorische Checks. Bei neuen Features oder Statusänderungen hier aktualisieren.
+- `Directus-JSON-AustroFit/austrofit-business-plan.yaml` — Business Plan v1.3 (Markt, Finanzen, Gamification-Formeln)
+- `Directus-JSON-AustroFit/service-blueprint.html` — Service Blueprint B2C v1.1 (User Journey, Phasen)
+
 ## Architecture Overview
 
 **SvelteKit** (Svelte 5 runes) + **Tailwind CSS v4** + **Directus 11** CMS + **Capacitor 8** for Android.
@@ -30,7 +36,7 @@ No test suite is configured in this project.
 
 **Auth**: Pure client-side localStorage token (`austrofit_access_token`). No httpOnly cookies, no SSR auth. All protected routes check `getAccessToken()` from `$lib/utils/auth.ts` in `onMount`. Server routes read the Bearer token from `Authorization` headers forwarded by the client.
 
-**API Proxy Pattern**: All CMS/Directus calls go through SvelteKit API routes in `src/routes/api/`. Client code never calls Directus directly. Server routes use `DIRECTUS_WRITE_TOKEN` or `PRIVATE_CMS_STATIC_TOKEN` (not the user's token) for privileged operations.
+**API Proxy Pattern**: All CMS/Directus calls go through SvelteKit API routes in `src/routes/api/`. Client code never calls Directus directly. Server routes use `DIRECTUS_WRITE_TOKEN` or `PRIVATE_CMS_STATIC_TOKEN` (not the user's token) for privileged operations. Always use `qs()` from `$lib/utils/qs` to build Directus query strings — never `new URLSearchParams()` directly.
 
 **Tailwind v4**: No `tailwind.config.js`. All theme configuration lives in `src/styles/tokens.css` (color tokens) and the `@theme {}` block in `src/app.css` (spacing, typography, radii). Import order in `app.css`: `@import 'tailwindcss'` → `tokens.css` → `utilities.css` → `component.css`. Dynamically constructed Tailwind classes require `src/lib/tailwind-safelist.svelte` + the `generate-safelist` script.
 
@@ -97,6 +103,14 @@ Alle Flags sind localStorage-Keys und werden im Dashboard/Profil bei `onMount` g
 **Wichtig**: `devNativeMode` steuert nur UI-Sichtbarkeit (`showNativeFeatures = isNativePlatform || devNativeMode`).
 Die echten Health-Sync-Calls (Capacitor) laufen weiterhin nur wenn `isNativePlatform` true ist.
 
+### MCP Server (Directus)
+
+`scripts/mcp-directus.mjs` — read-only Directus MCP Server, konfiguriert in `.claude/settings.json` (`node --env-file=.env scripts/mcp-directus.mjs`). Nach Session-Neustart verfügbar.
+
+Verfügbare Tools: `list_collections`, `get_fields`, `get_relations`, `read_items`, `read_item`, `schema_snapshot`, `read_ledger_entries`, `read_user_profile`, `check_quiz_status`.
+
+**Wichtig**: Vor `?fields=`-Queries immer `get_fields` aufrufen — ein ungültiger Feldname bricht die gesamte Directus-Response ohne Fehlermeldung (gibt `{"data":[]}` zurück).
+
 ### Known Gotchas
 
 **Directus `points_ledger.source_ref` is type `string`** — Directus rejects `_gte`/`_lte` on string fields with a 400 error. For date-range queries, generate an explicit `_in` list in the API route (see `/api/ledger-entries/+server.ts`). Max ~31 dates for a month view, ~7 for a week view.
@@ -124,7 +138,47 @@ Die echten Health-Sync-Calls (Capacitor) laufen weiterhin nur wenn `isNativePlat
 
 **Directus field query with invalid field name breaks entire response** — If a `?fields=` list includes a field that doesn't exist in the Directus schema (e.g. `description` on `points_ledger`), Directus rejects the entire query and returns `{"data":[]}` with no error. Always verify field names via MCP `get_fields` before adding them to a query.
 
+**Gamification Security Guardrails** — Several patterns were hardened after a security review (Mai 2026). Do not revert them:
+
+- **`/api/quiz-attempts` — Allowlist-Payload + max_score-Validierung**: Der Client-Body wird NICHT direkt an Directus weitergeleitet. Stattdessen wird ein `safePayload` mit explizitem Allowlist gebaut. `passed` wird server-seitig aus `score >= max_score` abgeleitet (nie vom Client übernommen); `max_score > 0` ist Pflicht, sonst ist `passed = false`. `eligible_points` wird via `Math.min(200, Number(...))` gecappt (nicht `typeof`-Check, da Strings sonst durchkommen). `completed_at` kommt immer vom Server. **Neu (Mai 2026):** Wenn `quiz`-ID angegeben, wird das Quiz aus Directus geladen (`quiz_json`-Feld) und die autoritative Fragenzahl (`quiz_json.questions.length`) gegen den Client-submitted `max_score` geprüft — Abweichung → 400. Ist Directus nicht erreichbar, schlägt die gesamte Anfrage fehl (fail-closed). Dadurch kann ein Angreifer nicht mehr mit `score:1, max_score:1` beliebige Quizze bestehen.
+
+- **`/api/claim` — Token im Authorization-Header**: Als einziger Endpoint hatte `claim` den JWT im Request-Body (`access_token`). Das ist behoben: Token kommt jetzt aus `extractBearerToken(request)`, `access_token` existiert nicht mehr im Body. Client (`Quiz.svelte`) setzt `Authorization: Bearer <token>` Header. Nicht rückgängig machen.
+
+- **`/api/claim` — Per-User-Cooldown (Bypass-Schutz)**: Der 30-Tage-Cooldown wird jetzt AUCH serverseitig bei `/api/claim` pro User+Quiz durchgesetzt (zusätzlich zum anonymen Check in `/api/quiz-attempts`). Vor dem Ledger-Write wird geprüft ob der User das jeweilige Quiz (`a.quiz`) bereits innerhalb des Cooldown-Fensters geclaimed hat. Verhindert Bypass durch beliebig viele neue `anonymous_id`s. Das `quiz`-Feld muss in der Attempts-Query mitgeladen werden (`fields: id,eligible_points,points_ledger_ref,quiz`).
+
+- **`/api/cardio/sync` — Input-Grenzen**: Max. 50 Workouts pro Request. Jeder Workout wird validiert: `date` muss `/^\d{4}-\d{2}-\d{2}$/` matchen und im Fenster ≤90 Tage Vergangenheit / ≤2 Tage Zukunft liegen; `startDate` muss ein parsbares ISO-8601-Datum sein. Ungültige Einträge werden herausgefiltert (kein 400-Fehler für den ganzen Batch).
+
+- **`cardioService.ts` — durationSeconds Cap**: `getEquivalentMinutes()` cappt `durationSeconds` auf max. 4 Stunden (14.400 s) bevor die Äquivalenz-Minuten berechnet werden. Der Cap liegt in der Funktion selbst, nicht im Endpoint.
+
+- **`streak.ts` — Streak-Wochen-Bonus Dedup**: Der Wochen-Bonus (Abschnitt 6 in `updateStreak`) hat jetzt wie der Quiz-Wochen-Bonus einen Dedup-Check vor dem Schreiben. Fehlt dieser Check, kann ein paralleler API-Call den Bonus doppelt schreiben.
+
+- **`/api/redeem` — Dedup vor Einlösung**: Vor dem Schreiben des `reward_redemptions`-Eintrags wird geprüft ob bereits eine `active`/`used` Einlösung für `(user, reward)` existiert (409 bei Fund). Verhindert Double-Spend durch parallele Requests.
+
 **`PRIVATE_CMS_STATIC_TOKEN` cannot access `directus_users`** — This token's policy covers only custom collections (`points_ledger`, `user_profiles`, `Badges`, etc.), not Directus system collections. Calling `/users/me` or `/users/{id}` with this token returns an error. To read user data (first_name, email, etc.), always use the user's own JWT. Use `/users/me` **without** a `?fields=` parameter — field selection can cause Directus to silently omit fields that the user's role technically has access to.
+
+**`user_profiles.totalSteps` is camelCase** — Unlike all other Directus fields (snake_case), this field is named `totalSteps` (camelCase). Using `total_steps` in a `?fields=` query silently returns no data (same failure mode as an invalid field name). Always write `totalSteps` when querying or patching this field.
+
+**`npm run cap:build:dev` schlägt auf Windows fehl** — Inline-Env-Vars (`PUBLIC_API_BASE=... npx vite build`) funktionieren in PowerShell nicht. Workaround — drei Befehle separat ausführen:
+```powershell
+node scripts/generate-safelist.js
+$env:BUILD_TARGET="capacitor"; $env:PUBLIC_API_BASE="https://dev.austrofit.at"; npx vite build
+npx cap sync android
+```
+
+### Environment Variables
+
+| Variable | Verwendet von | Hinweis |
+|---|---|---|
+| `PUBLIC_CMSURL` | Alle Server-Routes | Directus Base-URL |
+| `DIRECTUS_READ_TOKEN` | `/api/badges`, `/api/partner`, `/api/quizzes` | Policy „Read Content API" — nur publizierten Content |
+| `PRIVATE_CMS_STATIC_TOKEN` | `/api/claim`, `/api/ledger-*`, `/api/profile`, `/api/redeem` | Policy „Static Token API" — Writes auf custom Collections; kein Zugriff auf `directus_users` |
+| `DIRECTUS_WRITE_TOKEN` | `/api/auth/*` | Admin-Token für Auth-Flows |
+| `PUBLIC_API_BASE` | Client `apiUrl()` | Leer für Web/Vercel; `https://austrofit.at` für Capacitor-Build |
+| `PUBLIC_POSTHOG_TOKEN` | `$lib/utils/mixpanel.ts` | PostHog EU Cloud (`phc_...`) |
+| `PUBLIC_EMAIL_VERIFICATION` | `/registrierung` | Steuert ob Schritt 3 (E-Mail-Bestätigung) angezeigt wird |
+| `SCHRITTE_FLOW_ID` | `/api/steps/sync` | Optional — triggert Directus Flow statt direktem stepsService |
+
+**Policy-Gotcha**: `PRIVATE_CMS_STATIC_TOKEN` bekommt keinen automatischen Zugriff auf neue Collections. Bei jeder neuen Directus-Collection beide Policies aktualisieren: „Read Content API" (DIRECTUS_READ_TOKEN) und „Static Token API" (PRIVATE_CMS_STATIC_TOKEN).
 
 ### Deployment
 

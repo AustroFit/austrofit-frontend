@@ -1,0 +1,1130 @@
+# AustroFit Feature Registry
+# Maschinenlesbare Übersicht aller Features – implementiert, geplant, verworfen, TBD
+# Ablage: docs/features.yaml
+# Erstellt: 2026-05-16
+# Quellen: Directus-JSON-AustroFit/austrofit-business-plan.yaml,
+#          Directus-JSON-AustroFit/service-blueprint.html, CLAUDE.md (Ist-Stand Codebasis)
+
+meta:
+  titel: AustroFit Feature Registry
+  version: "1.1"
+  erstellt: "2026-05-16"
+  beschreibung: >
+    Feature-Liste für Entwicklung, Planung und regulatorische Checks.
+    Kombiniert Ist-Stand (Codebasis) mit Roadmap (Business Plan v1.3, Service Blueprint v1.1).
+  status_werte:
+    implemented: "Im Code vorhanden und produktiv aktiv"
+    in-progress: "In Entwicklung oder teilweise implementiert"
+    planned:     "Konkret in Roadmap eingeplant"
+    to-discuss:  "Idee oder Anforderung vorhanden, Umsetzung offen"
+    rejected:    "Bewusst verworfen – Begründung in notes"
+  phase_werte:
+    mvp:       "MVP / aktueller Stand"
+    phase-2:   "Phase 2 (nach erstem Launch, ~Jahr 1–3)"
+    phase-3+:  "Langfristig (Jahr 3+, B2G-Fokus)"
+
+categories:
+  gamification: "Punkte, Level, Streaks, Badges, Milestones, Challenges"
+  aktivitaet:   "Bewegungstracking via Health APIs"
+  bildung:      "Artikel, Quiz, Lernmodule"
+  belohnung:    "Marketplace, Partner, Gutscheine, Einlösung"
+  community:    "Leaderboard, Events, Referral, Social"
+  auth:         "Login, Registrierung, Profil, DSGVO"
+  sicherheit:   "Fraud Detection, Input-Validierung, Sicherheits-Hardening"
+  plattform:    "PWA, Capacitor, Service Worker, Push"
+  b2b:          "Partnerpakete, B2B-Dashboard, Abrechnung"
+  b2g:          "Kooperationen mit öffentlichen Gesundheitsakteuren"
+  analytics:    "Tracking, Events, Reporting"
+  praevention:  "Nachweis-basierte Präventionsmaßnahmen"
+
+features:
+
+  # ─────────────────────────────────────────────────────────────────
+  # GAMIFICATION
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: punkte-ledger
+    name: "Punkte-Ledger (append-only)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      Append-only Buchungssystem in points_ledger. Kontostand = SUM(points_delta).
+      Jede Buchung enthält source_type, source_ref, rule_version, occurred_at.
+    notes: >
+      source_ref ist Typ string → Directus lehnt _gte/_lte ab (400-Fehler).
+      Datumsbereiche immer via _in mit expliziter Liste.
+      Zwei simultane _in-Filter auf verschiedenen Feldern → leere Response.
+      occurred_at = Sync-Zeitpunkt (nicht Aktivitätsdatum) bei retroaktiven Syncs.
+    linked_files:
+      - src/lib/server/stepsService.ts
+      - src/lib/server/cardioService.ts
+      - src/lib/server/streak.ts
+      - src/routes/api/claim/+server.ts
+    related_features:
+      - level-system
+      - streak-schritte
+      - streak-cardio
+      - streak-quiz
+      - milestones
+
+  - id: level-system
+    name: "Level-System (20 Stufen)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      20 Level basierend auf earnedPoints (positive_only=true, SUM).
+      Einlösungen reduzieren das Level nicht. AustroFit-Branding alle 5 Level.
+      Bereich 0–480.000P. Berechnung client-seitig via getLevelInfo().
+    linked_files:
+      - src/lib/utils/level.ts
+      - src/routes/api/ledger-total/+server.ts
+    related_features:
+      - punkte-ledger
+
+  - id: streak-schritte
+    name: "Schritt-Streak (täglich, tiered)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      Tages-Streak-Bonus bei ≥7.000 Schritten.
+      Tier 1 (2–13d) +20P / Tier 2 (14–27d) +30P / Tier 3 (28–55d) +45P / Tier 4 (56+d) +60P.
+      source_type='streak_tag'.
+    linked_files:
+      - src/lib/server/streak.ts
+    related_features:
+      - streak-wochen-bonus
+      - milestones
+      - schritte-android
+
+  - id: streak-wochen-bonus
+    name: "Streak-Wochen-Bonus (Schritte, tiered)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      Feuert wenn (streak_days - 1) % 7 === 0.
+      Tier 1 +60P / Tier 2 +90P / Tier 3 +120P / Tier 4 +150P.
+      source_type='streak'. Dedup-Check vor Schreiben.
+    notes: >
+      Dedup-Check wurde Mai 2026 als Sicherheits-Fix ergänzt.
+      Verhindert Doppelbuchung bei parallelen API-Calls. Nicht rückgängig machen.
+    linked_files:
+      - src/lib/server/streak.ts
+    related_features:
+      - streak-schritte
+      - streak-wochen-bonus-dedup
+
+  - id: streak-cardio
+    name: "Cardio-Streak (wöchentlich, tiered)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      Bonus ab der zweiten aufeinanderfolgenden Woche mit vollem Cardio-Ziel.
+      W2–3 +100P / W4–7 +200P / W8–11 +300P / W12+ +400P.
+      source_type='streak', source_ref='cardio-streak-{weekKey}'.
+    linked_files:
+      - src/lib/server/cardioService.ts
+      - src/lib/server/streak.ts
+    related_features:
+      - cardio-android
+      - milestones
+
+  - id: streak-quiz
+    name: "Quiz-Streak (täglich + wöchentlich, tiered)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      Tages-Bonus ab Tag 2: T1(2–6d)+5P / T2(7–13d)+10P / T3(14–29d)+15P / T4(30+d)+20P.
+      source_type='streak_quiz'.
+      Wochen-Meilenstein: T1+30P / T2+50P / T3+75P / T4+100P.
+      source_type='streak'.
+    linked_files:
+      - src/lib/server/streak.ts
+      - src/routes/api/claim/+server.ts
+    related_features:
+      - quiz-authentifiziert
+      - milestones
+
+  - id: milestones
+    name: "Milestones (22 einmalige Boni)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      22 einmalige Boni für erste Achievements.
+      source_type='milestone', source_ref='milestone-{slug}'.
+      Kategorien: Schritte (7), Cardio (4), Quiz (7). Dedup via source_ref.
+    linked_files:
+      - src/lib/utils/milestones.ts
+      - src/lib/server/milestoneService.ts
+    related_features:
+      - streak-schritte
+      - streak-cardio
+      - streak-quiz
+
+  - id: badges
+    name: "Badges (113 Directus-Badges)"
+    status: implemented
+    category: gamification
+    phase: mvp
+    description: >
+      113 Badges in Directus Collection 'Badges'. Earned-Flag: total_steps >= step_threshold.
+      Typen: hauptstadt, bundesland, oesterreich, wanderweg, see, berg.
+      Bilder noch nicht hochgeladen → Emoji-Platzhalter.
+    notes: >
+      Lesezugriff nur via DIRECTUS_READ_TOKEN (nicht PRIVATE_CMS_STATIC_TOKEN).
+      Badge-Bilder sind Phase 2.
+    linked_files:
+      - src/routes/api/badges/+server.ts
+      - src/lib/utils/badges.ts
+    related_features:
+      - punkte-ledger
+
+  - id: challenges
+    name: "Challenges"
+    status: in-progress
+    category: gamification
+    phase: mvp
+    description: >
+      Directus Collection 'challenges' (id, titel, beschreibung, punkte_wert, aktiv_bis, status)
+      und API-Route /api/challenges vorhanden. Dashboard-Integration teilweise implementiert.
+    notes: >
+      Schema-Erweiterung Mai 2026 (Option B): Felder aktiv_von (DateTime), completion_type
+      (Dropdown: steps_total/steps_today/quiz_streak/cardio_week/manual), target_value (Integer)
+      in Directus angelegt. Dedup via points_ledger (source_type='challenge',
+      source_ref='challenge-{id}'). Completion-Logik und Claim-Button noch nicht implementiert.
+    linked_files:
+      - src/routes/api/challenges/+server.ts
+    related_features:
+      - punkte-ledger
+
+  - id: gewinnspiele
+    name: "Gewinnspiele / Lotteries"
+    status: planned
+    category: gamification
+    phase: phase-2
+    description: >
+      Regelmäßige Gewinnspiele für aktive Nutzer. Im Octalysis-Framework als
+      Engagement-Element (Core Drive 4) vorgesehen.
+    related_features:
+      - community-events
+
+  - id: schritt-formel-gleitend
+    name: "Gleitende Schritt-Skala 4001–6999"
+    status: planned
+    category: gamification
+    phase: phase-2
+    description: >
+      Aktuell MVP-Vereinfachung: alle Schritte 4000–6999 erhalten flat 10P.
+      Geplant: 10P + floor((schritte-4000)/500)*5P.
+      Formelquelle: Business Plan Anhang A1. Änderungen nie retroaktiv.
+    linked_files:
+      - src/lib/server/stepsService.ts
+    related_features:
+      - schritte-android
+      - punkte-ledger
+
+  - id: onboarding-booster
+    name: "Onboarding-Booster (1,5× Multiplikator)"
+    status: rejected
+    category: gamification
+    phase: mvp
+    description: "1,5× Punktemultiplikator für neue Nutzer. Bewusst entfernt."
+    notes: >
+      onboarding_booster_until existiert noch als Directus-Feld, wird nicht mehr
+      gesetzt oder gelesen. Kein source_type='onboarding' mehr.
+    related_features:
+      - punkte-ledger
+
+  # ─────────────────────────────────────────────────────────────────
+  # AKTIVITÄT
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: schritte-android
+    name: "Schritt-Tracking Android (Health Connect)"
+    status: implemented
+    category: aktivitaet
+    phase: mvp
+    description: >
+      Tagesschritte via @capgo/capacitor-health v8.2.17 (Health Connect).
+      Dedup via source_ref=YYYY-MM-DD. syncSteps() mit Concurrency-Guard (_syncing-Flag).
+      Retroaktiv: letzte 90 Tage.
+    notes: >
+      occurred_at = Sync-Zeitpunkt, nicht Aktivitätsdatum.
+      Monatsansicht filtert client-seitig via source_ref (kein occurred_at-Filter).
+      Concurrency-Guard (_syncing) nicht entfernen → verhindert Doppelbuchungen.
+    linked_files:
+      - src/lib/services/health.ts
+      - src/lib/services/stepSync.ts
+      - src/lib/server/stepsService.ts
+      - src/routes/api/steps/sync/+server.ts
+    related_features:
+      - streak-schritte
+      - background-sync
+      - steps-fraud-cap
+      - ios-healthkit
+
+  - id: cardio-android
+    name: "Cardio-Tracking Android (Health Connect)"
+    status: implemented
+    category: aktivitaet
+    phase: mvp
+    description: >
+      Workouts via @capgo/capacitor-health. Intensitätsmapping (moderat×1, intensiv×2).
+      Gruppenspezifische Wochenziele (adult/senior/pregnant: start=50/full=150min;
+      chronic: start=35/full=100min). Dedup via start_date (Option C: PATCH bei mehr Aktivität).
+      Retroaktiv: letzte 9 Tage. Ergebnisse in activity_logs Collection.
+    notes: >
+      Pregnant: intensive Workout-Typen (running, cycling) werden als moderat (1×) gewertet.
+      durationSeconds gecappt auf 4h in getEquivalentMinutes() (Security-Fix Mai 2026).
+      source_ref='cardio-YYYY-Wnn'. Cardio-History filtert via source_ref[_in] (ISO-Wochen).
+    linked_files:
+      - src/lib/services/health.ts
+      - src/lib/services/cardioSync.ts
+      - src/lib/server/cardioService.ts
+      - src/routes/api/cardio/sync/+server.ts
+    related_features:
+      - streak-cardio
+      - cardio-duration-cap
+      - cardio-input-limits
+      - ios-healthkit
+
+  - id: ios-healthkit
+    name: "iOS Tracking (HealthKit)"
+    status: planned
+    category: aktivitaet
+    phase: phase-2
+    description: >
+      Schritte und Workouts via Apple HealthKit. isNative() Guards im Code vorhanden.
+      iOS-App (TestFlight) noch nicht gebaut.
+    linked_files:
+      - src/lib/services/health.ts
+    related_features:
+      - schritte-android
+      - cardio-android
+      - ios-app
+
+  - id: cardio-typen-erweitert
+    name: "Erweiterte Cardio-Typen (Ski, Snowboard, Tanzen)"
+    status: planned
+    category: aktivitaet
+    phase: phase-2
+    description: >
+      Ski, Snowboard, Tanzen nicht im MVP – Plugin-Limitation (@capgo/capacitor-health
+      hat diese Typen nicht in HealthDataType typedef).
+    notes: "Für Phase 2 vorgesehen sobald Plugin-Support vorhanden."
+    related_features:
+      - cardio-android
+
+  - id: background-sync
+    name: "Background Sync (Schritte)"
+    status: implemented
+    category: aktivitaet
+    phase: mvp
+    description: >
+      Periodic Background Sync via Service Worker (Tag: 'austrofit-step-sync', täglich auf Android Chrome).
+      Setzt pending_sync-Flag in IndexedDB. Dashboard liest Flag in onMount und triggert syncSteps().
+    notes: >
+      Capacitor-Aufruf aus Service Worker nicht möglich → Flag-Pattern als Workaround.
+    linked_files:
+      - src/service-worker.ts
+      - src/lib/services/stepSync.ts
+    related_features:
+      - schritte-android
+      - pwa-service-worker
+
+  # ─────────────────────────────────────────────────────────────────
+  # BILDUNG
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: gesundheitswegweiser-artikel
+    name: "Gesundheitswegweiser (Artikel)"
+    status: implemented
+    category: bildung
+    phase: mvp
+    description: >
+      SEO-optimierte Artikel im Directus CMS (Collection: articles).
+      Erreichbar via /artikel/[slug] und /gesundheitswegweiser/[slug].
+      Primärer Akquisitionskanal: Nutzer liest Artikel, absolviert Quiz (unregistriert)
+      → Conversion-Trigger zur Registrierung.
+    linked_files:
+      - src/routes/artikel/[slug]/+page.svelte
+    related_features:
+      - quiz-anonym
+
+  - id: quiz-anonym
+    name: "Quiz (anonym, ohne Login)"
+    status: implemented
+    category: bildung
+    phase: mvp
+    description: >
+      Quiz absolvierbar ohne Registrierung. anonymous_id via localStorage.
+      Punkte werden simuliert/angezeigt aber nicht gebucht.
+      Claim-Flow nach Login verfügbar.
+    linked_files:
+      - src/lib/components/singlepage/Quiz.svelte
+      - src/routes/api/quiz-attempts/+server.ts
+    related_features:
+      - quiz-authentifiziert
+      - quiz-cooldown
+      - quiz-claim-flow
+
+  - id: quiz-authentifiziert
+    name: "Quiz (authentifiziert, mit Punktevergabe)"
+    status: implemented
+    category: bildung
+    phase: mvp
+    description: >
+      Punkte nach Login via /api/claim. eligible_points gecappt auf max. 200P.
+      max_score wird gegen Directus quiz_json.questions.length validiert (fail-closed).
+      250 Quizze im Pool.
+    notes: >
+      Sicherheits-Hardening Mai 2026: Allowlist-Payload, server-seitige passed-Ableitung,
+      quiz_json-Validierung. Details unter quiz-allowlist-payload.
+    linked_files:
+      - src/lib/components/singlepage/Quiz.svelte
+      - src/routes/api/quiz-attempts/+server.ts
+      - src/routes/api/claim/+server.ts
+    related_features:
+      - quiz-anonym
+      - quiz-cooldown
+      - quiz-claim-flow
+      - quiz-allowlist-payload
+
+  - id: quiz-claim-flow
+    name: "Quiz Claim-Flow (anonym → authentifiziert)"
+    status: implemented
+    category: bildung
+    phase: mvp
+    description: >
+      Nach Login werden ausstehende anonyme Quiz-Versuche dem User zugeordnet
+      und Punkte vergeben. PENDING_CLAIM_KEY in localStorage.
+      JWT kommt aus Authorization-Header (nicht Body).
+    notes: >
+      Token-Migration Mai 2026: Token aus Bearer-Header (war vorher: Request-Body).
+      Client setzt Authorization: Bearer <token>. Nicht rückgängig machen.
+    linked_files:
+      - src/routes/api/claim/+server.ts
+      - src/lib/components/singlepage/Quiz.svelte
+    related_features:
+      - quiz-anonym
+      - claim-bearer-token
+
+  - id: quiz-cooldown
+    name: "Quiz-Cooldown (30 Tage)"
+    status: implemented
+    category: bildung
+    phase: mvp
+    description: >
+      Pro User+Quiz 30-Tage-Cooldown (konfigurierbar in Directus cooldown_days-Feld).
+      Doppelt geprüft: bei /api/quiz-attempts (anonym) UND /api/claim (per User).
+    notes: >
+      Per-User-Cooldown bei /api/claim ist Security-Fix Mai 2026.
+      Verhindert Bypass durch Anlegen neuer anonymous_ids. Nicht rückgängig machen.
+    linked_files:
+      - src/routes/api/quiz-attempts/+server.ts
+      - src/routes/api/claim/+server.ts
+    related_features:
+      - quiz-anonym
+      - quiz-authentifiziert
+      - claim-cooldown-server
+
+  - id: refresh-quiz
+    name: "Refresh-Quiz (nach 90 Tagen erneut +40P)"
+    status: to-discuss
+    category: bildung
+    phase: phase-2
+    description: >
+      Im Business Plan (Anhang A1) vorgesehen: Nach 90 Tagen kann dasselbe Quiz erneut
+      absolviert werden und gibt wieder Punkte. Festigt Wissen und liefert denselben Reward.
+    notes: >
+      Noch nicht implementiert. Verhältnis zu aktuellem 30-Tage-Cooldown muss geklärt werden:
+      Ist der Cooldown ein Schutz vor Spam (→ bleibt) und der Refresh ein separater
+      Mechanismus nach längerer Zeit? Oder ersetzen sich beide?
+    related_features:
+      - quiz-cooldown
+
+  # ─────────────────────────────────────────────────────────────────
+  # BELOHNUNG
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: direktpartner-marketplace
+    name: "Direktpartner-Marketplace"
+    status: implemented
+    category: belohnung
+    phase: mvp
+    description: >
+      Marketplace für Direktpartner-Gutscheine unter /belohnung.
+      Tabs: Offen (AWIN-Platzhalter), Aktiv (eingelöste Gutscheine), Archiv.
+      Noch keine echten Partner-Verträge vorhanden.
+    notes: "Technisch vollständig. Geschäftlich: Keine echten Partner, kein B2B-Onboarding."
+    linked_files:
+      - src/routes/belohnung/+page.svelte
+      - src/routes/api/partner/+server.ts
+    related_features:
+      - direktpartner-redeem
+      - partner-filter
+      - awin-integration
+
+  - id: direktpartner-redeem
+    name: "Direktpartner-Einlösung (Redeem-Flow)"
+    status: implemented
+    category: belohnung
+    phase: mvp
+    description: >
+      /api/redeem erstellt reward_redemptions-Eintrag + negative Ledger-Buchung.
+      Dedup-Check vor Einlösung (409 bei bereits vorhandener active/used-Einlösung).
+      Aktive Gutscheine im Tab 'Aktiv' unter /belohnung.
+    notes: "Dedup-Check ist Security-Fix Mai 2026 – verhindert Double-Spend via parallele Requests."
+    linked_files:
+      - src/routes/api/redeem/+server.ts
+      - src/routes/api/gutscheine/+server.ts
+    related_features:
+      - direktpartner-marketplace
+      - redeem-dedup
+      - punkte-ledger
+
+  - id: partner-filter
+    name: "Partner-Filter (Kategorie, Region, ESG)"
+    status: implemented
+    category: belohnung
+    phase: mvp
+    description: >
+      Client-side Filter für Partnerangebote. 9 Kategorie-Slugs
+      (fitnessstudio, sportgeraete, sportbekleidung, privat-sport, wellness,
+      apotheke, nahrungsergaenzung, bio-lebensmittel, pflegeprodukte),
+      Region-Dropdown, ESG-Toggle. Filterung via $derived ohne Re-Fetch.
+    linked_files:
+      - src/routes/belohnung/+page.svelte
+    related_features:
+      - direktpartner-marketplace
+
+  - id: awin-integration
+    name: "AWIN/TradeDoubler Affiliate-Integration"
+    status: in-progress
+    category: belohnung
+    phase: mvp
+    description: >
+      AWIN Publisher-Account (ID: 1896704) und TradeDoubler-Account (Publisher 2466954)
+      aktiv. Gutscheincodes via CSV-Export vorhanden (Mai 2026):
+      14 AWIN-Codes (Plankpad, Sportstech AT, apotheke.at, 100percentpure, Wellness Point),
+      3 TradeDoubler-Rabatte ohne Code (Qathu AT, Papique AT, OneBioShop AT).
+      Directus rewards-Collection erweitert: reward_type (direktpartner|awin|tradedoubler),
+      affiliate_tracking_url (String). Punkte-Modell: 100P pro 1% Rabatt (z.B. 500P=5%,
+      2000P=20%), Festbeträge analog (500P=5€, 600P=6€ usw.).
+    notes: >
+      Nächste Schritte: Partner in Directus partner-Collection anlegen, dann rewards
+      aus den CSV-Daten importieren. Import noch nicht erfolgt (Stand Mai 2026).
+      TradeDoubler-API-Tokens in .env vorhanden (TRADEDOUBLER_PUBLISHER_TOKEN etc.),
+      aber noch keine Code-Integration für automatischen Datenabruf.
+    linked_files:
+      - docs/2026-05-16-awin-promotions.csv
+      - docs/2026-05-16-tradedoubler-vouchers.csv
+    related_features:
+      - direktpartner-marketplace
+      - direktpartner-redeem
+
+  # ─────────────────────────────────────────────────────────────────
+  # COMMUNITY
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: leaderboard
+    name: "Leaderboard / Bestenliste"
+    status: planned
+    category: community
+    phase: phase-2
+    description: "Rangliste aktiver Nutzer nach Punkten oder Aktivität. Service Blueprint Phase 2."
+    related_features:
+      - community-events
+      - social-sharing
+
+  - id: community-events
+    name: "Community Events"
+    status: planned
+    category: community
+    phase: phase-2
+    description: >
+      Regionale Events und Community-Challenges. Directus Collections für Events geplant.
+      Beitrag zu Gesundheitsziel Österreich Nr. 5 (sozialer Zusammenhalt).
+    related_features:
+      - leaderboard
+      - gewinnspiele
+
+  - id: invite-a-friend
+    name: "Invite-a-Friend / Referral-Programm"
+    status: planned
+    category: community
+    phase: phase-2
+    description: >
+      Einladung von Freunden gegen Bonus-Punkte (geplant: +50P pro erfolgreich eingeladene Person).
+      Viral-K-Factor Ziel: ≥ 0,2.
+    related_features:
+      - punkte-ledger
+
+  - id: social-sharing
+    name: "Social Sharing"
+    status: planned
+    category: community
+    phase: phase-2
+    description: "Teilen von Achievements (Badges, Level-Ups, Streaks) auf Social Media."
+    related_features:
+      - badges
+      - leaderboard
+
+  # ─────────────────────────────────────────────────────────────────
+  # AUTH & USER MANAGEMENT
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: email-password-auth
+    name: "E-Mail + Passwort Login/Registrierung"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      3-stufige Registrierung: Konto → Gruppenauswahl → E-Mail-Bestätigung
+      (Schritt 3 steuerbar via PUBLIC_EMAIL_VERIFICATION).
+      Login via /login → Redirect zu /dashboard.
+      JWT in localStorage (austrofit_access_token). Kein httpOnly Cookie.
+    linked_files:
+      - src/routes/registrierung/+page.svelte
+      - src/routes/login/+page.svelte
+      - src/routes/api/auth/register/+server.ts
+      - src/routes/api/auth/login/+server.ts
+      - src/lib/utils/auth.ts
+    related_features:
+      - magic-link
+      - init-onboarding
+      - gruppenauswahl
+
+  - id: magic-link
+    name: "Magic Link Auth"
+    status: rejected
+    category: auth
+    phase: mvp
+    description: >
+      /api/auth/magic-link (POST) und /auth/callback sind im Code vorhanden,
+      aber nicht in Betrieb. Bewusst abgelehnt.
+    notes: >
+      Erfordert funktionierenden SMTP-Kanal (Resend konfiguriert, aber Zugang nicht vorhanden).
+      Directus Magic Link auf Cloud-Hosted-Instanz in der Praxis nicht zuverlässig nutzbar.
+      Code-Routen bleiben als Referenz, sind aber inaktiv.
+      Alternative: Google OAuth (→ google-oauth).
+    linked_files:
+      - src/routes/api/auth/magic-link/+server.ts
+      - src/routes/auth/callback/+page.svelte
+    related_features:
+      - email-password-auth
+      - google-oauth
+
+  - id: gruppenauswahl
+    name: "Aktivitätsgruppen-Auswahl (adult/senior/pregnant/chronic)"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      Vier Nutzergruppen bestimmen das Cardio-Wochenziel (WHO/FGOE-Empfehlungen).
+      Wird bei Registrierung (Schritt 2) gesetzt und via init-onboarding bei Login idempotent gesetzt.
+    linked_files:
+      - src/routes/api/auth/init-onboarding/+server.ts
+    related_features:
+      - cardio-android
+      - email-password-auth
+
+  - id: profil-einstellungen
+    name: "Profil & Einstellungen"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      Persönliche Daten, Health-Verbindungsstatus, Benachrichtigungseinstellungen, Datenschutz.
+      Entwickler-Tools (devNativeMode, testMode, cardioTestMode) nur im Browser sichtbar
+      (Toggle via localStorage-Flags).
+    linked_files:
+      - src/routes/profil/+page.svelte
+    related_features:
+      - dsgvo-loeschung
+
+  - id: dsgvo-loeschung
+    name: "DSGVO Konto-Löschung"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: "Account-Löschung mit Kaskaden-Löschung aller Nutzerdaten via /api/profile/delete."
+    linked_files:
+      - src/routes/api/profile/delete/+server.ts
+    related_features:
+      - profil-einstellungen
+
+  - id: init-onboarding
+    name: "Init-Onboarding (nach Login)"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      POST /api/auth/init-onboarding setzt activity_group auf user_profiles.
+      Idempotent: nur wenn noch nicht gesetzt. Wird nach erfolgreichem Login aufgerufen.
+      Liest gespeichertes activity_group aus localStorage (aus Registrierung).
+    linked_files:
+      - src/routes/api/auth/init-onboarding/+server.ts
+      - src/routes/login/+page.svelte
+    related_features:
+      - gruppenauswahl
+
+  - id: google-oauth
+    name: "Google OAuth (Login / Registrierung)"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      Google OAuth 2.0 als Alternative zu E-Mail + Passwort.
+      Benutzerdefinierter SvelteKit-Flow (Option B) – unabhängig von Directus-SSO-Konfiguration.
+      GET /api/auth/google → CSRF-State-Cookie → Redirect zu Google.
+      GET /api/auth/google/callback → Code-Exchange → User finden/anlegen → Directus-JWT → localStorage.
+    notes: >
+      Implementiert Mai 2026. Google Cloud Projekt 'austrofit-production'.
+      Neue Redirect URIs in Google Cloud Console eintragen:
+        https://dev.austrofit.at/api/auth/google/callback (Vercel Preview)
+        https://austrofit.at/api/auth/google/callback (Vercel Production)
+      Env-Vars GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET in .env und Vercel setzen.
+      Sicherheitshinweis: Temporäres Passwort wird nach Directus-Login sofort rotiert
+      (zweifache Rotation: vor und nach Login). JWT-Refresh funktioniert normal.
+    linked_files:
+      - src/routes/api/auth/google/+server.ts
+      - src/routes/api/auth/google/callback/+server.ts
+      - src/routes/login/+page.svelte
+    related_features:
+      - email-password-auth
+      - magic-link
+
+  # ─────────────────────────────────────────────────────────────────
+  # SICHERHEIT
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: steps-fraud-cap
+    name: "Schritt-Cap (max. 20.000/Tag)"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      Tagesschritte werden auf max. 20.000 gekappt bevor Punkte berechnet werden.
+      Liegt in stepsService.ts (server-seitig), nicht im Endpoint.
+    linked_files:
+      - src/lib/server/stepsService.ts
+    related_features:
+      - schritte-android
+      - ml-anomalie-scoring
+
+  - id: cardio-duration-cap
+    name: "Cardio-Dauer-Cap (max. 4 Stunden)"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      getEquivalentMinutes() cappt durationSeconds auf max. 14.400s (4h)
+      bevor Äquivalenz-Minuten berechnet werden.
+      Cap liegt in der Funktion selbst, nicht nur im Endpoint. Security-Fix Mai 2026.
+    notes: "Cap muss in der Funktion bleiben – nicht nur im Endpoint validieren."
+    linked_files:
+      - src/lib/server/cardioService.ts
+    related_features:
+      - cardio-android
+      - cardio-input-limits
+
+  - id: cardio-input-limits
+    name: "Cardio Input-Validierung (Endpoint)"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      Max. 50 Workouts pro Request.
+      date muss /^\d{4}-\d{2}-\d{2}$/ matchen und im Fenster
+      ≤90 Tage Vergangenheit / ≤2 Tage Zukunft liegen.
+      startDate muss ein parsbares ISO-8601-Datum sein.
+      Ungültige Einträge werden herausgefiltert (kein 400 für den ganzen Batch).
+      Security-Fix Mai 2026.
+    linked_files:
+      - src/routes/api/cardio/sync/+server.ts
+    related_features:
+      - cardio-android
+      - cardio-duration-cap
+
+  - id: quiz-allowlist-payload
+    name: "Quiz Allowlist-Payload + max_score-Validierung"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      Client-Body wird NICHT direkt an Directus weitergeleitet.
+      safePayload mit explizitem Allowlist wird gebaut.
+      passed = score >= max_score (server-seitig abgeleitet, nie vom Client).
+      eligible_points gecappt via Math.min(200, Number(...)).
+      completed_at kommt vom Server.
+      quiz_json.questions.length wird gegen max_score geprüft.
+      Fail-closed: Wenn Directus nicht erreichbar ist, schlägt die Anfrage fehl.
+      Security-Fix Mai 2026.
+    notes: "Verhindert score:1, max_score:1-Bypass. Fail-closed ist Pflicht."
+    linked_files:
+      - src/routes/api/quiz-attempts/+server.ts
+    related_features:
+      - quiz-anonym
+      - quiz-authentifiziert
+
+  - id: claim-bearer-token
+    name: "Claim: JWT aus Authorization-Header"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      Token kommt aus extractBearerToken(request) – nicht aus dem Request-Body.
+      Client setzt Authorization: Bearer <token>. Security-Fix Mai 2026.
+    notes: >
+      access_token im Request-Body existiert nicht mehr. Nicht rückgängig machen.
+      Als einziger Endpoint hatte /api/claim den JWT im Body – das ist behoben.
+    linked_files:
+      - src/routes/api/claim/+server.ts
+      - src/lib/components/singlepage/Quiz.svelte
+    related_features:
+      - quiz-claim-flow
+
+  - id: claim-cooldown-server
+    name: "Claim: Per-User-Cooldown (Bypass-Schutz)"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      30-Tage-Cooldown wird bei /api/claim pro User+Quiz server-seitig durchgesetzt
+      (zusätzlich zum anonymen Check in /api/quiz-attempts).
+      Verhindert Bypass durch Anlegen beliebig vieler neuer anonymous_ids.
+      Security-Fix Mai 2026.
+    linked_files:
+      - src/routes/api/claim/+server.ts
+    related_features:
+      - quiz-cooldown
+
+  - id: streak-wochen-bonus-dedup
+    name: "Streak-Wochen-Bonus Dedup"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      Dedup-Check vor Schreiben des wöchentlichen Streak-Bonus.
+      Verhindert Doppelbuchung bei parallelen API-Calls
+      (analog zum Quiz-Wochen-Bonus-Dedup). Security-Fix Mai 2026.
+    linked_files:
+      - src/lib/server/streak.ts
+    related_features:
+      - streak-wochen-bonus
+
+  - id: redeem-dedup
+    name: "Redeem: Dedup vor Einlösung"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      Vor dem reward_redemptions-Eintrag wird geprüft ob bereits eine active/used-Einlösung
+      für (user, reward) existiert. 409 bei Fund.
+      Verhindert Double-Spend durch parallele Requests. Security-Fix Mai 2026.
+    linked_files:
+      - src/routes/api/redeem/+server.ts
+    related_features:
+      - direktpartner-redeem
+
+  - id: device-id-check
+    name: "Device-ID-Check"
+    status: planned
+    category: sicherheit
+    phase: phase-2
+    description: "Geplant in Business Plan Fraud Detection Phase 1. Noch nicht implementiert."
+    related_features:
+      - gps-plausibilitaet
+      - ml-anomalie-scoring
+
+  - id: gps-plausibilitaet
+    name: "GPS-Plausibilitätsprüfung"
+    status: planned
+    category: sicherheit
+    phase: phase-2
+    description: "Geplant in Business Plan Fraud Detection Phase 1. Noch nicht implementiert."
+    related_features:
+      - device-id-check
+      - steps-fraud-cap
+
+  - id: ml-anomalie-scoring
+    name: "ML-Anomalie-Scoring (Isolation Forest)"
+    status: planned
+    category: sicherheit
+    phase: phase-2
+    description: >
+      Isolation-Forest auf Einlösemustern, Schwellenwert 0,85.
+      Business Plan Fraud Detection Phase 2.
+    related_features:
+      - device-id-check
+      - steps-fraud-cap
+
+  # ─────────────────────────────────────────────────────────────────
+  # PLATTFORM
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: pwa-service-worker
+    name: "PWA + Service Worker (App Shell Caching)"
+    status: implemented
+    category: plattform
+    phase: mvp
+    description: >
+      App Shell Caching (Cache First) für JS/CSS/HTML.
+      Cache-Name enthält SvelteKit version → automatische Cache-Invalidierung bei Deploy.
+      API-Calls (/api/*) immer Network Only.
+    linked_files:
+      - src/service-worker.ts
+    related_features:
+      - background-sync
+      - capacitor-android-build
+
+  - id: capacitor-android-build
+    name: "Capacitor Android Build"
+    status: implemented
+    category: plattform
+    phase: mvp
+    description: >
+      Zwei Modi via capacitor.config.ts:
+      Local Build Mode (server.url auskommentiert): adapter-static SPA in APK eingebettet,
+      sofortige Navigation, API → https://austrofit.at.
+      Live Server Mode (server.url aktiv): App lädt vom Netzwerk, für Dev-Iteration.
+      Production-Build: npm run cap:build.
+    notes: >
+      Windows-Gotcha: npm run cap:build:dev schlägt fehl (inline env vars in PowerShell).
+      Workaround: drei separate Befehle ausführen.
+    linked_files:
+      - capacitor.config.ts
+      - svelte.config.js
+    related_features:
+      - ios-app
+      - cors-capacitor
+      - pwa-service-worker
+
+  - id: google-play-upload
+    name: "Google Play Store Publikation"
+    status: in-progress
+    category: plattform
+    phase: mvp
+    description: "Android-Projekt unter android/ vorhanden, Build-Prozess vorbereitet. Upload in Google Play Console ausstehend."
+    related_features:
+      - capacitor-android-build
+
+  - id: ios-app
+    name: "iOS App (TestFlight)"
+    status: planned
+    category: plattform
+    phase: phase-2
+    description: >
+      Capacitor iOS-Build. TestFlight noch nicht aufgesetzt.
+      Abhängig von iOS HealthKit-Integration.
+    related_features:
+      - ios-healthkit
+      - capacitor-android-build
+
+  - id: push-notifications
+    name: "Push Notifications"
+    status: planned
+    category: plattform
+    phase: phase-2
+    description: >
+      Web Push via VAPID für Streak-Reminder, Challenge-Einladungen, Community-Events.
+      Service Blueprint: Phase 2.
+    related_features:
+      - background-sync
+      - community-events
+
+  - id: cors-capacitor
+    name: "CORS + OPTIONS-Handling (Capacitor)"
+    status: implemented
+    category: plattform
+    phase: mvp
+    description: >
+      vercel.json setzt CORS-Header für /api/* (Access-Control-Allow-Origin: https://localhost –
+      Capacitor 8 Android WebView-Origin).
+      hooks.server.ts fängt OPTIONS-Preflight global ab → 204.
+      Ohne hooks.server.ts schlagen POST/PATCH/DELETE mit 405 fehl.
+    linked_files:
+      - src/hooks.server.ts
+      - vercel.json
+    related_features:
+      - capacitor-android-build
+
+  # ─────────────────────────────────────────────────────────────────
+  # B2B
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: partner-dashboard-b2b
+    name: "B2B Partner Self-Service Dashboard"
+    status: planned
+    category: b2b
+    phase: phase-2
+    description: >
+      Self-Service für Partner: Angebots-Upload (CSV/JSON), Einlösungsstatistiken, KPI-Dashboard.
+      Nutzer-seitige Marketplace-Seite ist fertig; B2B-Seite fehlt vollständig.
+    related_features:
+      - direktpartner-marketplace
+      - partner-onboarding-prozess
+
+  - id: partner-onboarding-prozess
+    name: "Partner-Onboarding-Prozess (5 Schritte)"
+    status: planned
+    category: b2b
+    phase: phase-2
+    description: >
+      Geplanter 5-Schritt-Prozess: Lead-Gen via Landing-Page → Self-Service-Registrierung (AGB) →
+      Angebots-Upload (CSV/JSON-Template) → API-Key + Test-Voucher → Go-Live.
+      Noch kein Prozess, keine Verträge, kein B2B-Dashboard.
+    related_features:
+      - partner-dashboard-b2b
+      - kyc-light
+
+  - id: partner-pakete
+    name: "Partnerpakete (Basic/Plus/Premium/Nachhaltigkeit)"
+    status: planned
+    category: b2b
+    phase: phase-2
+    description: >
+      Basic (0€/Monat), Plus (19€), Premium (39€), Nachhaltigkeit (29€, ESG-Zertifikat erforderlich).
+      Provision: Pay-per-Redemption (4–6% staffelnd).
+      Listungsgebühr: 0,15–0,25€ pro Angebot/Quartal (KMU kostenlos).
+    related_features:
+      - stripe-abrechnung
+      - partner-dashboard-b2b
+
+  - id: kyc-light
+    name: "KYC-Light (Firmenbuch + ESG-Selbstaudit)"
+    status: planned
+    category: b2b
+    phase: phase-2
+    description: >
+      Partner-Whitelist-Prüfung: Firmenbuch-Verifikation + ESG-Selbstaudit.
+      Dreistufige Warn-/Sperr-Logik für auffällige Partner.
+    related_features:
+      - partner-onboarding-prozess
+
+  - id: stripe-abrechnung
+    name: "Stripe + lexoffice Abrechnung"
+    status: planned
+    category: b2b
+    phase: phase-2
+    description: >
+      Stripe für Partner-Paket-Buchungen (monatlich oder quartalsweise).
+      lexoffice API für automatisierte Rechnungsstellung.
+      Phase 1 (MVP): nur AWIN-Provisionen, kein direktes Payment.
+    related_features:
+      - partner-pakete
+
+  # ─────────────────────────────────────────────────────────────────
+  # B2G
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: krankenkassen-integration
+    name: "Krankenkassen-Integration (ÖGK/SVS)"
+    status: to-discuss
+    category: b2g
+    phase: phase-3+
+    description: >
+      Integration in Bonusmodelle von ÖGK (7,6 Mio. Versicherte) oder SVS.
+      Potenzial: Gemeinden mit Präventionsprogrammen.
+      Ziel: Ab Jahr 3 erste Pilotgespräche.
+    notes: "TBD. Abhängig von regulatorischen Rahmenbedingungen und politischen Entscheidungsprozessen."
+    related_features:
+      - elga-schnittstelle
+      - impact-analytics-api
+
+  - id: elga-schnittstelle
+    name: "ELGA-Schnittstelle"
+    status: to-discuss
+    category: b2g
+    phase: phase-3+
+    description: >
+      Anbindung an ELGA (Elektronische Gesundheitsakte Österreich) für verifizierte
+      Präventionsnachweise (z.B. Impfungen, Vorsorgeuntersuchungen).
+    notes: "TBD. Regulatorisch komplex. Voraussetzung für skalierbare B2G-Kooperationen."
+    related_features:
+      - krankenkassen-integration
+      - praevention-schnittstelle
+
+  - id: impact-analytics-api
+    name: "Impact Analytics API (B2G)"
+    status: planned
+    category: b2g
+    phase: phase-3+
+    description: >
+      DSGVO-konforme Impact-Analytics-API für öffentliche Gesundheitsakteure (differential privacy).
+      Ermöglicht Wirkungsmessung ohne personenbezogene Datenweitergabe.
+      Beitrag zu Gesundheitszielen Österreich (Ziel 1, 2, 3, 5, 6, 8, 9).
+    related_features:
+      - krankenkassen-integration
+
+  - id: public-health-programs
+    name: "Integration öffentlicher Gesundheitsprogramme"
+    status: to-discuss
+    category: b2g
+    phase: phase-3+
+    description: >
+      Anbindung an bestehende Initiativen: 'Bewegt im Park', 'Jackpot.fit',
+      Sport-Dachverbände (ASKÖ, ASVÖ, SPORTUNION). Pilotprojekte zur Impact-Messung.
+      Interesse: Future Health Lab bereits bekundet.
+    notes: "TBD. Kontakte zu Future Health Lab vorhanden."
+    related_features:
+      - krankenkassen-integration
+
+  # ─────────────────────────────────────────────────────────────────
+  # ANALYTICS
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: posthog-core-events
+    name: "PostHog Core Events (7 Events)"
+    status: implemented
+    category: analytics
+    phase: mvp
+    description: >
+      PostHog EU Cloud (eu.i.posthog.com, DSGVO-konform, Frankfurt).
+      7 Core-Events: user_registered, user_logged_in, dashboard_viewed,
+      health_permission_result, quiz_completed, steps_synced, voucher_redeemed.
+      initAnalytics() einmalig in +layout.svelte onMount.
+      identifyUser() nach Login/Register.
+    notes: "Dateiname mixpanel.ts (historisch) – nutzt intern PostHog."
+    linked_files:
+      - src/lib/utils/mixpanel.ts
+    related_features:
+      - utm-tracking
+
+  - id: utm-tracking
+    name: "UTM-Tracking (Kampagnen)"
+    status: planned
+    category: analytics
+    phase: phase-2
+    description: >
+      UTM-Parameter in allen Kampagnen-Links für Attribution.
+      Ziel ROAS ≥ 3 (Umsatz/Marketingkosten). Integration mit PostHog.
+    related_features:
+      - posthog-core-events
+
+  # ─────────────────────────────────────────────────────────────────
+  # PRÄVENTION
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: praevention-schnittstelle
+    name: "Schnittstelle zu offiziellen Präventions-Apps"
+    status: to-discuss
+    category: praevention
+    phase: phase-3+
+    description: >
+      Verifizierte Präventionsnachweise (Impfung, Vorsorgeuntersuchung) via Schnittstelle
+      zu offiziellen Apps/Systemen (z.B. ELGA, e-Impfpass) – kein manueller Upload.
+      Punktevergabe bei verifiziertem Nachweis.
+    notes: >
+      Kein Nachweis-Upload geplant. Schnittstelle zu offiziellen Systemen bevorzugt.
+      Regulatorischer Rahmen und technische Machbarkeit noch unklar. TBD.
+    related_features:
+      - elga-schnittstelle
+      - krankenkassen-integration
