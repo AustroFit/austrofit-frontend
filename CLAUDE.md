@@ -25,8 +25,23 @@ No test suite is configured in this project.
 ## Project Documentation
 
 - `docs/features.yaml` — Maschinenlesbare Feature-Registry (54 Features, 12 Kategorien). Primäre Referenz für Roadmap, Feature-Status (implemented/in-progress/planned/to-discuss/rejected) und regulatorische Checks. Bei neuen Features oder Statusänderungen hier aktualisieren.
+- `docs/compliance.yaml` — Regulierungs-Registry (12 Regularien, Mai 2026). Enthält Anwendbarkeit, Anforderungen mit Status, Nachweis-Typ und priorisierte `open_actions`. Bei neuen Features auf regulatorische Auswirkungen prüfen und Status hier pflegen.
 - `Directus-JSON-AustroFit/austrofit-business-plan.yaml` — Business Plan v1.3 (Markt, Finanzen, Gamification-Formeln)
 - `Directus-JSON-AustroFit/service-blueprint.html` — Service Blueprint B2C v1.1 (User Journey, Phasen)
+
+## Compliance
+
+Regulatorische Übersicht in `docs/compliance.yaml`. Anwendbare Regularien: DSGVO/DSG, ePrivacy/TKG 2021, MDR (Disclaimer-Pflicht), ECG/KSchG, UWG, DSA, EU AI Act (ab 08/2026). Nicht anwendbar: BFSG (Kleinstunternehmen), GSpG (keine kaufbaren Punkte), ZaDiG (keine Bargeld-Einlösung), NIS2 (Schwellenwert nicht erreicht).
+
+**Offene Pflichten (erfordern Rechtsberatung — kein Code):**
+- DPIA (Datenschutz-Folgenabschätzung) für Gesundheitsdaten (Art. 35 DSGVO) — vor Go-Live
+- AGB erstellen (Punkte-Regeln, Nutzungsbedingungen, Haftung)
+- Art. 9-Consent im Onboarding rechtlich absichern
+
+**Consent-Banner** (`src/lib/components/dashboard/ConsentBanner.svelte`):
+- Analytics (PostHog) wird erst nach Einwilligung initialisiert (localStorage `austrofit_analytics_consent`)
+- Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) — NICHT berechtigtes Interesse
+- `identifyUser()` nach Login verknüpft PostHog-Session mit Nutzer-ID (pseudonymisiert)
 
 ## Architecture Overview
 
@@ -154,7 +169,7 @@ Verfügbare Tools: `list_collections`, `get_fields`, `get_relations`, `read_item
 
 - **`/api/redeem` — Dedup vor Einlösung**: Vor dem Schreiben des `reward_redemptions`-Eintrags wird geprüft ob bereits eine `active`/`used` Einlösung für `(user, reward)` existiert (409 bei Fund). Verhindert Double-Spend durch parallele Requests.
 
-**`PRIVATE_CMS_STATIC_TOKEN` cannot access `directus_users`** — This token's policy covers only custom collections (`points_ledger`, `user_profiles`, `Badges`, etc.), not Directus system collections. Calling `/users/me` or `/users/{id}` with this token returns an error. To read user data (first_name, email, etc.), always use the user's own JWT. Use `/users/me` **without** a `?fields=` parameter — field selection can cause Directus to silently omit fields that the user's role technically has access to.
+**`PRIVATE_CMS_STATIC_TOKEN` (and `DIRECTUS_WRITE_TOKEN`) cannot access `directus_users`** — Both tokens share the same value in `.env` and belong to a limited policy that only covers custom collections (`points_ledger`, `user_profiles`, `Badges`, etc.). Calling `/users/me` or `/users/{id}` with either token returns empty data or an error — no 403, just silent failure. To read user data (first_name, email, etc.), always use the user's own JWT. Use `/users/me` **without** a `?fields=` parameter — field selection can cause Directus to silently omit fields that the user's role technically has access to. For admin operations on `directus_users` (Google OAuth flow), use `DIRECTUS_ADMIN_TOKEN` — a static token generated on the Administrator user in Directus.
 
 **`user_profiles.totalSteps` is camelCase** — Unlike all other Directus fields (snake_case), this field is named `totalSteps` (camelCase). Using `total_steps` in a `?fields=` query silently returns no data (same failure mode as an invalid field name). Always write `totalSteps` when querying or patching this field.
 
@@ -172,7 +187,8 @@ npx cap sync android
 | `PUBLIC_CMSURL` | Alle Server-Routes | Directus Base-URL |
 | `DIRECTUS_READ_TOKEN` | `/api/badges`, `/api/partner`, `/api/quizzes` | Policy „Read Content API" — nur publizierten Content |
 | `PRIVATE_CMS_STATIC_TOKEN` | `/api/claim`, `/api/ledger-*`, `/api/profile`, `/api/redeem` | Policy „Static Token API" — Writes auf custom Collections; kein Zugriff auf `directus_users` |
-| `DIRECTUS_WRITE_TOKEN` | `/api/auth/*` | Admin-Token für Auth-Flows |
+| `DIRECTUS_WRITE_TOKEN` | `/api/auth/*` | Achtung: hat in `.env` denselben Wert wie `PRIVATE_CMS_STATIC_TOKEN` → kein Zugriff auf `directus_users`. Nur noch als Legacy-Bezeichnung vorhanden. |
+| `DIRECTUS_ADMIN_TOKEN` | `/api/auth/google/callback` | Echter Admin-Static-Token (Administrator-User in Directus) — darf `directus_users` lesen und schreiben. Nur für Google OAuth Callback. |
 | `PUBLIC_API_BASE` | Client `apiUrl()` | Leer für Web/Vercel; `https://austrofit.at` für Capacitor-Build |
 | `PUBLIC_POSTHOG_TOKEN` | `$lib/utils/mixpanel.ts` | PostHog EU Cloud (`phc_...`) |
 | `PUBLIC_EMAIL_VERIFICATION` | `/registrierung` | Steuert ob Schritt 3 (E-Mail-Bestätigung) angezeigt wird |

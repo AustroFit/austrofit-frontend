@@ -6,7 +6,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { PUBLIC_CMSURL } from '$env/static/public';
-import { DIRECTUS_WRITE_TOKEN } from '$env/static/private';
 import crypto from 'crypto';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -75,7 +74,7 @@ export async function GET({ url, cookies, fetch }: RequestEvent) {
 
   const adminHeaders = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${DIRECTUS_WRITE_TOKEN}`
+    Authorization: `Bearer ${env.DIRECTUS_ADMIN_TOKEN ?? ''}`
   };
 
   // 3) Prüfen ob Directus-User mit dieser E-Mail bereits existiert
@@ -129,12 +128,16 @@ export async function GET({ url, cookies, fetch }: RequestEvent) {
       });
     }
   } else {
-    // 4b) Existierender User: Passwort rotieren damit Login möglich wird
-    await fetch(`${PUBLIC_CMSURL}/users/${userId}`, {
+    // 4b) Existierender User: Passwort rotieren + aktivieren
+    const patchRes = await fetch(`${PUBLIC_CMSURL}/users/${userId}`, {
       method: 'PATCH',
       headers: adminHeaders,
-      body: JSON.stringify({ password: tempPw })
+      body: JSON.stringify({ password: tempPw, status: 'active' })
     });
+    if (!patchRes.ok) {
+      console.error('[Google OAuth] Passwort-Rotation fehlgeschlagen:', await patchRes.text());
+      return failRedirect('directus_login');
+    }
   }
 
   if (!userId) return failRedirect('no_user_id');
