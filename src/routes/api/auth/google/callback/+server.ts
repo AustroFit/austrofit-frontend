@@ -5,7 +5,7 @@
 // liefert eine HTML-Seite zurück, die das Token in localStorage speichert.
 import type { RequestEvent } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { PUBLIC_APP_URL, PUBLIC_CMSURL } from '$env/static/public';
+import { PUBLIC_CMSURL } from '$env/static/public';
 import { DIRECTUS_WRITE_TOKEN } from '$env/static/private';
 import crypto from 'crypto';
 
@@ -43,7 +43,7 @@ export async function GET({ url, cookies, fetch }: RequestEvent) {
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: `${PUBLIC_APP_URL}/api/auth/google/callback`,
+      redirect_uri: `${url.origin}/api/auth/google/callback`,
       grant_type: 'authorization_code'
     }).toString()
   });
