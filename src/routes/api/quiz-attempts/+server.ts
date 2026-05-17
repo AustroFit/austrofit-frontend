@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
+import { qs } from '$lib/utils/qs';
 
 const MAX_ELIGIBLE_POINTS = 200;
 
@@ -20,53 +21,96 @@ export async function POST({ request }) {
   const quizId = payload.quiz ?? null;
   const anonymousId = payload.anonymous_id ?? null;
 
-  // Cap eligible_points for security – client must not be trusted for point values
-  if (typeof payload.eligible_points === 'number') {
-    payload.eligible_points = Math.max(0, Math.min(MAX_ELIGIBLE_POINTS, payload.eligible_points));
+  // Build safe payload from explicit allowlist – never trust client for scores or passed flag
+  const safeScore = typeof payload.score === 'number' ? payload.score : null;
+  const safeMaxScore = typeof payload.max_score === 'number' ? payload.max_score : null;
+  const safeEligiblePoints = Math.max(
+    0,
+    Math.min(MAX_ELIGIBLE_POINTS, Number(payload.eligible_points) || 0)
+  );
+
+  let safePassed = false;
+  let cooldownDays = 0;
+
+  if (quizId) {
+    // Fetch quiz: authoritative question count + cooldown_days (blocking – reject on failure)
+    const quizRes = await fetch(
+      `${PUBLIC_CMSURL}/items/quizzes/${quizId}?fields=id,cooldown_days,quiz_json`,
+      { headers: adminHeaders }
+    );
+
+    if (!quizRes.ok) {
+      return json({ error: 'quiz not found' }, { status: 400 });
+    }
+
+    const quizData = (await quizRes.json())?.data;
+    cooldownDays = quizData?.cooldown_days ?? 0;
+
+    // Validate max_score against authoritative question count (quiz_json may be string or object)
+    const rawQuizJson = quizData?.quiz_json;
+    let parsedQuizJson: any = rawQuizJson;
+    if (typeof rawQuizJson === 'string') {
+      try {
+        parsedQuizJson = JSON.parse(rawQuizJson);
+      } catch {
+        parsedQuizJson = null;
+      }
+    }
+    const authoritativeQuestionCount = Array.isArray(parsedQuizJson?.questions)
+      ? parsedQuizJson.questions.length
+      : null;
+
+    if (authoritativeQuestionCount !== null) {
+      if (safeMaxScore !== authoritativeQuestionCount) {
+        return json({ error: 'invalid submission' }, { status: 400 });
+      }
+      if (safeScore !== null && safeScore > authoritativeQuestionCount) {
+        return json({ error: 'invalid submission' }, { status: 400 });
+      }
+    }
+
   }
 
-  // Server-side cooldown check: if quiz ID + anonymous_id provided,
-  // check whether a completed attempt for this quiz still exists within cooldown_days
-  if (quizId && anonymousId) {
+  safePassed =
+    safeScore !== null && safeMaxScore !== null && safeMaxScore > 0
+      ? safeScore >= safeMaxScore
+      : false;
+
+  const safePayload = {
+    anonymous_id: anonymousId,
+    quiz: quizId,
+    score: safeScore,
+    max_score: safeMaxScore,
+    passed: safePassed,
+    eligible_points: safeEligiblePoints,
+    completed_at: new Date().toISOString()
+  };
+
+  // Server-side cooldown check (non-blocking: failure still allows attempt creation)
+  if (quizId && anonymousId && cooldownDays > 0) {
+    const cooldownDate = new Date();
+    cooldownDate.setDate(cooldownDate.getDate() - cooldownDays);
+
     try {
-      const quizRes = await fetch(
-        `${PUBLIC_CMSURL}/items/quizzes/${quizId}?fields=id,cooldown_days`,
+      const dupRes = await fetch(
+        `${PUBLIC_CMSURL}/items/quiz_attempts?${qs({
+          'filter[anonymous_id][_eq]': anonymousId,
+          'filter[quiz][_eq]': String(quizId),
+          'filter[completed_at][_nnull]': 'true',
+          'filter[completed_at][_gte]': cooldownDate.toISOString(),
+          fields: 'id',
+          limit: '1'
+        })}`,
         { headers: adminHeaders }
       );
 
-      if (quizRes.ok) {
-        const quizJson = await quizRes.json();
-        const cooldownDays: number = quizJson?.data?.cooldown_days ?? 0;
-
-        if (cooldownDays > 0) {
-          const cooldownDate = new Date();
-          cooldownDate.setDate(cooldownDate.getDate() - cooldownDays);
-
-          const dupParams = new URLSearchParams({
-            'filter[anonymous_id][_eq]': anonymousId,
-            'filter[quiz][_eq]': String(quizId),
-            'filter[completed_at][_nnull]': 'true',
-            'filter[completed_at][_gte]': cooldownDate.toISOString(),
-            fields: 'id',
-            limit: '1'
-          });
-
-          const dupRes = await fetch(
-            `${PUBLIC_CMSURL}/items/quiz_attempts?${dupParams}`,
-            { headers: adminHeaders }
-          );
-
-          if (dupRes.ok) {
-            const dupData = await dupRes.json();
-            if ((dupData?.data ?? []).length > 0) {
-              // Still within cooldown – return success with skipped flag (no error, no duplicate)
-              return json({ skipped: true, reason: 'cooldown' });
-            }
-          }
+      if (dupRes.ok) {
+        const dupData = await dupRes.json();
+        if ((dupData?.data ?? []).length > 0) {
+          return json({ skipped: true, reason: 'cooldown' });
         }
       }
     } catch (e) {
-      // Non-blocking: log and continue – the attempt is still created
       console.warn('[quiz-attempts] cooldown check failed:', e);
     }
   }
@@ -74,7 +118,7 @@ export async function POST({ request }) {
   const upstream = await fetch(`${PUBLIC_CMSURL}/items/quiz_attempts`, {
     method: 'POST',
     headers: adminHeaders,
-    body: JSON.stringify(payload)
+    body: JSON.stringify(safePayload)
   });
 
   // 204 must not have a body

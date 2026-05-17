@@ -134,7 +134,8 @@ function getEquivalentMinutes(
   intenseTypes: Set<string>,
   moderateTypes: Set<string>
 ): number {
-  const durationMinutes = durationSeconds / 60;
+  const cappedSeconds = Math.min(Math.max(0, durationSeconds), 4 * 3600); // max 4h pro Session
+  const durationMinutes = cappedSeconds / 60;
   if (intenseTypes.has(workoutType)) {
     // pregnant: intense activities count as moderate (1×) per WHO guidelines
     const multiplier = activityGroup === 'pregnant' ? 1 : 2;

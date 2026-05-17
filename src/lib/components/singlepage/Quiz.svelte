@@ -139,11 +139,8 @@
 
     const res = await fetch(apiUrl('/api/claim'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        anonymous_id: anonymousId,
-        access_token: token
-      })
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ anonymous_id: anonymousId })
     });
 
     let data = {};

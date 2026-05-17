@@ -7,6 +7,7 @@ import {
   lookupTierBonus
 } from '$lib/utils/streak';
 import { isValidDateString } from '$lib/utils/date';
+import { qs } from '$lib/utils/qs';
 
 /**
  * Full server-side streak update for steps.
@@ -35,17 +36,15 @@ export async function updateStreak(
   const tiers = await getStreakTiers(cmsUrl, token, fetchFn);
 
   // 1. Fetch step entries (last 60 days) – nur ≥7.000-Schritte-Tage zählen
-  const params = new URLSearchParams({
-    'filter[user][_eq]': userId,
-    'filter[source_type][_eq]': 'schritte',
-    fields: 'source_ref,points_delta',
-    sort: '-occurred_at',
-    limit: '60'
-  });
-
   let qualifiedDates: string[] = [];
   try {
-    const res = await fetchFn(`${cmsUrl}/items/points_ledger?${params}`, {
+    const res = await fetchFn(`${cmsUrl}/items/points_ledger?${qs({
+      'filter[user][_eq]': userId,
+      'filter[source_type][_eq]': 'schritte',
+      fields: 'source_ref,points_delta',
+      sort: '-occurred_at',
+      limit: '60'
+    })}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (res.ok) {
@@ -105,16 +104,15 @@ export async function updateStreak(
   let streak_tag_bonus_awarded = false;
   const tagBonus = lookupTierBonus(streak_days, tiers, 'step_tag');
   if (qualifiesForStreak && tagBonus > 0) {
-    const dedupParams = new URLSearchParams({
-      'filter[user][_eq]': userId,
-      'filter[source_type][_eq]': 'streak_tag',
-      'filter[source_ref][_eq]': newDate,
-      fields: 'id',
-      limit: '1'
-    });
     let alreadyAwarded = false;
     try {
-      const dedupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dedupParams}`, {
+      const dedupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${qs({
+        'filter[user][_eq]': userId,
+        'filter[source_type][_eq]': 'streak_tag',
+        'filter[source_ref][_eq]': newDate,
+        fields: 'id',
+        limit: '1'
+      })}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (dedupRes.ok) {
@@ -153,19 +151,34 @@ export async function updateStreak(
   let streak_bonus_awarded = false;
   if (streak_days > 1 && (streak_days - 1) % 7 === 0) {
     const weekBonus = lookupTierBonus(streak_days, tiers, 'step_week');
+    const bonusRef = `streak-${streak_days}d-${newDate}`;
     try {
-      const bonusRes = await fetchFn(`${cmsUrl}/items/points_ledger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          user: userId,
-          points_delta: weekBonus,
-          source_type: 'streak',
-          source_ref: `streak-${streak_days}d-${newDate}`,
-          occurred_at: new Date().toISOString()
-        })
+      const dedupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${qs({
+        'filter[user][_eq]': userId,
+        'filter[source_type][_eq]': 'streak',
+        'filter[source_ref][_eq]': bonusRef,
+        fields: 'id',
+        limit: '1'
+      })}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      streak_bonus_awarded = bonusRes.ok;
+      if (dedupRes.ok) {
+        const db = await dedupRes.json();
+        if ((db.data ?? []).length === 0) {
+          const bonusRes = await fetchFn(`${cmsUrl}/items/points_ledger`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              user: userId,
+              points_delta: weekBonus,
+              source_type: 'streak',
+              source_ref: bonusRef,
+              occurred_at: new Date().toISOString()
+            })
+          });
+          streak_bonus_awarded = bonusRes.ok;
+        }
+      }
     } catch {
       /* non-critical */
     }
@@ -212,18 +225,16 @@ export async function updateQuizStreak(
   const tiers = await getStreakTiers(cmsUrl, token, fetchFn);
 
   // 1. Alle bestandenen, geclaimten Quiz-Attempts des Users lesen
-  const params = new URLSearchParams({
-    'filter[user][_eq]': userId,
-    'filter[passed][_eq]': 'true',
-    'filter[completed_at][_nnull]': 'true',
-    fields: 'completed_at',
-    sort: '-completed_at',
-    limit: '60'
-  });
-
   let completedDates: string[] = [];
   try {
-    const res = await fetchFn(`${cmsUrl}/items/quiz_attempts?${params}`, {
+    const res = await fetchFn(`${cmsUrl}/items/quiz_attempts?${qs({
+      'filter[user][_eq]': userId,
+      'filter[passed][_eq]': 'true',
+      'filter[completed_at][_nnull]': 'true',
+      fields: 'completed_at',
+      sort: '-completed_at',
+      limit: '60'
+    })}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (res.ok) {
@@ -282,15 +293,14 @@ export async function updateQuizStreak(
   // 4. Quiz-Streak-Tag-Bonus (tiered): ab Tag 2 täglich
   const dailyBonus = lookupTierBonus(quiz_streak_days, tiers, 'quiz_tag');
   if (dailyBonus > 0) {
-    const dedupParams = new URLSearchParams({
-      'filter[user][_eq]': userId,
-      'filter[source_type][_eq]': 'streak_quiz',
-      'filter[source_ref][_eq]': today,
-      fields: 'id',
-      limit: '1'
-    });
     try {
-      const dedupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dedupParams}`, {
+      const dedupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${qs({
+        'filter[user][_eq]': userId,
+        'filter[source_type][_eq]': 'streak_quiz',
+        'filter[source_ref][_eq]': today,
+        fields: 'id',
+        limit: '1'
+      })}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (dedupRes.ok) {
@@ -328,15 +338,14 @@ export async function updateQuizStreak(
   if (quiz_streak_days > 1 && (quiz_streak_days - 1) % 7 === 0) {
     const weekBonus = lookupTierBonus(quiz_streak_days, tiers, 'quiz_week');
     const bonusRef = `quiz-streak-${quiz_streak_days}d-${today}`;
-    const dedupParams = new URLSearchParams({
-      'filter[user][_eq]': userId,
-      'filter[source_type][_eq]': 'streak',
-      'filter[source_ref][_eq]': bonusRef,
-      fields: 'id',
-      limit: '1'
-    });
     try {
-      const dedupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${dedupParams}`, {
+      const dedupRes = await fetchFn(`${cmsUrl}/items/points_ledger?${qs({
+        'filter[user][_eq]': userId,
+        'filter[source_type][_eq]': 'streak',
+        'filter[source_ref][_eq]': bonusRef,
+        fields: 'id',
+        limit: '1'
+      })}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (dedupRes.ok) {

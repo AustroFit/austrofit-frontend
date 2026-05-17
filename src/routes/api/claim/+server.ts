@@ -2,16 +2,17 @@ import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { qs } from '$lib/utils/qs';
-import { resolveUserId } from '$lib/server/auth';
+import { extractBearerToken, resolveUserId } from '$lib/server/auth';
 import { updateQuizStreak } from '$lib/server/streak';
 import { awardMilestoneIfNew } from '$lib/server/milestoneService';
 
 export const POST = async ({ request, fetch }) => {
   try {
-    const { anonymous_id, access_token } = await request.json();
-
-    if (!anonymous_id) return json({ error: 'missing anonymous_id' }, { status: 400 });
+    const access_token = extractBearerToken(request);
     if (!access_token) return json({ error: 'missing access_token' }, { status: 401 });
+
+    const { anonymous_id } = await request.json();
+    if (!anonymous_id) return json({ error: 'missing anonymous_id' }, { status: 400 });
 
     // 1) user_id via users/me mit User-Token holen
     const user_id = await resolveUserId(access_token, PUBLIC_CMSURL, fetch);
@@ -31,7 +32,7 @@ export const POST = async ({ request, fetch }) => {
         'filter[points_claimed_at][_null]': 'true',
         'filter[passed][_eq]': 'true',
         'limit': '200',
-        'fields': 'id,eligible_points,points_ledger_ref'
+        'fields': 'id,eligible_points,points_ledger_ref,quiz'
       });
 
     const attemptsRes = await fetch(attemptsUrl, { headers: adminHeaders });
@@ -41,7 +42,7 @@ export const POST = async ({ request, fetch }) => {
     }
 
     const attemptsJson = attemptsTxt ? JSON.parse(attemptsTxt) : null;
-    const attempts: Array<{ id: string; eligible_points?: number; points_ledger_ref?: string | null }> =
+    const attempts: Array<{ id: string; eligible_points?: number; points_ledger_ref?: string | null; quiz?: string | number | null }> =
       attemptsJson?.data ?? [];
 
     if (!attempts.length) {
@@ -52,10 +53,54 @@ export const POST = async ({ request, fetch }) => {
 
     let claimed = 0;
     const results: Array<{ attempt_id: string; ledger_id: string }> = [];
+    const quizCooldownCache = new Map<string, number>();
 
     for (const a of attempts) {
       // Safety: falls schon verlinkt, skip (idempotent)
       if (a.points_ledger_ref) continue;
+
+      // Per-User-Cooldown: verhindert Bypass durch neue anonymous_id
+      const quizId = a.quiz ? String(a.quiz) : null;
+      if (quizId) {
+        if (!quizCooldownCache.has(quizId)) {
+          try {
+            const qRes = await fetch(
+              `${PUBLIC_CMSURL}/items/quizzes/${quizId}?fields=cooldown_days`,
+              { headers: adminHeaders }
+            );
+            quizCooldownCache.set(
+              quizId,
+              qRes.ok ? ((await qRes.json())?.data?.cooldown_days ?? 0) : 0
+            );
+          } catch {
+            quizCooldownCache.set(quizId, 0);
+          }
+        }
+        const cooldownDays = quizCooldownCache.get(quizId) ?? 0;
+        if (cooldownDays > 0) {
+          const cooldownDate = new Date();
+          cooldownDate.setDate(cooldownDate.getDate() - cooldownDays);
+          try {
+            const existingRes = await fetch(
+              `${PUBLIC_CMSURL}/items/quiz_attempts?` +
+                qs({
+                  'filter[user][_eq]': user_id,
+                  'filter[quiz][_eq]': quizId,
+                  'filter[passed][_eq]': 'true',
+                  'filter[points_claimed_at][_nnull]': 'true',
+                  'filter[points_claimed_at][_gte]': cooldownDate.toISOString(),
+                  fields: 'id',
+                  limit: '1'
+                }),
+              { headers: adminHeaders }
+            );
+            if (existingRes.ok) {
+              const existingData = await existingRes.json();
+              if ((existingData?.data ?? []).length > 0) continue; // bereits innerhalb Cooldown geclaimed
+            }
+          } catch { /* non-critical: bei Fehler Claim trotzdem zulassen */ }
+        }
+      }
 
       const source_ref = `quiz_attempts:${a.id}`;
 

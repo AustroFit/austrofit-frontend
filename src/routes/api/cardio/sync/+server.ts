@@ -22,15 +22,24 @@ export async function POST({
   const userId = userInfo.id;
 
   const body = await request.json().catch(() => null);
-  if (!body || !Array.isArray(body.workouts)) {
+  if (!body || !Array.isArray(body.workouts) || body.workouts.length > 50) {
     return json({ error: 'Ungültige Anfrage' }, { status: 400 });
   }
 
-  // Filter out workouts before user registration date
+  // Filter out workouts before user registration date and validate fields
   const registrationDate = userInfo.date_created ? userInfo.date_created.split('T')[0] : null;
-  const workouts: WorkoutInput[] = registrationDate
-    ? (body.workouts as WorkoutInput[]).filter((w) => w.date >= registrationDate)
-    : body.workouts;
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const nowMs = Date.now();
+  const maxPastMs = 90 * 24 * 60 * 60 * 1000;
+  const maxFutureMs = 2 * 24 * 60 * 60 * 1000;
+  const workouts: WorkoutInput[] = (body.workouts as WorkoutInput[]).filter((w) => {
+    if (!dateRegex.test(w.date)) return false;
+    const dMs = Date.parse(w.date + 'T12:00:00Z');
+    if (isNaN(dMs) || dMs < nowMs - maxPastMs || dMs > nowMs + maxFutureMs) return false;
+    if (!w.startDate || isNaN(Date.parse(w.startDate))) return false;
+    if (registrationDate && w.date < registrationDate) return false;
+    return true;
+  });
   const platform: string = body.platform ?? 'android';
   const source = platform === 'ios' ? 'healthkit' : 'health_connect';
 

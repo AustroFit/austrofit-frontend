@@ -14,6 +14,7 @@ import { json } from '@sveltejs/kit';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN, DIRECTUS_READ_TOKEN } from '$env/static/private';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
+import { qs } from '$lib/utils/qs';
 
 export async function POST({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) {
   const token = extractBearerToken(request);
@@ -57,6 +58,24 @@ export async function POST({ request, fetch }: { request: Request; fetch: typeof
       { error: `Nicht genug Punkte. Du hast ${totalPoints}P, benötigst ${reward.points_cost}P.` },
       { status: 400 }
     );
+  }
+
+  // 3b) Dedup: bereits aktive oder verwendete Einlösung für diesen Reward prüfen
+  const dedupRes = await fetch(
+    `${PUBLIC_CMSURL}/items/reward_redemptions?${qs({
+      'filter[user][_eq]': user_id,
+      'filter[reward][_eq]': String(Number(reward_id)),
+      'filter[status][_in]': 'active,used',
+      fields: 'id',
+      limit: '1'
+    })}`,
+    { headers: adminHeaders }
+  );
+  if (dedupRes.ok) {
+    const dedupBody = await dedupRes.json();
+    if ((dedupBody?.data ?? []).length > 0) {
+      return json({ error: 'Du hast dieses Angebot bereits eingelöst.' }, { status: 409 });
+    }
   }
 
   // 4) reward_redemptions-Eintrag erstellen
