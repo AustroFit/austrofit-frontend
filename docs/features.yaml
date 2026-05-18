@@ -7,11 +7,13 @@
 
 meta:
   titel: AustroFit Feature Registry
-  version: "1.1"
+  version: "1.2"
   erstellt: "2026-05-16"
+  aktualisiert: "2026-05-17"
   beschreibung: >
     Feature-Liste für Entwicklung, Planung und regulatorische Checks.
     Kombiniert Ist-Stand (Codebasis) mit Roadmap (Business Plan v1.3, Service Blueprint v1.1).
+    Regulatorische Anforderungen → docs/compliance.yaml
   status_werte:
     implemented: "Im Code vorhanden und produktiv aktiv"
     in-progress: "In Entwicklung oder teilweise implementiert"
@@ -690,7 +692,9 @@ features:
       Neue Redirect URIs in Google Cloud Console eintragen:
         https://dev.austrofit.at/api/auth/google/callback (Vercel Preview)
         https://austrofit.at/api/auth/google/callback (Vercel Production)
-      Env-Vars GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET in .env und Vercel setzen.
+      Env-Vars GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET + DIRECTUS_ADMIN_TOKEN in .env und Vercel setzen.
+      DIRECTUS_ADMIN_TOKEN = Static Token des Directus-Administrator-Users (nicht DIRECTUS_WRITE_TOKEN –
+      der teilt denselben eingeschränkten Token wie PRIVATE_CMS_STATIC_TOKEN, kein Zugriff auf directus_users).
       Sicherheitshinweis: Temporäres Passwort wird nach Directus-Login sofort rotiert
       (zweifache Rotation: vor und nach Login). JWT-Refresh funktioniert normal.
     linked_files:
