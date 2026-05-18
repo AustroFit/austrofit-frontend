@@ -9,7 +9,7 @@ meta:
   titel: AustroFit Feature Registry
   version: "1.2"
   erstellt: "2026-05-16"
-  aktualisiert: "2026-05-17"
+  aktualisiert: "2026-05-18"
   beschreibung: >
     Feature-Liste für Entwicklung, Planung und regulatorische Checks.
     Kombiniert Ist-Stand (Codebasis) mit Roadmap (Business Plan v1.3, Service Blueprint v1.1).
@@ -689,7 +689,8 @@ features:
       GET /api/auth/google/callback → Code-Exchange → User finden/anlegen → Directus-JWT → localStorage.
     notes: >
       Implementiert Mai 2026. Google Cloud Projekt 'austrofit-production'.
-      Neue Redirect URIs in Google Cloud Console eintragen:
+      Redirect URIs in Google Cloud Console registriert:
+        http://localhost:5173/api/auth/google/callback (lokale Entwicklung)
         https://dev.austrofit.at/api/auth/google/callback (Vercel Preview)
         https://austrofit.at/api/auth/google/callback (Vercel Production)
       Env-Vars GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET + DIRECTUS_ADMIN_TOKEN in .env und Vercel setzen.
