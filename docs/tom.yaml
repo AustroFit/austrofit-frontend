@@ -386,14 +386,15 @@ organisatorische_massnahmen:
 
   - id: om-5
     name: "Auftragsverarbeitungsverträge (AVV, Art. 28)"
-    status: teilweise
+    status: geplant
     nachweis: extern
     notes: >
-      Vercel: AVV abgeschlossen (Vercel DPA).
-      PostHog: AVV standardmäßig für EU-Cloud-Kunden vorhanden.
-      Directus: selbst gehostet (Hetzner) – kein Directus-SaaS-AVV erforderlich.
-      Hetzner: AVV vorhanden (Hetzner AV-Vertrag).
-      Offen: Formale Prüfung/Ablage aller AVV-Dokumente noch durchzuführen.
+      Noch nicht abgeschlossen (Stand Mai 2026, compliance.yaml dsgvo-avv: open).
+      Erforderlich: Vercel AVV (vercel.com/legal/dpa – selbst abzuschließen),
+      Hetzner AVV (hetzner.com/legal/privacy → AV-Vertrag anfragen).
+      PostHog: AVV standardmäßig für EU-Cloud-Kunden vorhanden (keine Aktion nötig).
+      Directus: selbst gehostet auf Hetzner – kein separater Directus-AVV erforderlich.
+      Aktion: AVV-Dokumente von Vercel und Hetzner einholen und archivieren.
 
   - id: om-6
     name: "Mitarbeiterzugang und Vertraulichkeit"

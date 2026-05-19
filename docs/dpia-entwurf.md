@@ -51,7 +51,7 @@ ist eine DPIA bei umfangreicher Verarbeitung besonderer Kategorien (Art. 9) verp
 | Löschung | Vollständige Kaskaden-Löschung bei Account-Löschung durch Nutzer |
 
 ### 2.3 Betroffene Personen
-- Registrierte AustroFit-Nutzer (natürliche Personen, 18+ Jahre)
+- Registrierte AustroFit-Nutzer (natürliche Personen; Mindestalter 18 Jahre laut AGB, technisch nicht verifiziert)
 - Besonders schutzbedürftige Gruppen: Schwangere (`pregnant`), chronisch Erkrankte (`chronic`)
 
 ### 2.4 Verarbeitete Datenkategorien
@@ -76,8 +76,8 @@ ist eine DPIA bei umfangreicher Verarbeitung besonderer Kategorien (Art. 9) verp
 Auftragsverarbeiter (kein Datenzugang zu Gesundheitsdaten im Klartext):
 | Auftragsverarbeiter | Funktion | Standort | AVV |
 |---|---|---|---|
-| Hetzner Online GmbH | Server-Hosting (Datenbank) | Deutschland (EU) | ✅ vorhanden |
-| Vercel Inc. | Frontend-Hosting (kein DB-Zugriff) | USA (SCC-gesichert) | ✅ vorhanden |
+| Hetzner Online GmbH | Server-Hosting (Datenbank) | Deutschland (EU) | ⚠️ noch abzuschließen |
+| Vercel Inc. | Frontend-Hosting (kein DB-Zugriff) | USA (SCC-gesichert) | ⚠️ noch abzuschließen |
 
 PostHog (Analytics): erhält **keine** Gesundheitsdaten – nur pseudonymisierte User-ID
 und App-Nutzungsevents (Quiz abgeschlossen, Gutschein eingelöst etc.).
@@ -87,7 +87,7 @@ Gesundheitsdaten verbleiben auf EU-Servern (Hetzner, Deutschland). Kein Drittlan
 
 ### 2.7 Speicherdauer
 - Aktive Konten: unbegrenzt (solange Konto besteht)
-- Konto-Löschung: vollständige Löschung aller Gesundheitsdaten innerhalb von 24 Stunden
+- Konto-Löschung: vollständige synchrone Löschung aller Gesundheitsdaten unverzüglich (im selben API-Request)
 - Keine gesetzlichen Aufbewahrungspflichten für Gesundheitsdaten bekannt
 
 > ⚠️ **RECHTSCHECK: Speicherdauer**
@@ -232,8 +232,8 @@ Relevante Maßnahmen im Überblick:
 | Speicherdauer festlegen | ⚠️ offen | |
 | Residualrisiko akzeptabel? | ⚠️ offen | |
 | DSB-Konsultation erforderlich? (Art. 36) | ⚠️ offen | |
-| AVV Hetzner vorhanden | ✅ ja | |
-| AVV Vercel vorhanden | ✅ ja | |
+| AVV Hetzner abschließen | ⚠️ offen | Hetzner AVV-Formular abrufen |
+| AVV Vercel abschließen | ⚠️ offen | Vercel DPA unter vercel.com/legal/dpa |
 | Backup-Konzept schriftlich | ⚠️ zu ergänzen | TOM op-2 |
 | DPIA-Überprüfungsintervall festlegen | 🔲 Entscheidung nötig | |
 

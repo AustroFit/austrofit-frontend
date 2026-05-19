@@ -89,7 +89,7 @@ die unter seinem Konto vorgenommen werden.
 (1) Punkte werden ausschließlich durch körperliche Aktivität verdient:
 - Tägliche Schritte (Berechnung nach täglicher Schrittzahl, Formel serverseitig)
 - Aufgezeichnete Workouts via Android Health Connect (Typ und Dauer)
-- Abschluss von Gesundheits-Quizzen (maximal einmal pro Quiz alle 30 Tage)
+- Abschluss von Gesundheits-Quizzen (pro Quiz ein konfigurierbares Cooldown, standardmäßig 30 Tage)
 - Streak-Boni für aufeinanderfolgende aktive Tage und Wochen
 - Einmalige Meilenstein-Boni für erste Aktivitäten
 

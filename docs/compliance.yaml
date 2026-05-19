@@ -129,10 +129,14 @@ regulations:
         status: open
         evidence_type: external
         notes: >
-          AVVs erforderlich mit: Vercel (Hosting), PostHog (Analytics – EU Cloud,
-          AVV standardmäßig vorhanden), Directus (falls SaaS-Hosted). AWIN und
-          TradeDoubler agieren als eigenständige Verantwortliche für ihr Tracking –
-          AVV nicht erforderlich, aber DSE-Hinweis auf Drittverantwortliche nötig.
+          Noch nicht abgeschlossen (Mai 2026). Konkrete Schritte:
+          1. Vercel AVV: vercel.com/legal/dpa → "Sign DPA" im Vercel-Dashboard
+          2. Hetzner AVV: hetzner.com → Kundencenter → Datenschutz → AV-Vertrag
+          PostHog: EU-Cloud-Kunden erhalten AVV standardmäßig (keine Aktion nötig).
+          Directus: selbst gehostet auf Hetzner – kein separater Directus-AVV.
+          AWIN/TradeDoubler: eigenständige Verantwortliche – kein AVV, DSE-Hinweis vorhanden.
+          ACHTUNG: DSE behauptet "AVV mit Vercel abgeschlossen" – Formulierung auf
+          "wird abgeschlossen" geändert (Mai 2026) bis tatsächlicher Abschluss erfolgt.
 
   - id: dsg
     name: "DSG (Datenschutzgesetz Österreich)"

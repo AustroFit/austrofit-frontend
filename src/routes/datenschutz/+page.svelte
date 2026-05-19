@@ -108,7 +108,7 @@
           Vercel verarbeitet dabei technische Verbindungsdaten (IP-Adresse, Zeitstempel).
           Rechtsgrundlage: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).
           Die Übertragung in die USA erfolgt auf Grundlage von Standardvertragsklauseln (SCC, Art. 46 Abs. 2 lit. c DSGVO).
-          Auftragsverarbeitungsvertrag mit Vercel abgeschlossen.</p>
+          Ein Auftragsverarbeitungsvertrag mit Vercel wird abgeschlossen.</p>
         </div>
         <div>
           <p class="font-medium text-gray-700">Datenbank &amp; CMS: Hetzner / Directus</p>
