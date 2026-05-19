@@ -20,6 +20,7 @@
 
   let step = $state(1);
   let datenschutzAkzeptiert = $state(false);
+  let gesundheitsdatenConsent = $state(false);
   let isInstalled = $state(false);
   let selectedGroup = $state('adult');
 
@@ -352,17 +353,38 @@
         Die Bewegungsempfehlungen basieren auf WHO/FGOE-Richtlinien.
       </p>
 
+      <!-- Art. 9 DSGVO – Einwilligung Gesundheitsdaten (Pflichtfeld) -->
+      <!-- RECHTSCHECK: Wortlaut bitte von Anwalt auf Art.-9-Tauglichkeit prüfen lassen -->
+      <label class="flex items-start gap-3 cursor-pointer mb-5 rounded-xl border border-primary/20 bg-primary/5 p-3">
+        <input
+          type="checkbox"
+          bind:checked={gesundheitsdatenConsent}
+          required
+          class="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-primary cursor-pointer"
+        />
+        <span class="text-xs text-gray-600 leading-relaxed">
+          Ich willige ausdrücklich ein (Art. 9 Abs. 2 lit. a DSGVO), dass AustroFit meine
+          Gesundheits- und Aktivitätsdaten – Schritt- und Bewegungsdaten sowie meine
+          Aktivitätsgruppe – verarbeitet, um mein persönliches Bewegungsziel zu berechnen
+          und meine Aktivität zu belohnen. Diese Einwilligung ist freiwillig und kann jederzeit
+          unter Profil → Datenschutz widerrufen werden.
+          <a href="/datenschutz" class="text-primary underline underline-offset-2 hover:text-primary-dark" target="_blank" rel="noopener">Datenschutzerklärung</a>
+        </span>
+      </label>
+
       <button
         type="button"
         onclick={confirmGroup}
-        class="w-full rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+        disabled={!gesundheitsdatenConsent}
+        class="w-full rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Weiter
       </button>
       <button
         type="button"
         onclick={() => { selectedGroup = 'adult'; confirmGroup(); }}
-        class="mt-2 w-full text-sm text-gray-400 hover:text-gray-600 transition-colors py-2"
+        disabled={!gesundheitsdatenConsent}
+        class="mt-2 w-full text-sm text-gray-400 hover:text-gray-600 transition-colors py-2 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Überspringen (Standard: Erwachsene)
       </button>
