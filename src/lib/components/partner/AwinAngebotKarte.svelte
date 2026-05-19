@@ -148,6 +148,16 @@
 
   const labelText = $derived(category ? (AWIN_KATEGORIE_LABELS[category] ?? category) : null);
 
+  // Rabatt-Wert aus Description parsen (z.B. "15% auf alle Artikel" → "15%")
+  const discountBadge = $derived.by(() => {
+    const desc = promo?.description ?? '';
+    const pct = desc.match(/(\d+)\s*%/);
+    if (pct) return `${pct[1]}% Rabatt`;
+    const eur = desc.match(/(\d+)\s*€/);
+    if (eur) return `${eur[1]}€ Rabatt`;
+    return null;
+  });
+
   let descExpanded = $state(false);
   const descIsLong = $derived((promo?.description?.length ?? 0) > 80);
 </script>
@@ -187,11 +197,18 @@
   <!-- Content -->
   <div class="flex flex-1 flex-col gap-3 px-4 py-3">
 
-    {#if labelText}
-      <span class="w-fit rounded-[var(--radius-pill)] bg-primary-light px-2 py-0.5 text-xs font-medium text-primary">
-        {labelText}
-      </span>
-    {/if}
+    <div class="flex items-center gap-2 flex-wrap">
+      {#if discountBadge}
+        <span class="rounded-[var(--radius-pill)] bg-secondary px-3 py-1 text-sm font-bold text-white">
+          {discountBadge}
+        </span>
+      {/if}
+      {#if labelText}
+        <span class="rounded-[var(--radius-pill)] bg-primary-light px-2 py-0.5 text-xs font-medium text-primary">
+          {labelText}
+        </span>
+      {/if}
+    </div>
 
     {#if promo}
       <button

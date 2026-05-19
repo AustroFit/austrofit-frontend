@@ -26,6 +26,7 @@ No test suite is configured in this project.
 
 - `docs/features.yaml` — Maschinenlesbare Feature-Registry (54 Features, 12 Kategorien). Primäre Referenz für Roadmap, Feature-Status (implemented/in-progress/planned/to-discuss/rejected) und regulatorische Checks. Bei neuen Features oder Statusänderungen hier aktualisieren.
 - `docs/compliance.yaml` — Regulierungs-Registry (12 Regularien, Mai 2026). Enthält Anwendbarkeit, Anforderungen mit Status, Nachweis-Typ und priorisierte `open_actions`. Bei neuen Features auf regulatorische Auswirkungen prüfen und Status hier pflegen.
+- `docs/tom.yaml` — TOM-Dokument (Technische und Organisatorische Maßnahmen, Art. 32 DSGVO, Mai 2026). 9 Kategorien, 20 Maßnahmen. Erforderlich für DPIA und DSB-Anfragen. Offene Punkte: Rate-Limiting, Backup-Konzept, CSP-Header, AVV-Ablage.
 - `Directus-JSON-AustroFit/austrofit-business-plan.yaml` — Business Plan v1.3 (Markt, Finanzen, Gamification-Formeln)
 - `Directus-JSON-AustroFit/service-blueprint.html` — Service Blueprint B2C v1.1 (User Journey, Phasen)
 
@@ -188,7 +189,7 @@ npx cap sync android
 |---|---|---|
 | `PUBLIC_CMSURL` | Alle Server-Routes | Directus Base-URL |
 | `DIRECTUS_READ_TOKEN` | `/api/badges`, `/api/partner`, `/api/quizzes` | Policy „Read Content API" — nur publizierten Content |
-| `PRIVATE_CMS_STATIC_TOKEN` | `/api/claim`, `/api/ledger-*`, `/api/profile`, `/api/redeem` | Policy „Static Token API" — Writes auf custom Collections; kein Zugriff auf `directus_users` |
+| `PRIVATE_CMS_STATIC_TOKEN` | `/api/claim`, `/api/ledger-*`, `/api/profile`, `/api/redeem` | Policy „Write Content API" — Writes auf custom Collections; kein Zugriff auf `directus_users` |
 | `DIRECTUS_WRITE_TOKEN` | `/api/auth/*` | Achtung: hat in `.env` denselben Wert wie `PRIVATE_CMS_STATIC_TOKEN` → kein Zugriff auf `directus_users`. Nur noch als Legacy-Bezeichnung vorhanden. |
 | `DIRECTUS_ADMIN_TOKEN` | `/api/auth/google/callback` | Echter Admin-Static-Token (Administrator-User in Directus) — darf `directus_users` lesen und schreiben. Nur für Google OAuth Callback. |
 | `PUBLIC_API_BASE` | Client `apiUrl()` | Leer für Web/Vercel; `https://austrofit.at` für Capacitor-Build |
@@ -196,7 +197,7 @@ npx cap sync android
 | `PUBLIC_EMAIL_VERIFICATION` | `/registrierung` | Steuert ob Schritt 3 (E-Mail-Bestätigung) angezeigt wird |
 | `SCHRITTE_FLOW_ID` | `/api/steps/sync` | Optional — triggert Directus Flow statt direktem stepsService |
 
-**Policy-Gotcha**: `PRIVATE_CMS_STATIC_TOKEN` bekommt keinen automatischen Zugriff auf neue Collections. Bei jeder neuen Directus-Collection beide Policies aktualisieren: „Read Content API" (DIRECTUS_READ_TOKEN) und „Static Token API" (PRIVATE_CMS_STATIC_TOKEN).
+**Policy-Gotcha**: `PRIVATE_CMS_STATIC_TOKEN` bekommt keinen automatischen Zugriff auf neue Collections. Bei jeder neuen Directus-Collection beide Policies aktualisieren: „Read Content API" (DIRECTUS_READ_TOKEN) und „Write Content API" (PRIVATE_CMS_STATIC_TOKEN).
 
 ### Deployment
 

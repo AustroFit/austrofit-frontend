@@ -508,7 +508,7 @@ features:
 
   - id: awin-integration
     name: "AWIN/TradeDoubler Affiliate-Integration"
-    status: in-progress
+    status: implemented
     category: belohnung
     phase: mvp
     description: >
@@ -520,10 +520,12 @@ features:
       affiliate_tracking_url (String). Punkte-Modell: 100P pro 1% Rabatt (z.B. 500P=5%,
       2000P=20%), Festbeträge analog (500P=5€, 600P=6€ usw.).
     notes: >
-      Nächste Schritte: Partner in Directus partner-Collection anlegen, dann rewards
-      aus den CSV-Daten importieren. Import noch nicht erfolgt (Stand Mai 2026).
-      TradeDoubler-API-Tokens in .env vorhanden (TRADEDOUBLER_PUBLISHER_TOKEN etc.),
-      aber noch keine Code-Integration für automatischen Datenabruf.
+      Implementiert Mai 2026. Promotions werden in Directus Collection 'online_promotions'
+      gepflegt (nicht in 'rewards'). 12 aktive Angebote (AWIN). Freischaltung via
+      /api/awin/unlock-code, Punkte-Abzug via points_ledger (source_type='awin_unlock').
+      Policy-Gotcha: online_promotions braucht Read in 'Write Content API' (PRIVATE_CMS_STATIC_TOKEN)
+      UND 'Read Content API' (DIRECTUS_READ_TOKEN).
+      TradeDoubler-Angebote noch nicht eingetragen (kein Code, nur Tracking-URL – vorerst nicht vorgesehen).
     linked_files:
       - docs/2026-05-16-awin-promotions.csv
       - docs/2026-05-16-tradedoubler-vouchers.csv

@@ -193,11 +193,17 @@
       ? offeneOffers.filter((o) => o.promo.pointsCost <= userPoints)
       : offeneOffers;
     const filtered = filterAwinKategorie ? base.filter((o) => o.program.category === filterAwinKategorie) : base;
-    if (!isLoggedIn) return filtered;
     return [...filtered].sort((a, b) => {
-      const aNeed = Math.max(0, a.promo.pointsCost - userPoints);
-      const bNeed = Math.max(0, b.promo.pointsCost - userPoints);
-      return aNeed - bNeed;
+      // Primär (eingeloggt): leistbare Angebote zuerst
+      if (isLoggedIn) {
+        const aNeed = Math.max(0, a.promo.pointsCost - userPoints);
+        const bNeed = Math.max(0, b.promo.pointsCost - userPoints);
+        if (aNeed !== bNeed) return aNeed - bNeed;
+      }
+      // Sekundär: Ablaufdatum aufsteigend (bald ablaufend zuerst), null-Daten ans Ende
+      const aDate = a.promo.endDate ? new Date(a.promo.endDate).getTime() : Infinity;
+      const bDate = b.promo.endDate ? new Date(b.promo.endDate).getTime() : Infinity;
+      return aDate - bDate;
     });
   });
 

@@ -28,9 +28,8 @@
     <div class="mx-auto max-w-lg rounded-2xl bg-white p-5 shadow-xl border border-black/10 pointer-events-auto">
       <h3 class="font-semibold leading-snug mb-1">Anonyme Nutzungsstatistiken</h3>
       <p class="text-sm text-neutral-500 leading-relaxed mb-4">
-        Wir verwenden anonyme Statistiken, um die App zu verbessern. Die Daten werden
-        ausschließlich auf EU-Servern (Frankfurt) verarbeitet und enthalten
-        keine personenbezogenen Daten.
+        Wir verwenden pseudonymisierte Nutzungsstatistiken, um die App zu verbessern.
+        Die Daten werden ausschließlich auf EU-Servern (Frankfurt) verarbeitet.
         <a href="/datenschutz" class="text-primary underline underline-offset-2 hover:text-primary-dark">Datenschutzerklärung</a>
       </p>
       <div class="flex flex-wrap gap-2">

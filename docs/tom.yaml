@@ -1,0 +1,450 @@
+# AustroFit – Technische und Organisatorische Maßnahmen (TOM)
+# Gemäß Art. 32 DSGVO
+# Ablage: docs/tom.yaml
+# Erstellt: 2026-05-19
+# Scope: AustroFit Web-App + Android-App (Österreich / EU)
+
+meta:
+  titel: TOM-Dokument AustroFit
+  version: "1.0"
+  erstellt: "2026-05-19"
+  rechtsgrundlage: "Art. 32 DSGVO – Sicherheit der Verarbeitung"
+  verantwortlicher: "Johannes Gnong, kontakt@austrofit.at"
+  beschreibung: >
+    Schriftliche Übersicht aller technischen und organisatorischen Maßnahmen
+    zum Schutz personenbezogener Daten (inkl. Gesundheitsdaten gem. Art. 9 DSGVO).
+    Erforderlich für DPIA (Art. 35 DSGVO) und auf Anfrage der österreichischen DSB.
+  status_werte:
+    umgesetzt:   "Maßnahme vollständig implementiert und nachweisbar"
+    teilweise:   "Maßnahme teilweise umgesetzt – offene Punkte in notes"
+    geplant:     "Noch nicht umgesetzt – Zeitplan in notes"
+  nachweis_werte:
+    code:        "Nachweis im Code (Datei/Funktion)"
+    konfiguration: "Nachweis in Deployment-Konfiguration (vercel.json, .env-Struktur)"
+    prozess:     "Nachweis in organisatorischem Prozess"
+    extern:      "Nachweis bei Auftragsverarbeiter (AVV, Zertifikat)"
+
+# ─────────────────────────────────────────────────────────────────
+# 1. ZUGANGSKONTROLLE
+# Unbefugter Zugang zu Datenverarbeitungsanlagen verhindern
+# ─────────────────────────────────────────────────────────────────
+
+zugangskontrolle:
+
+  - id: zk-1
+    name: "HTTPS/TLS-Verschlüsselung aller Übertragungen"
+    status: umgesetzt
+    nachweis: konfiguration
+    nachweis_ref:
+      - vercel.json
+    notes: >
+      Vercel erzwingt HTTPS für alle Routen (automatische HTTP→HTTPS-Weiterleitung).
+      TLS 1.2 minimum. Gilt für Web-App (austrofit.at) und API-Proxy-Routen (/api/*).
+      Capacitor-App kommuniziert ausschließlich über HTTPS mit der API.
+
+  - id: zk-2
+    name: "CORS-Beschränkung auf autorisierte Ursprünge"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - vercel.json
+      - src/hooks.server.ts
+    notes: >
+      vercel.json: Access-Control-Allow-Origin auf https://localhost beschränkt
+      (Capacitor 8 Android WebView-Origin). Kein Wildcard-CORS.
+      hooks.server.ts: OPTIONS-Preflight-Handler gibt explizit erlaubte
+      Methoden und Header zurück (GET, POST, PATCH, DELETE, OPTIONS;
+      Content-Type, Authorization).
+
+  - id: zk-3
+    name: "Keine öffentlich zugänglichen Admin-Oberflächen"
+    status: umgesetzt
+    nachweis: prozess
+    notes: >
+      Directus-Admin-Interface ist nicht über austrofit.at erreichbar.
+      Zugang nur direkt auf dem Hetzner-Server (Betreiber-Only).
+      API-Tokens werden nicht im Frontend-Bundle eingebettet (nur serverseitig via env).
+
+# ─────────────────────────────────────────────────────────────────
+# 2. ZUGRIFFSKONTROLLE
+# Berechtigte dürfen nur auf ihnen zustehende Daten zugreifen
+# ─────────────────────────────────────────────────────────────────
+
+zugriffskontrolle:
+
+  - id: zkk-1
+    name: "JWT Bearer Token Authentifizierung"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/lib/server/auth.ts
+      - src/lib/utils/auth.ts
+    notes: >
+      Alle geschützten API-Routen prüfen den Bearer-Token via extractBearerToken().
+      User-ID wird server-seitig aus dem Token aufgelöst (resolveUserId/resolveUserInfo).
+      Client kann keine fremde User-ID injizieren.
+      Passwort-Hashing: Directus (bcrypt intern).
+
+  - id: zkk-2
+    name: "Minimale Token-Berechtigungen (Principle of Least Privilege)"
+    status: umgesetzt
+    nachweis: konfiguration
+    nachweis_ref:
+      - .env (Struktur; Werte in Vercel)
+    notes: >
+      Drei separate API-Tokens mit jeweils minimalen Rechten:
+      - DIRECTUS_READ_TOKEN: Policy "Read Content API" – nur publizierter Content
+        (Badges, Partner, Quizze). Kein Zugriff auf user_profiles oder directus_users.
+      - PRIVATE_CMS_STATIC_TOKEN: Policy "Write Content API" – nur custom Collections
+        (points_ledger, user_profiles, reward_redemptions). Kein Zugriff auf directus_users.
+      - DIRECTUS_ADMIN_TOKEN: Echter Admin-Token – ausschließlich im Google OAuth Callback
+        (/api/auth/google/callback) für User-Anlage/-Suche. Minimale Nutzung.
+      Neue Directus-Collections müssen explizit in beiden Policies freigeschaltet werden.
+
+  - id: zkk-3
+    name: "Server-seitiger API-Proxy (kein Direktzugriff auf Directus)"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/routes/api/
+    notes: >
+      Alle Directus-Calls laufen über SvelteKit API-Routen (src/routes/api/).
+      Der Client kennt keine Directus-URLs, keine Tokens, keine Collection-Strukturen.
+      API-Tokens sind nur serverseitig verfügbar ($env/static/private).
+
+  - id: zkk-4
+    name: "Google OAuth CSRF-Schutz"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/routes/api/auth/google/+server.ts
+      - src/routes/api/auth/google/callback/+server.ts
+    notes: >
+      CSRF-State-Cookie wird bei OAuth-Initiation gesetzt und im Callback geprüft.
+      Token-Rotation bei Google-Login: Temp-Passwort wird bei jedem Login rotiert,
+      sodass kein persistentes Passwort im Klartext gespeichert wird.
+
+# ─────────────────────────────────────────────────────────────────
+# 3. WEITERGABEKONTROLLE
+# Unbefugte Übermittlung personenbezogener Daten verhindern
+# ─────────────────────────────────────────────────────────────────
+
+weitergabekontrolle:
+
+  - id: wk-1
+    name: "Keine Weitergabe von Gesundheitsdaten an Dritte"
+    status: umgesetzt
+    nachweis: code
+    notes: >
+      Schritt- und Bewegungsdaten sowie Aktivitätsgruppe werden ausschließlich
+      auf dem selbst gehosteten Directus-Server (Hetzner, Deutschland) gespeichert.
+      Keine Übermittlung an AWIN, TradeDoubler, PostHog oder andere Dritte.
+
+  - id: wk-2
+    name: "Pseudonymisierte Analytics (PostHog)"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/lib/utils/mixpanel.ts
+    notes: >
+      PostHog erhält nur pseudonymisierte User-ID (UUID), keine Namen oder E-Mail-Adressen.
+      IP-Anonymisierung aktiviert. Keine Gesundheitsdaten in Analytics-Events.
+      Datenverarbeitung ausschließlich auf EU-Servern (Frankfurt, Deutschland).
+      Analytics nur nach expliziter Einwilligung (ConsentBanner.svelte).
+
+  - id: wk-3
+    name: "Standardvertragsklauseln für US-Transfers"
+    status: umgesetzt
+    nachweis: extern
+    notes: >
+      Vercel Inc. (USA): SCC gemäß Art. 46 Abs. 2 lit. c DSGVO, AVV abgeschlossen.
+      PostHog Inc. (USA): EU-Cloud-Datenverarbeitung in Frankfurt; AVV standardmäßig.
+      Google LLC (USA): SCC für OAuth-Datenübermittlung, Datenschutzerklärung aktiv.
+
+# ─────────────────────────────────────────────────────────────────
+# 4. EINGABEKONTROLLE
+# Manipulationen und unberechtigte Eingaben verhindern
+# ─────────────────────────────────────────────────────────────────
+
+eingabekontrolle:
+
+  - id: ek-1
+    name: "Server-seitige Eingabevalidierung (Allowlist-Prinzip)"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/routes/api/quiz-attempts/+server.ts
+      - src/routes/api/cardio/sync/+server.ts
+      - src/routes/api/redeem/+server.ts
+      - src/routes/api/claim/+server.ts
+    notes: >
+      /api/quiz-attempts: Allowlist-Payload (safePayload), max_score wird gegen
+      Directus-Quiz-Daten geprüft (Fragenzahl), eligible_points via Math.min(200,...) gecappt,
+      passed server-seitig aus score >= max_score abgeleitet (nie vom Client übernommen),
+      completed_at kommt vom Server. Fail-closed wenn Directus nicht erreichbar.
+      /api/cardio/sync: Max. 50 Workouts pro Request; Datums-Validierung
+      (≤90 Tage Vergangenheit, ≤2 Tage Zukunft); ISO-8601-startDate-Check.
+      /api/claim: Token ausschließlich aus Authorization-Header (nie aus Request-Body).
+      /api/redeem: reward_id-Validierung, Punkte-Check server-seitig.
+
+  - id: ek-2
+    name: "Deduplication-Checks gegen Doppelbuchungen"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/lib/server/stepsService.ts
+      - src/lib/server/cardioService.ts
+      - src/routes/api/redeem/+server.ts
+      - src/routes/api/claim/+server.ts
+      - src/lib/utils/streak.ts
+    notes: >
+      Steps: source_ref = Datum (YYYY-MM-DD) – ein Eintrag pro Tag.
+      Cardio: start_date als Dedup-Key; PATCH bestehenden Eintrag bei mehr Aktivität.
+      Redeem: Prüfung aktive/verwendete Einlösung für (user, reward) vor Erstellung (409).
+      Quiz-Claim: Server-seitiger 30-Tage-Cooldown pro User+Quiz (verhindert Bypass
+      via neue anonymous_ids). Streak-Wochen-Bonus: Dedup-Check vor Schreiben.
+
+  - id: ek-3
+    name: "Datenwert-Caps gegen Übertreibungsangriffe"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/lib/server/cardioService.ts
+    notes: >
+      cardioService: durationSeconds gecappt auf max. 4 Stunden (14.400 s)
+      in getEquivalentMinutes() bevor Punkte berechnet werden.
+      eligible_points in quiz-attempts: Math.min(200, ...) – Typ-String-sichere Prüfung.
+
+  - id: ek-4
+    name: "Race-Condition-Schutz bei parallelen Requests"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/lib/services/stepSync.ts
+    notes: >
+      stepSync.ts: Modul-Level _syncing-Flag blockiert parallele syncSteps()-Aufrufe.
+      Verhindert doppelte Ledger-Einträge bei gleichzeitigem Background-Sync + onMount-Trigger.
+
+  - id: ek-5
+    name: "Rate-Limiting auf API-Endpunkte"
+    status: geplant
+    nachweis: code
+    notes: >
+      Noch nicht implementiert. Dedup-Checks und Validierungen reduzieren das Risiko,
+      sind aber kein Ersatz für echtes Rate-Limiting.
+      Geplant: Vercel Edge Rate Limiting oder Upstash Redis für kritische Endpunkte
+      (/api/auth/login, /api/quiz-attempts, /api/redeem).
+
+# ─────────────────────────────────────────────────────────────────
+# 5. TRENNUNGSKONTROLLE
+# Zweckgebundene Trennung von Daten sicherstellen
+# ─────────────────────────────────────────────────────────────────
+
+trennungskontrolle:
+
+  - id: tk-1
+    name: "Trennung Produktiv- und Entwicklungsumgebung"
+    status: umgesetzt
+    nachweis: konfiguration
+    notes: >
+      Separate Vercel-Deployments: dev.austrofit.at (Preview, passwortgeschützt)
+      und austrofit.at (Production). Separate Directus-Instanz für dev/prod.
+      Entwickler-Tools im Browser deaktivierbar (localStorage-Flags, kein Einfluss
+      auf Produktionsdaten).
+
+  - id: tk-2
+    name: "Pseudonymisierung durch Trennung von Identität und Aktivitätsdaten"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/routes/api/quiz-attempts/+server.ts
+    notes: >
+      Quiz-Versuche werden mit anonymous_id (UUID, kein Personenbezug) angelegt.
+      Verknüpfung mit User-Konto erst beim Claim-Endpunkt nach Login.
+      points_ledger enthält User-ID (UUID), keine Klartextdaten.
+
+# ─────────────────────────────────────────────────────────────────
+# 6. VERFÜGBARKEITSKONTROLLE
+# Schutz vor Datenverlust und Wiederherstellbarkeit
+# ─────────────────────────────────────────────────────────────────
+
+verfuegbarkeitskontrolle:
+
+  - id: vk-1
+    name: "Hosting-Redundanz (Vercel CDN)"
+    status: umgesetzt
+    nachweis: extern
+    notes: >
+      Vercel: globales CDN mit automatischer Failover-Logik.
+      SLA laut Vercel Pro-Plan. AVV mit Vercel abgeschlossen.
+
+  - id: vk-2
+    name: "Datenbankbackup (Hetzner)"
+    status: teilweise
+    nachweis: extern
+    notes: >
+      Hetzner bietet Snapshot-Backups für den Directus-Server.
+      Automatisiertes tägliches Backup zu konfigurieren (Hetzner Backup-Option).
+      Formales Backup-Konzept (Frequenz, Aufbewahrungsdauer, Wiederherstellungstest)
+      noch nicht schriftlich dokumentiert.
+
+  - id: vk-3
+    name: "Löschkonzept (Art. 17 DSGVO)"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/routes/api/profile/delete/+server.ts
+    notes: >
+      Account-Löschung mit vollständiger Kaskaden-Löschung aller Nutzerdaten
+      (points_ledger, user_profiles, reward_redemptions, quiz_attempts, activity_logs).
+      Nutzer kann selbst löschen (Profil → Konto löschen). Keine Soft-Delete-Logik
+      die Daten versteckt aber behält.
+
+# ─────────────────────────────────────────────────────────────────
+# 7. PSEUDONYMISIERUNG UND VERSCHLÜSSELUNG (Art. 32 Abs. 1 lit. a)
+# ─────────────────────────────────────────────────────────────────
+
+pseudonymisierung:
+
+  - id: ps-1
+    name: "Pseudonymisierung von Nutzer-IDs in allen Systemen"
+    status: umgesetzt
+    nachweis: code
+    notes: >
+      Interne Referenzierung ausschließlich über UUIDs (Directus user_id).
+      Analytics (PostHog): nur UUID, keine Namen/E-Mails.
+      points_ledger, activity_logs, quiz_attempts: nur UUID, kein Klartext-PII.
+
+  - id: ps-2
+    name: "Passwort-Hashing"
+    status: umgesetzt
+    nachweis: extern
+    notes: >
+      Directus speichert Passwörter als bcrypt-Hash (Directus-Standard, nicht konfigurierbar).
+      Kein Passwort-Klartext in Logs, Datenbank oder API-Responses.
+
+  - id: ps-3
+    name: "JWT-Token-Speicherung (Designentscheidung)"
+    status: umgesetzt
+    nachweis: code
+    nachweis_ref:
+      - src/lib/utils/auth.ts
+    notes: >
+      JWT in localStorage (kein httpOnly Cookie) – bewusste Designentscheidung für
+      Capacitor-Android-Kompatibilität (httpOnly Cookies funktionieren im Capacitor
+      WebView nicht zuverlässig). Risiko: XSS-Angriffe könnten Token extrahieren.
+      Gegenmaßnahme: Content Security Policy empfohlen (noch offen).
+      Diese Entscheidung ist im CLAUDE.md dokumentiert.
+
+# ─────────────────────────────────────────────────────────────────
+# 8. ORGANISATORISCHE MASSNAHMEN
+# ─────────────────────────────────────────────────────────────────
+
+organisatorische_massnahmen:
+
+  - id: om-1
+    name: "Datensparsamkeit (Privacy by Design, Art. 25)"
+    status: umgesetzt
+    nachweis: code
+    notes: >
+      Keine Standortdaten (GPS) erhoben. Keine Social-Graph-Daten.
+      Keine Profilbilder gespeichert. Aktivitätsdaten nur mit expliziter
+      Einwilligung (Health Connect Permission Dialog + ConsentBanner für Analytics).
+      anonymous_id für Quiz ermöglicht datenschutzfreundliche Teilnahme ohne Login.
+
+  - id: om-2
+    name: "Staged Deployment (Entwicklungs- → Produktionsprozess)"
+    status: umgesetzt
+    nachweis: prozess
+    notes: >
+      Workflow: dev-Branch → Vercel Preview (dev.austrofit.at, passwortgeschützt)
+      → Code-Review → merge main → Vercel Production (austrofit.at).
+      Keine direkten Deployments auf Production ohne vorherigen dev-Test.
+
+  - id: om-3
+    name: "Umgebungsvariablen-Sicherheit"
+    status: umgesetzt
+    nachweis: konfiguration
+    notes: >
+      Alle API-Tokens und Secrets ausschließlich in Vercel Environment Variables
+      gespeichert (nicht im Repository). .env-Dateien in .gitignore.
+      Nur serverseitige Variablen ($env/static/private) für Tokens; keine Token
+      im Client-Bundle.
+
+  - id: om-4
+    name: "Security Review und Dokumentation"
+    status: umgesetzt
+    nachweis: prozess
+    nachweis_ref:
+      - CLAUDE.md
+      - docs/features.yaml
+    notes: >
+      Security-Hardening-Review Mai 2026: 7 Fixes implementiert und dokumentiert
+      (Quiz-Allowlist, Claim-Token-Fix, Cooldown-Bypass-Schutz, Cardio-Cap,
+      Streak-Dedup, Redeem-Race-Condition, Cardio-Input-Grenzen).
+      Laufende Dokumentation von Sicherheitsentscheidungen in CLAUDE.md.
+
+  - id: om-5
+    name: "Auftragsverarbeitungsverträge (AVV, Art. 28)"
+    status: teilweise
+    nachweis: extern
+    notes: >
+      Vercel: AVV abgeschlossen (Vercel DPA).
+      PostHog: AVV standardmäßig für EU-Cloud-Kunden vorhanden.
+      Directus: selbst gehostet (Hetzner) – kein Directus-SaaS-AVV erforderlich.
+      Hetzner: AVV vorhanden (Hetzner AV-Vertrag).
+      Offen: Formale Prüfung/Ablage aller AVV-Dokumente noch durchzuführen.
+
+  - id: om-6
+    name: "Mitarbeiterzugang und Vertraulichkeit"
+    status: umgesetzt
+    nachweis: prozess
+    notes: >
+      Aktuell Einzelpersonenbetrieb (Johannes Gnong). Kein weiteres Personal
+      mit Datenzugang. Bei Erweiterung des Teams: Verpflichtung auf Vertraulichkeit
+      (Geheimhaltungsvereinbarung) und rollenbasierte Zugangsberechtigungen in Directus.
+
+# ─────────────────────────────────────────────────────────────────
+# 9. ZUSAMMENFASSUNG: OFFENE PUNKTE
+# ─────────────────────────────────────────────────────────────────
+
+offene_punkte:
+
+  - id: op-1
+    massnahme: ek-5
+    aktion: "Rate-Limiting für kritische API-Endpunkte implementieren"
+    prioritaet: mittel
+    frist: "Phase 2 / vor erstem Produktivbetrieb mit vielen Nutzern"
+    notes: >
+      Kritischste Endpunkte: /api/auth/login (Brute-Force), /api/quiz-attempts,
+      /api/redeem. Optionen: Vercel Edge Middleware mit IP-Rate-Limiting
+      oder Upstash Redis (serverless rate limiting).
+
+  - id: op-2
+    massnahme: vk-2
+    aktion: "Automatisiertes Datenbankbackup-Konzept dokumentieren und testen"
+    prioritaet: mittel
+    frist: "vor Go-Live"
+    notes: >
+      Hetzner Backup aktivieren (tägliche Snapshots), Aufbewahrungsdauer festlegen
+      (empfohlen: 7 Tage), Wiederherstellungstest durchführen und dokumentieren.
+
+  - id: op-3
+    massnahme: ps-3
+    aktion: "Content Security Policy (CSP) Headers evaluieren"
+    prioritaet: niedrig
+    frist: "Phase 2"
+    notes: >
+      CSP würde XSS-Risiko beim localStorage-JWT reduzieren.
+      SvelteKit-kompatible CSP-Konfiguration in vercel.json testen.
+      Achtung: Inline-Scripts (SvelteKit Hydration) erfordern nonce-basierte CSP.
+
+  - id: op-4
+    massnahme: om-5
+    aktion: "AVV-Dokumente zentral ablegen und prüfen"
+    prioritaet: niedrig
+    frist: "kurzfristig"
+    notes: >
+      Alle abgeschlossenen AVVs (Vercel, PostHog, Hetzner) herunterladen und
+      sicher aufbewahren (z.B. verschlüsselter Ordner). Auf Anfrage der DSB
+      vorlegbar.

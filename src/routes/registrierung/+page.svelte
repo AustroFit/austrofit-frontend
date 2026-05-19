@@ -347,6 +347,11 @@
         {/each}
       </div>
 
+      <p class="text-xs text-gray-400 text-center leading-relaxed mb-4">
+        AustroFit ist keine medizinische Anwendung und ersetzt keine ärztliche Beratung.
+        Die Bewegungsempfehlungen basieren auf WHO/FGOE-Richtlinien.
+      </p>
+
       <button
         type="button"
         onclick={confirmGroup}

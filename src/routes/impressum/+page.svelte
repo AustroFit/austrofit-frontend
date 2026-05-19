@@ -32,6 +32,14 @@
           <dd><a href="mailto:kontakt@austrofit.at" class="underline hover:text-gray-900">kontakt@austrofit.at</a></dd>
         </div>
         <div>
+          <dt class="font-medium text-gray-500">Kontaktstelle gemäß Digital Services Act (DSA)</dt>
+          <dd><a href="mailto:kontakt@austrofit.at" class="underline hover:text-gray-900">kontakt@austrofit.at</a></dd>
+        </div>
+        <div>
+          <dt class="font-medium text-gray-500">Zuständige Aufsichtsbehörde (DSA)</dt>
+          <dd>KommAustria / RTR-GmbH, Mariahilfer Straße 77–79, 1060 Wien</dd>
+        </div>
+        <div>
           <dt class="font-medium text-gray-500">Unternehmensgegenstand</dt>
           <dd>Digitale Gesundheitsplattform – Bewegungsförderung und Prävention</dd>
         </div>
@@ -65,7 +73,7 @@
       </p>
     </section>
 
-    <p class="text-xs text-gray-400 text-center">Stand: März 2026</p>
+    <p class="text-xs text-gray-400 text-center">Stand: Mai 2026</p>
 
   </div>
 </main>

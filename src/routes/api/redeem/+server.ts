@@ -133,12 +133,10 @@ export async function POST({ request, fetch }: { request: Request; fetch: typeof
     );
   }
 
-  // Unique code derived from redemption ID – deterministic, no schema change needed.
-  // Falls redemptionId eine Zahl ist: AF-000042; falls UUID: letzte 8 Zeichen.
-  const codeBase = /^\d+$/.test(redemptionId)
-    ? String(redemptionId).padStart(6, '0')
-    : redemptionId.slice(-8).toUpperCase();
-  const code = `AF-${codeBase}`;
+  // Echten Gutschein-Code aus Directus bevorzugen; Fallback: generierter AF-Code.
+  const code = reward.coupon_code
+    ? String(reward.coupon_code)
+    : `AF-${/^\d+$/.test(redemptionId) ? String(redemptionId).padStart(6, '0') : redemptionId.slice(-8).toUpperCase()}`;
 
   return json({
     gutschein: {

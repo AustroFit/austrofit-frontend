@@ -6,7 +6,7 @@
     <h1 class="mb-2 text-3xl font-bold font-heading text-heading">
       Datenschutzerklärung
     </h1>
-    <p class="mb-8 text-sm text-gray-400">Stand: März 2026 · gemäß DSGVO</p>
+    <p class="mb-8 text-sm text-gray-400">Stand: Mai 2026 · gemäß DSGVO</p>
 
     <!-- 1. Verantwortlicher -->
     <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
@@ -36,7 +36,10 @@
         <div>
           <p class="font-medium text-gray-800">Gesundheits- und Aktivitätsdaten</p>
           <p>Mit deiner ausdrücklichen Einwilligung (Art. 6 Abs. 1 lit. a i.V.m. Art. 9 Abs. 2 lit. a DSGVO)
-          erheben wir Schritt- und Bewegungsdaten. Diese werden <strong>pseudonymisiert</strong> gespeichert
+          erheben wir Schritt- und Bewegungsdaten sowie deine Aktivitätsgruppe
+          (Erwachsene, Senioren, Schwangere oder chronisch Erkrankte). Diese Angaben gelten als
+          Gesundheitsdaten im Sinne von Art. 4 Nr. 15 DSGVO. Sie werden <strong>pseudonymisiert</strong>
+          gespeichert, ausschließlich zur Berechnung deines persönlichen Bewegungsziels verwendet
           und nicht an Dritte weitergegeben. Du kannst die Einwilligung jederzeit widerrufen und
           dein Konto in den Profileinstellungen vollständig löschen.</p>
         </div>
@@ -52,46 +55,77 @@
     <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
       <h2 class="mb-4 text-lg font-semibold text-gray-900">3. Web-Analytics (PostHog)</h2>
       <p class="text-sm text-gray-600 leading-relaxed mb-3">
-        Wir verwenden PostHog EU zur Analyse der Plattformnutzung. Rechtsgrundlage ist unser
-        berechtigtes Interesse an der Verbesserung unseres Angebots (Art. 6 Abs. 1 lit. f DSGVO).
+        Wir verwenden PostHog EU zur Analyse der Plattformnutzung, sofern du dem beim ersten
+        App-Aufruf zugestimmt hast. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).
+        Die Einwilligung kann jederzeit mit Wirkung für die Zukunft widerrufen werden
+        (Einstellungen → Datenschutz oder durch Löschen des Eintrags
+        <code class="bg-gray-100 px-1 rounded text-xs">austrofit_analytics_consent</code> im Browser-Speicher).
       </p>
       <ul class="text-sm text-gray-600 space-y-1.5 list-none">
         <li>→ <strong>Anbieter:</strong> PostHog Inc., 965 Mission St, Suite 100, San Francisco – Datenverarbeitung ausschließlich auf EU-Servern (Frankfurt, Deutschland)</li>
-        <li>→ <strong>Keine Cookies:</strong> Die Analyse erfolgt ohne Browser-Cookies, ausschließlich über eine anonyme ID im lokalen Speicher (localStorage).</li>
+        <li>→ <strong>Keine Cookies:</strong> Die Analyse erfolgt ohne Browser-Cookies, ausschließlich über eine pseudonymisierte ID im lokalen Speicher (localStorage).</li>
         <li>→ <strong>IP-Anonymisierung:</strong> IP-Adressen werden vor der Speicherung anonymisiert.</li>
         <li>→ <strong>Gespeicherte Events:</strong> Registrierung, Quiz-Abschluss, Health-Permission-Entscheidung, Gutschein-Einlösung – keine Inhalte, keine personenbezogenen Texteingaben.</li>
-        <li>→ <strong>Widerspruch:</strong> Du kannst die Speicherung der anonymen Analytics-ID durch Löschen des localStorage-Eintrags <code class="bg-gray-100 px-1 rounded text-xs">austrofit_anonymous_id</code> verhindern.</li>
+        <li>→ <strong>Nach Login:</strong> Nach der Anmeldung wird die Analytics-Session mit einer pseudonymisierten Nutzer-ID verknüpft, um die Nutzung geräteübergreifend zusammenzuführen.</li>
       </ul>
     </section>
 
-    <!-- 4. Affiliate-Links (AWIN) -->
+    <!-- 4. Affiliate-Links -->
     <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
-      <h2 class="mb-4 text-lg font-semibold text-gray-900">4. Affiliate-Links (AWIN)</h2>
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">4. Partnerangebote &amp; Affiliate-Tracking</h2>
       <p class="text-sm text-gray-600 leading-relaxed mb-3">
-        AustroFit nimmt am Affiliate-Partnerprogramm von <strong>AWIN AG</strong> (Eichhornstraße 3, 10785 Berlin, Deutschland) teil.
-        Auf unserer Plattform können Links zu Angeboten von AWIN-Partnern eingebettet sein. Wenn du auf einen
-        solchen Link klickst, wird eine Verbindung zu den Servern von AWIN hergestellt, um die Vermittlung
-        nachzuverfolgen.
+        AustroFit kooperiert mit Affiliate-Netzwerken. Angebote, die als <strong>Partnerangebot</strong>
+        gekennzeichnet sind, enthalten Tracking-Links. Wenn du auf einen solchen Link klickst und
+        beim Partner einkaufst, erhalten wir eine Provision. Das Tracking findet auf den Servern des
+        jeweiligen Netzwerks statt – AustroFit selbst speichert keine Klick- oder Kaufdaten.
+        Rechtsgrundlage: berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO).
       </p>
-      <ul class="text-sm text-gray-600 space-y-1.5 list-none">
-        <li>→ <strong>Zweck:</strong> Nachverfolgung von Vermittlungen zur Abrechnung von Provisionen</li>
-        <li>→ <strong>Rechtsgrundlage:</strong> Berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO)</li>
-        <li>→ <strong>Datenschutzerklärung AWIN:</strong> <a href="https://www.awin.com/de/datenschutz" target="_blank" rel="noopener noreferrer" class="underline">www.awin.com/de/datenschutz</a></li>
-      </ul>
-      <p class="mt-3 text-sm text-gray-600 leading-relaxed">
-        Affiliate-Links sind in der Regel als solche erkennbar oder werden entsprechend gekennzeichnet.
-      </p>
+      <div class="space-y-3">
+        <div>
+          <p class="text-sm font-medium text-gray-700 mb-1">AWIN AG</p>
+          <ul class="text-sm text-gray-600 space-y-1 list-none">
+            <li>→ <strong>Anbieter:</strong> AWIN AG, Eichhornstraße 3, 10785 Berlin, Deutschland</li>
+            <li>→ <a href="https://www.awin.com/de/datenschutz" target="_blank" rel="noopener noreferrer" class="underline">Datenschutzerklärung AWIN</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-700 mb-1">TradeDoubler AB</p>
+          <ul class="text-sm text-gray-600 space-y-1 list-none">
+            <li>→ <strong>Anbieter:</strong> TradeDoubler AB, Birger Jarlsgatan 28A, 111 45 Stockholm, Schweden</li>
+            <li>→ <a href="https://www.tradedoubler.com/de/datenschutz/" target="_blank" rel="noopener noreferrer" class="underline">Datenschutzerklärung TradeDoubler</a></li>
+          </ul>
+        </div>
+      </div>
     </section>
 
     <!-- 5. Hosting -->
     <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
-      <h2 class="mb-4 text-lg font-semibold text-gray-900">5. Hosting & Infrastruktur</h2>
-      <p class="text-sm text-gray-600 leading-relaxed">
-        Das Content-Management-System (Directus) und die Datenbank (PostgreSQL) sind auf einem
-        Server in der EU (Hetzner, Deutschland) selbst gehostet. Es erfolgt keine Übertragung
-        personenbezogener Daten in Drittländer außerhalb der EU/EWR, mit Ausnahme der unter
-        Punkt 3 beschriebenen Analytics-Verarbeitung innerhalb der EU.
-      </p>
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">5. Hosting &amp; Infrastruktur</h2>
+      <div class="space-y-3 text-sm text-gray-600 leading-relaxed">
+        <div>
+          <p class="font-medium text-gray-700">Frontend-Hosting: Vercel Inc.</p>
+          <p>Die Web-App wird über Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) ausgeliefert.
+          Vercel verarbeitet dabei technische Verbindungsdaten (IP-Adresse, Zeitstempel).
+          Rechtsgrundlage: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).
+          Die Übertragung in die USA erfolgt auf Grundlage von Standardvertragsklauseln (SCC, Art. 46 Abs. 2 lit. c DSGVO).
+          Auftragsverarbeitungsvertrag mit Vercel abgeschlossen.</p>
+        </div>
+        <div>
+          <p class="font-medium text-gray-700">Datenbank &amp; CMS: Hetzner / Directus</p>
+          <p>Das Content-Management-System (Directus) und die Datenbank (PostgreSQL) sind auf einem
+          Server in der EU (Hetzner, Deutschland) selbst gehostet. Keine Übertragung in Drittländer.
+          Rechtsgrundlage: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).</p>
+        </div>
+        <div>
+          <p class="font-medium text-gray-700">Google OAuth (Login mit Google)</p>
+          <p>Wenn du dich mit deinem Google-Konto anmeldest, wird eine Verbindung zu den Servern von
+          Google LLC (1600 Amphitheatre Parkway, Mountain View, CA 94043, USA) hergestellt.
+          Google übermittelt dabei deinen Namen und deine E-Mail-Adresse an AustroFit.
+          Rechtsgrundlage: Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).
+          Die Übertragung in die USA erfolgt auf Grundlage von Standardvertragsklauseln (SCC).
+          Datenschutzerklärung Google: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="underline">policies.google.com/privacy</a></p>
+        </div>
+      </div>
     </section>
 
     <!-- 6. Aufbewahrung -->
@@ -130,7 +164,20 @@
       </p>
     </section>
 
-    <p class="text-xs text-gray-400 text-center">Stand: März 2026</p>
+    <!-- 8. Medizinischer Disclaimer -->
+    <section class="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-black/10">
+      <h2 class="mb-4 text-lg font-semibold text-gray-900">8. Hinweis: Keine medizinische Anwendung</h2>
+      <p class="text-sm text-gray-600 leading-relaxed">
+        AustroFit ist eine Bewegungs- und Wellness-App und <strong>kein Medizinprodukt</strong>.
+        Die App dient ausschließlich der allgemeinen Gesundheitsförderung und Bewegungsmotivation.
+        Die Bewegungsempfehlungen basieren auf den Richtlinien der WHO und FGOE und stellen
+        <strong>keinen medizinischen Rat</strong> dar. AustroFit diagnostiziert, behandelt oder
+        überwacht keine Krankheiten. Bei gesundheitlichen Beschwerden oder Fragen zur körperlichen
+        Belastbarkeit wende dich an eine Ärztin oder einen Arzt.
+      </p>
+    </section>
+
+    <p class="text-xs text-gray-400 text-center">Stand: Mai 2026</p>
 
   </div>
 </main>

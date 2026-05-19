@@ -1,0 +1,585 @@
+# AustroFit Compliance Registry
+# Maschinenlesbare Übersicht aller anwendbaren Regularien, Gesetze, Standards und Normen
+# Ablage: docs/compliance.yaml
+# Erstellt: 2026-05-17
+# Scope: Österreich / EU
+
+meta:
+  titel: AustroFit Compliance Registry
+  version: "1.0"
+  erstellt: "2026-05-17"
+  beschreibung: >
+    Regulierungs-Übersicht für Entwicklung, Rechts- und Investoren-Checks.
+    Enthält alle anwendbaren Anforderungen mit Implementierungsstatus und Nachweis-Typ.
+    Nicht-anwendbare Regularien sind mit applicability: false markiert (inkl. Begründung).
+  status_werte:
+    compliant:    "Anforderung erfüllt und nachweisbar"
+    partial:      "Teilweise erfüllt – offene Punkte in notes"
+    open:         "Noch nicht umgesetzt"
+    not_applies:  "Nicht anwendbar – Begründung in notes"
+    deferred:     "Zurückgestellt auf spätere Phase (Phase 2 / Phase 3+)"
+  evidence_type_werte:
+    code:         "Nachweis liegt im Code (Datei/Funktion/Test)"
+    document:     "Nachweis liegt in einem Dokument (DSE, AGB, DPIA, etc.)"
+    process:      "Nachweis liegt in einem Prozess / einer Richtlinie"
+    external:     "Nachweis liegt bei Drittanbieter (Zertifikat, Auftragsverarbeitungsvertrag)"
+    none:         "Kein Nachweis vorhanden"
+
+# ─────────────────────────────────────────────────────────────────
+# DATENSCHUTZ
+# ─────────────────────────────────────────────────────────────────
+
+regulations:
+
+  - id: dsgvo
+    name: "DSGVO (Datenschutz-Grundverordnung)"
+    rechtsgrundlage: "Verordnung (EU) 2016/679"
+    kategorie: datenschutz
+    phase: mvp
+    applicability: true
+    begruendung: >
+      AustroFit verarbeitet personenbezogene Daten (E-Mail, Aktivitätsdaten, Schritte,
+      Workouts, Aktivitätsgruppe) und Gesundheitsdaten im Sinne von Art. 4 Nr. 15 DSGVO.
+      Verarbeitung von Gesundheitsdaten unterliegt Art. 9 (besondere Kategorien).
+    requirements:
+
+      - id: dsgvo-art9-consent
+        name: "Explizite Einwilligung für Gesundheitsdaten (Art. 9 Abs. 2 lit. a)"
+        status: partial
+        evidence_type: code
+        evidence_ref:
+          - src/routes/registrierung/+page.svelte
+          - src/routes/api/auth/register/+server.ts
+        notes: >
+          Aktivitätsgruppe (adult/senior/pregnant/chronic) ist Gesundheitsdatum.
+          Schritte + Workouts via Health Connect sind Gesundheitsdaten.
+          Beim Health-Connect-Permission-Request (requestHealthPermission) wird der User
+          über die Datenweitergabe informiert – aber: ein expliziter DSGVO-Art.9-Consent
+          (separates Häkchen mit Zweckangabe) fehlt im Onboarding-Flow.
+          Offen: Separater Consent-Schritt für Gesundheitsdaten-Verarbeitung einbauen
+          oder vorhandene Einwilligung auf Art. 9-Tauglichkeit prüfen lassen (Rechtsberatung).
+
+      - id: dsgvo-art13-dse
+        name: "Informationspflichten (Datenschutzerklärung, Art. 13/14)"
+        status: compliant
+        evidence_type: document
+        evidence_ref:
+          - src/routes/datenschutz/+page.svelte
+        notes: >
+          DSE vollständig (Mai 2026). Alle Verarbeiter explizit genannt mit Rechtsgrundlage:
+          PostHog (Art. 6 Abs. 1 lit. a), AWIN/TradeDoubler (Art. 6 Abs. 1 lit. f),
+          Vercel (Art. 6 Abs. 1 lit. b + SCC), Directus/Hetzner (Art. 6 Abs. 1 lit. b),
+          Google OAuth (Art. 6 Abs. 1 lit. a + SCC).
+          Gesundheitsdaten inkl. Aktivitätsgruppe mit Art. 9 Abs. 2 lit. a ausgewiesen.
+          Betroffenenrechte Art. 15–21 dokumentiert. DSE-Stand: Mai 2026.
+
+      - id: dsgvo-art17-loeschung
+        name: "Recht auf Löschung (Art. 17) und Datenportabilität (Art. 20)"
+        status: compliant
+        evidence_type: code
+        evidence_ref:
+          - src/routes/api/profile/delete/+server.ts
+        notes: >
+          Account-Löschung mit Kaskaden-Löschung aller Nutzerdaten implementiert.
+          Datenportabilität (Export) noch nicht implementiert – kein sofortiger
+          Handlungsbedarf (kein expliziter Nutzerwunsch bisher), aber für Skalierung
+          empfehlenswert.
+
+      - id: dsgvo-art25-privacy-by-design
+        name: "Privacy by Design / Privacy by Default (Art. 25)"
+        status: partial
+        evidence_type: code
+        evidence_ref:
+          - src/lib/utils/auth.ts
+        notes: >
+          Datensparsamkeit weitgehend eingehalten (keine Standortdaten, keine
+          Social-Graph-Daten). JWT in localStorage (kein httpOnly Cookie) ist bewusste
+          Design-Entscheidung für Capacitor-Kompatibilität – sollte in DPIA begründet
+          und dokumentiert sein. anonymous_id für Quiz-Flow = datenschutzfreundliches Design.
+
+      - id: dsgvo-art32-tom
+        name: "Technische und organisatorische Maßnahmen (Art. 32)"
+        status: partial
+        evidence_type: document
+        evidence_ref:
+          - docs/tom.yaml
+        notes: >
+          TOM-Dokument erstellt (Mai 2026): docs/tom.yaml mit 9 Kategorien, 20 Maßnahmen.
+          Umgesetzt: HTTPS/TLS, CORS, JWT-Auth, Least-Privilege-Tokens, API-Proxy,
+          Input-Validierung (Allowlist), Dedup-Checks, Datenwert-Caps, Race-Condition-Schutz,
+          Pseudonymisierung, Passwort-Hashing, Löschkonzept, Staged Deployment.
+          Offen (in tom.yaml/offene_punkte dokumentiert):
+          Rate-Limiting (op-1), Backup-Konzept schriftlich (op-2),
+          CSP-Header (op-3), AVV-Ablage (op-4).
+          Status bleibt 'partial' bis Rate-Limiting und Backup-Konzept umgesetzt.
+
+      - id: dsgvo-art35-dpia
+        name: "Datenschutz-Folgenabschätzung DPIA (Art. 35)"
+        status: open
+        evidence_type: document
+        notes: >
+          DPIA ist Pflicht bei "umfangreicher Verarbeitung besonderer Kategorien" (Art. 35
+          Abs. 3 lit. b). Gesundheitsdaten + Fitness-Tracking = klarer Anwendungsfall.
+          Österreichische DSB-Blacklist prüfen (§ 4 DSFA-AV).
+          Inhalt DPIA: Zweck, Notwendigkeit, Risiken, Gegenmaßnahmen, Residualrisiken.
+          Zu erstellen vor Go-Live oder vor erstem echten Nutzer.
+
+      - id: dsgvo-avv
+        name: "Auftragsverarbeitungsverträge (Art. 28)"
+        status: open
+        evidence_type: external
+        notes: >
+          AVVs erforderlich mit: Vercel (Hosting), PostHog (Analytics – EU Cloud,
+          AVV standardmäßig vorhanden), Directus (falls SaaS-Hosted). AWIN und
+          TradeDoubler agieren als eigenständige Verantwortliche für ihr Tracking –
+          AVV nicht erforderlich, aber DSE-Hinweis auf Drittverantwortliche nötig.
+
+  - id: dsg
+    name: "DSG (Datenschutzgesetz Österreich)"
+    rechtsgrundlage: "BGBl. I Nr. 165/1999 idF BGBl. I Nr. 24/2018"
+    kategorie: datenschutz
+    phase: mvp
+    applicability: true
+    requirements:
+
+      - id: dsg-dsb
+        name: "Datenschutzbehörde als zuständige Aufsichtsbehörde"
+        status: compliant
+        evidence_type: document
+        notes: >
+          Zuständig: DSB Wien (Österreich). Keine eigene nationale Pflicht zum
+          Datenschutzbeauftragten für Kleinstunternehmen ohne systematische
+          Art. 9-Verarbeitung – Bestellung jedoch empfohlen oder externer DSB-Dienstleister.
+
+# ─────────────────────────────────────────────────────────────────
+# EPRIVACY / TRACKING
+# ─────────────────────────────────────────────────────────────────
+
+  - id: eprivacy-tkg
+    name: "ePrivacy / TKG 2021 (§ 165 ff.)"
+    rechtsgrundlage: "Telekommunikationsgesetz 2021 BGBl. I Nr. 190/2021"
+    kategorie: tracking
+    phase: mvp
+    applicability: true
+    requirements:
+
+      - id: eprivacy-consent-banner
+        name: "Einwilligungs-Banner für nicht-notwendige Verarbeitung"
+        status: compliant
+        evidence_type: code
+        evidence_ref:
+          - src/lib/components/dashboard/ConsentBanner.svelte
+          - src/routes/+layout.svelte
+        notes: >
+          Implementiert: ConsentBanner.svelte – PostHog Analytics wird erst nach
+          Einwilligung (localStorage 'austrofit_analytics_consent') initialisiert.
+          Accept + Decline persistieren Wahl korrekt.
+          Banner-Text lautet korrekt "pseudonymisierte Nutzungsstatistiken" (Mai 2026).
+          AWIN/TradeDoubler: Affiliate-Tracking findet auf der Partner-Seite statt
+          (nach Klick auf Affiliate-Link), nicht auf austrofit.at – kein eigener Consent
+          von AustroFit erforderlich; DSE-Hinweis auf Partner-Tracking genügt.
+
+      - id: eprivacy-localstorage
+        name: "localStorage für funktionale Daten (kein Consent erforderlich)"
+        status: compliant
+        evidence_type: code
+        notes: >
+          Auth-Token (austrofit_access_token), anonymous_id, Sync-Timestamps,
+          Dev-Flags: alle funktional notwendig für den Dienst → kein Consent erforderlich
+          (§ 165 Abs. 3 TKG: Ausnahme für technisch notwendige Speicherung).
+
+# ─────────────────────────────────────────────────────────────────
+# MEDIZINPRODUKTERECHT
+# ─────────────────────────────────────────────────────────────────
+
+  - id: mdr
+    name: "MDR – Medical Device Regulation"
+    rechtsgrundlage: "Verordnung (EU) 2017/745"
+    kategorie: produktrecht
+    phase: mvp
+    applicability: false
+    begruendung: >
+      AustroFit ist eine Wellness- und Fitness-App ohne medizinische Zweckbestimmung.
+      Keine Diagnose, Behandlung oder Überwachung von Krankheiten.
+      Die App fällt nicht unter die MDR-Definition eines Medizinprodukts (Art. 2 Nr. 1 MDR),
+      solange keine medizinischen Claims kommuniziert werden.
+    requirements:
+
+      - id: mdr-no-medical-claims
+        name: "Keine medizinischen Zweckbehauptungen"
+        status: compliant
+        evidence_type: document
+        evidence_ref:
+          - src/routes/registrierung/+page.svelte
+          - src/routes/datenschutz/+page.svelte
+        notes: >
+          Disclaimer implementiert (Mai 2026): Onboarding Step 2 (Gruppenauswahl) zeigt
+          "AustroFit ist keine medizinische Anwendung und ersetzt keine ärztliche Beratung."
+          DSE enthält eigene Section 8 "Hinweis: Keine medizinische Anwendung".
+          Kritische Grenze: Sobald AustroFit behauptet, Krankheiten zu diagnostizieren,
+          zu behandeln oder zu überwachen, wird die App zum Medizinprodukt (CE-Pflicht).
+          Gesundheitsartikel und Aktivitätsgruppen (chronic, pregnant) laufend prüfen –
+          nur WHO/FGOE-Bewegungsempfehlungen, keine diagnostischen Claims.
+
+# ─────────────────────────────────────────────────────────────────
+# E-COMMERCE / KONSUMENTENSCHUTZ
+# ─────────────────────────────────────────────────────────────────
+
+  - id: ecg
+    name: "E-Commerce-Gesetz (ECG)"
+    rechtsgrundlage: "BGBl. I Nr. 152/2001 (Umsetzung Richtlinie 2000/31/EG)"
+    kategorie: konsumentenschutz
+    phase: mvp
+    applicability: true
+    requirements:
+
+      - id: ecg-impressum
+        name: "Impressumspflicht (§ 5 ECG)"
+        status: compliant
+        evidence_type: document
+        evidence_ref:
+          - src/routes/impressum/+page.svelte
+        notes: >
+          /impressum vorhanden mit allen Pflichtangaben für Privatperson (Mai 2026):
+          Name (Johannes Gnong), Anschrift (Sollingergasse 8-12/5/10, 1190 Wien),
+          E-Mail (kontakt@austrofit.at), DSA-Kontaktstelle, DSA-Aufsichtsbehörde
+          (KommAustria / RTR-GmbH). UID-Nummer und Kammerzugehörigkeit entfallen
+          mangels Gewerbeanmeldung. Nach Gewerbeanmeldung: UID ergänzen.
+
+      - id: ecg-agb
+        name: "Allgemeine Geschäftsbedingungen"
+        status: open
+        evidence_type: document
+        notes: >
+          AGB fehlen oder sind unvollständig. Mindestinhalt: Leistungsbeschreibung,
+          Punkte-Regeln (Verfall, Nicht-Übertragbarkeit, kein Bargeldtausch),
+          Nutzungsbedingungen, Haftungsausschluss.
+          Punkte ausdrücklich als "nicht übertragbar, nicht gegen Bargeld einlösbar,
+          kein Geldwert" definieren (relevant für ZaDiG-Abgrenzung und GSpG).
+
+  - id: kschg
+    name: "Konsumentenschutzgesetz (KSchG)"
+    rechtsgrundlage: "BGBl. Nr. 140/1979 idgF"
+    kategorie: konsumentenschutz
+    phase: mvp
+    applicability: true
+    requirements:
+
+      - id: kschg-transparenz-punkte
+        name: "Transparenz des Punkte-Systems"
+        status: open
+        evidence_type: document
+        notes: >
+          Nutzer muss klar verstehen: Wie werden Punkte berechnet? Verfallen Punkte?
+          Wie lange sind Gutscheine gültig? Was passiert mit Punkten bei Account-Löschung?
+          Aktuell im UI nicht explizit kommuniziert – in AGB und/oder FAQ dokumentieren.
+
+      - id: kschg-no-dark-patterns
+        name: "Keine irreführenden Gestaltungsmuster (Dark Patterns)"
+        status: compliant
+        evidence_type: code
+        notes: >
+          Consent-Flow und Marketplace zeigen keine bekannten Dark Patterns
+          (kein Confirmshaming, kein verstecktes Ablehnen, keine Countdown-Täuschung).
+          Laufende Prüfung empfohlen bei neuen UI-Features.
+
+# ─────────────────────────────────────────────────────────────────
+# GLÜCKSSPIEL / GEWINNSPIELE
+# ─────────────────────────────────────────────────────────────────
+
+  - id: gspg
+    name: "Glücksspielgesetz (GSpG)"
+    rechtsgrundlage: "BGBl. Nr. 620/1989 idgF"
+    kategorie: gluecksspiel
+    phase: mvp
+    applicability: false
+    begruendung: >
+      GSpG ist nicht anwendbar: AustroFit-Punkte werden ausschließlich durch Aktivität
+      verdient (keine Kaufmöglichkeit geplant). Geplante Gewinnspiele sind als
+      kostenlose Preisausschreiben gestaltbar (kein Geldeinsatz = kein Glücksspiel i.S.d. GSpG).
+    requirements:
+
+      - id: gspg-gewinnspiele-design
+        name: "Gewinnspiele als Preisausschreiben gestalten (Phase 2)"
+        status: deferred
+        evidence_type: document
+        notes: >
+          Sobald Gewinnspiele implementiert werden: Sicherstellen dass keine
+          Kaufverpflichtung für Teilnahme besteht. WKO-Leitfaden Gewinnspiele beachten.
+          5% Glücksspielsteuer auf Gewinne über €10.000 pro Kalenderjahr (§ 17 GSpG).
+          Teilnahmebedingungen vor Feature-Launch rechtlich prüfen lassen.
+
+# ─────────────────────────────────────────────────────────────────
+# ZAHLUNGSDIENSTE / E-GELD
+# ─────────────────────────────────────────────────────────────────
+
+  - id: zadig
+    name: "ZaDiG 2018 / E-Geld-Gesetz"
+    rechtsgrundlage: "BGBl. I Nr. 17/2018 (ZaDiG 2018); BGBl. I Nr. 107/2010 (E-GeldG)"
+    kategorie: finanzrecht
+    phase: mvp
+    applicability: false
+    begruendung: >
+      Nicht anwendbar: AustroFit-Punkte sind nicht gegen Bargeld einlösbar und nicht
+      übertragbar. Sie erfüllen nicht die E-Geld-Definition (kein monetärer Gegenwert,
+      der auf Verlangen zurückgezahlt wird). Kein Zahlungsdienst im Sinne des ZaDiG.
+    requirements:
+
+      - id: zadig-agb-abgrenzung
+        name: "Punkte in AGB als Non-E-Geld definieren"
+        status: open
+        evidence_type: document
+        notes: >
+          Auch wenn ZaDiG nicht anwendbar: explizite AGB-Klausel empfohlen um
+          Auslegungszweifel zu vermeiden:
+          "Punkte sind kein Zahlungsmittel, nicht gegen Bargeld oder andere Währungen
+          einlösbar, nicht auf andere Nutzer übertragbar und begründen keinen
+          Rückzahlungsanspruch." → Wird im Rahmen der AGB-Erstellung abgedeckt.
+
+# ─────────────────────────────────────────────────────────────────
+# BARRIEREFREIHEIT
+# ─────────────────────────────────────────────────────────────────
+
+  - id: bfsg
+    name: "BFSG / BaFG (Barrierefreiheitsstärkungsgesetz / Barrierefreiheitsgesetz Österreich)"
+    rechtsgrundlage: "EU European Accessibility Act (Richtlinie (EU) 2019/882); österr. BaFG; in Kraft seit 28.06.2025"
+    kategorie: barrierefreiheit
+    phase: phase-2
+    applicability: false
+    begruendung: >
+      Aktuell nicht anwendbar: AustroFit ist Kleinstunternehmen (<10 MA, <2 Mio EUR Umsatz)
+      und noch kein eingetragenes Unternehmen. Kleinstunternehmen sind für Dienstleistungen
+      von den erweiterten BFSG-Pflichten ausgenommen.
+      Beim Wachstum auf ≥10 MA oder ≥2 Mio EUR Umsatz wird die Pflicht aktiv.
+    requirements:
+
+      - id: bfsg-wcag-future
+        name: "WCAG 2.1 AA – Barrierefreiheit (für Skalierung / B2G)"
+        status: deferred
+        evidence_type: none
+        notes: >
+          Für B2G-Kooperationen (Krankenkassen, öffentliche Gesundheitsprogramme) wird
+          WCAG 2.1 AA voraussichtlich Voraussetzung sein – unabhängig von gesetzlicher Pflicht.
+          Empfohlen: Barrierefreiheit von Anfang an als Design-Prinzip verankern
+          (Kontraste, Keyboard-Navigation, Screen-Reader-Labels).
+          Übergangsfrist für bestehende Produkte bis 28. Juni 2030.
+
+# ─────────────────────────────────────────────────────────────────
+# WERBERECHT / GESUNDHEITSCLAIMS
+# ─────────────────────────────────────────────────────────────────
+
+  - id: uwg
+    name: "UWG (Gesetz gegen unlauteren Wettbewerb)"
+    rechtsgrundlage: "BGBl. Nr. 448/1984 idgF"
+    kategorie: werberecht
+    phase: mvp
+    applicability: true
+    requirements:
+
+      - id: uwg-affiliate-kennzeichnung
+        name: "Kennzeichnung von Affiliate-Links / Werbung"
+        status: compliant
+        evidence_type: code
+        evidence_ref:
+          - src/lib/components/partner/AwinAngebotKarte.svelte
+          - src/routes/belohnung/+page.svelte
+        notes: >
+          Implementiert (Mai 2026): Jede AWIN/TradeDoubler-Karte trägt "Werbung"-Badge
+          (AwinAngebotKarte.svelte). Zusätzlich seitenweiter Hinweis im "Offen"-Tab:
+          "Die Online-Angebote unten sind Affiliate-Partnerschaften. AustroFit erhält
+          bei Nutzung eine Provision." mit Link zur DSE.
+          Artikel im Gesundheitswegweiser: keine Affiliate-Links in redaktionellen
+          Inhalten – laufende redaktionelle Prüfung empfohlen.
+
+      - id: uwg-health-claims
+        name: "Keine irreführenden Gesundheitsaussagen (§ 2 UWG)"
+        status: compliant
+        evidence_type: process
+        notes: >
+          Gesundheitsartikel basieren auf seriösen Gesundheitsquellen (WHO, FGOE).
+          Aktivitätsgruppen kommunizieren WHO/FGOE-Bewegungsempfehlungen, keine
+          medizinischen Versprechen. Laufende redaktionelle Prüfung empfohlen.
+
+  - id: health-claims-reg
+    name: "Health-Claims-Verordnung (EG) Nr. 1924/2006"
+    rechtsgrundlage: "Verordnung (EG) Nr. 1924/2006"
+    kategorie: werberecht
+    phase: mvp
+    applicability: false
+    begruendung: >
+      Gilt für Lebensmittel und Nahrungsergänzungsmittel. AustroFit selbst verkauft
+      keine Lebensmittel. Relevant nur falls Nahrungsergänzungs-Partner Produkte
+      bewerben – dann gilt die Verordnung für den Partner, nicht für AustroFit.
+
+# ─────────────────────────────────────────────────────────────────
+# CYBERSICHERHEIT
+# ─────────────────────────────────────────────────────────────────
+
+  - id: nis2
+    name: "NIS2 / NISG 2026"
+    rechtsgrundlage: "Richtlinie (EU) 2022/2555; österr. NISG 2026 (ab 01.10.2026)"
+    kategorie: cybersicherheit
+    phase: mvp
+    applicability: false
+    begruendung: >
+      Nicht anwendbar: AustroFit unterschreitet die Schwellenwerte (≥50 MA ODER
+      ≥10 Mio EUR Umsatz) und ist kein Anbieter kritischer Infrastruktur oder
+      essenzieller Dienste. Kein Registrierungsbedarf beim BACS.
+    requirements:
+
+      - id: nis2-future-check
+        name: "NIS2-Schwellenwert-Check bei Wachstum"
+        status: deferred
+        evidence_type: none
+        notes: >
+          Bei Wachstum auf ≥50 MA oder ≥10 Mio EUR Umsatz Betroffenheit prüfen.
+          DSGVO Art. 32 TOM (Technische Maßnahmen) sind unabhängig von NIS2 Pflicht
+          und decken den Sicherheitsbedarf für die aktuelle Phase ab.
+
+# ─────────────────────────────────────────────────────────────────
+# KI-REGULIERUNG
+# ─────────────────────────────────────────────────────────────────
+
+  - id: ai-act
+    name: "EU AI Act (KI-Verordnung)"
+    rechtsgrundlage: "Verordnung (EU) 2024/1689; anwendbar ab 02.08.2026"
+    kategorie: ki
+    phase: phase-2
+    applicability: true
+    begruendung: >
+      Geplantes ML-Anomalie-Scoring (Isolation Forest, Fraud Detection) fällt unter
+      den Geltungsbereich des AI Act. Klassifikation: voraussichtlich 'Minimal Risk'
+      oder 'Limited Risk' (internes Werkzeug, kein direkter Einfluss auf Dritte ohne
+      menschliche Überprüfung). Hochrisiko-Einstufung (Anhang III) wäre gegeben,
+      falls das System automatisiert Nutzer sperrt oder Leistungen verweigert.
+    requirements:
+
+      - id: ai-act-risikoklassifikation
+        name: "Risikoklassifikation des ML-Systems dokumentieren"
+        status: deferred
+        evidence_type: document
+        notes: >
+          Vor Implementierung des Isolation-Forest-Anomalie-Scorings (Phase 2):
+          Risikoklasse bestimmen. Empfehlung: System so gestalten dass automatisiertes
+          Scoring nur als Entscheidungsunterstützung dient (menschliche Prüfung
+          vor Nutzer-Sperre) → bleibt in 'Limited Risk'.
+          Bei Limited Risk: Transparenzpflicht wenn Nutzer mit KI interagiert (Art. 50).
+          Kein Hochrisiko-System anstreben (vermeidet aufwändige Konformitätsbewertung).
+
+      - id: ai-act-transparenz
+        name: "Transparenz gegenüber Nutzern bei automatisierten Entscheidungen"
+        status: deferred
+        evidence_type: document
+        notes: >
+          Falls Nutzer aufgrund von Fraud-Detection-Ergebnissen eingeschränkt werden:
+          Information an den Nutzer dass eine automatisierte Analyse stattgefunden hat
+          (Art. 50 AI Act). Widerspruchsmöglichkeit (Mensch-in-der-Schleife) vorsehen.
+
+# ─────────────────────────────────────────────────────────────────
+# DIGITALE DIENSTE
+# ─────────────────────────────────────────────────────────────────
+
+  - id: dsa
+    name: "Digital Services Act (DSA)"
+    rechtsgrundlage: "Verordnung (EU) 2022/2065; gilt seit 17.02.2024"
+    kategorie: plattformrecht
+    phase: mvp
+    applicability: true
+    begruendung: >
+      AustroFit ist als App-Betreiber ein Anbieter von Vermittlungsdiensten im Sinne
+      des DSA. Als kleines Unternehmen (<50 MA, <10 Mio EUR) gelten nur die
+      Grundpflichten, keine erweiterten Plattformpflichten.
+    requirements:
+
+      - id: dsa-kontaktstelle
+        name: "Zentrale Kontaktstelle für Behörden benennen (Art. 11)"
+        status: compliant
+        evidence_type: document
+        evidence_ref:
+          - src/routes/impressum/+page.svelte
+        notes: >
+          Kontaktstelle (kontakt@austrofit.at) und Aufsichtsbehörde (KommAustria / RTR-GmbH)
+          im Impressum eingetragen (Mai 2026).
+
+      - id: dsa-nutzerbeschwerden
+        name: "Interne Beschwerdebehandlung (Art. 20, nur für Online-Plattformen)"
+        status: not_applies
+        evidence_type: none
+        notes: >
+          Gilt nur für Online-Plattformen die nutzergenerierte Inhalte hosten.
+          AustroFit hostet keine UGC im DSA-Sinne (Artikel sind redaktionell).
+          Nicht anwendbar solange kein Social/Community-Feature (Leaderboard, Forum) live ist.
+
+# ─────────────────────────────────────────────────────────────────
+# B2G / GESUNDHEITSTELEMATIK (PHASE 3+)
+# ─────────────────────────────────────────────────────────────────
+
+  - id: gteleg
+    name: "Gesundheitstelematikgesetz (GTelG 2012)"
+    rechtsgrundlage: "BGBl. I Nr. 111/2012 idgF"
+    kategorie: b2g
+    phase: phase-3+
+    applicability: false
+    begruendung: >
+      Aktuell nicht anwendbar. Wird relevant bei Anbindung an ELGA oder
+      öffentliche Gesundheitsdaten-Infrastrukturen (Phase 3+).
+    requirements:
+
+      - id: gteleg-elga-zulassung
+        name: "ELGA-Betreiber-Zulassung und Anbindung"
+        status: deferred
+        evidence_type: none
+        notes: >
+          Für ELGA-Anbindung: Zulassungsverfahren beim ELGA GmbH / BMG.
+          Technische und organisatorische Anforderungen noch nicht bekannt.
+          Abhängig von politischen und regulatorischen Entscheidungen.
+          Kein Handlungsbedarf vor Jahr 3.
+
+  - id: ehealth-strategie
+    name: "eHealth-Strategie Österreich 2024"
+    rechtsgrundlage: "Strategiepapier BMG / BMSGPK (nicht verbindlich)"
+    kategorie: b2g
+    phase: phase-3+
+    applicability: false
+    begruendung: >
+      Nicht-verbindliches Strategiepapier. Relevant als Signal für B2G-Kooperationen:
+      Pilotprojekt zur Bewertung digitaler Gesundheitsanwendungen (DiGA-Äquivalent AT)
+      ab 2025 geplant. Chancen für AustroFit als Pilotpartner prüfen.
+    requirements:
+
+      - id: ehealth-diga-oesterreich
+        name: "Evaluierung als 'Digitale Gesundheitsanwendung' (DiGA-AT)"
+        status: deferred
+        evidence_type: none
+        notes: >
+          Österreich plant ein DiGA-ähnliches Bewertungssystem (analog zur deutschen DiGA).
+          Zertifizierung als erstattungsfähige Gesundheitsanwendung wäre strategisch wertvoll
+          für Krankenkassen-Integration. Stand 2026: Pilotprojekt in Vorbereitung.
+          Voraussetzung: klinische Evidenz, DSGVO-Konformität, BFSG-Konformität.
+
+# ─────────────────────────────────────────────────────────────────
+# ZUSAMMENFASSUNG: OFFENE PFLICHTEN (sofort / kurzfristig)
+# ─────────────────────────────────────────────────────────────────
+
+open_actions:
+  - prioritaet: 1
+    regulierung: dsgvo-art35-dpia
+    aktion: "DPIA (Datenschutz-Folgenabschätzung) erstellen"
+    frist: "vor Go-Live / vor erstem echten Nutzer"
+    aufwand: hoch
+    verantwortlich: Betreiber + Rechtsberatung
+
+  - prioritaet: 2
+    regulierung: dsgvo-art9-consent
+    aktion: "Art. 9-konformen Gesundheitsdaten-Consent im Onboarding sicherstellen"
+    frist: "vor Go-Live"
+    aufwand: mittel
+    verantwortlich: Entwicklung + Rechtsberatung
+
+  - prioritaet: 3
+    regulierung: ecg-agb
+    aktion: "AGB erstellen mit Punkte-Regeln, Nutzungsbedingungen, Haftungsausschluss"
+    frist: "vor Go-Live"
+    aufwand: hoch
+    verantwortlich: Rechtsberatung
+
