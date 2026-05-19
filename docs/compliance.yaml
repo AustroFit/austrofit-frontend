@@ -126,17 +126,18 @@ regulations:
 
       - id: dsgvo-avv
         name: "Auftragsverarbeitungsverträge (Art. 28)"
-        status: open
+        status: partial
         evidence_type: external
         notes: >
-          Noch nicht abgeschlossen (Mai 2026). Konkrete Schritte:
-          1. Vercel AVV: vercel.com/legal/dpa → "Sign DPA" im Vercel-Dashboard
-          2. Hetzner AVV: hetzner.com → Kundencenter → Datenschutz → AV-Vertrag
-          PostHog: EU-Cloud-Kunden erhalten AVV standardmäßig (keine Aktion nötig).
-          Directus: selbst gehostet auf Hetzner – kein separater Directus-AVV.
-          AWIN/TradeDoubler: eigenständige Verantwortliche – kein AVV, DSE-Hinweis vorhanden.
-          ACHTUNG: DSE behauptet "AVV mit Vercel abgeschlossen" – Formulierung auf
-          "wird abgeschlossen" geändert (Mai 2026) bis tatsächlicher Abschluss erfolgt.
+          Stand Mai 2026 – geklärter Status je Anbieter:
+          Directus (self-hosted): KEIN AVV erforderlich – Directus hat keinen Datenzugriff
+          (bestätigt: directus.io/commercial-license). Erledigt.
+          PostHog EU Cloud: AVV standardmäßig enthalten. Erledigt.
+          AWIN/TradeDoubler: eigenständige Verantwortliche, kein AVV nötig, DSE-Hinweis vorhanden. Erledigt.
+          Vercel: DPA unter vercel.com/legal/dpa – Abschluss abhängig vom Vercel-Plan.
+          Hobby-Plan: kein expliziter DPA signierbar; Pro-Plan oder Hetzner-Direkthosting prüfen.
+          Hetzner: AVV über Hetzner-Kundencenter → Datenschutz → AV-Vertrag noch abzuschließen.
+          Offen: Vercel-Plan klären + Hetzner-AVV abschließen.
 
   - id: dsg
     name: "DSG (Datenschutzgesetz Österreich)"
