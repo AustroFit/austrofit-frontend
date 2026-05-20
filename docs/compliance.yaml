@@ -134,10 +134,11 @@ regulations:
           (bestätigt: directus.io/commercial-license). Erledigt.
           PostHog EU Cloud: AVV standardmäßig enthalten. Erledigt.
           AWIN/TradeDoubler: eigenständige Verantwortliche, kein AVV nötig, DSE-Hinweis vorhanden. Erledigt.
-          Vercel: DPA unter vercel.com/legal/dpa – Abschluss abhängig vom Vercel-Plan.
-          Hobby-Plan: kein expliziter DPA signierbar; Pro-Plan oder Hetzner-Direkthosting prüfen.
+          Vercel: Aktuell Hobby-Plan – kein signierbarer DPA verfügbar. Vercel verarbeitet
+          technische Verbindungsdaten (IP-Adressen) als Auftragsverarbeiter → AVV vor Go-Live
+          zwingend erforderlich. Lösung: Upgrade auf Vercel Pro vor Launch (vercel.com/legal/dpa).
           Hetzner: AVV über Hetzner-Kundencenter → Datenschutz → AV-Vertrag noch abzuschließen.
-          Offen: Vercel-Plan klären + Hetzner-AVV abschließen.
+          BLOCKEND VOR GO-LIVE: Vercel Pro-Upgrade + DPA unterzeichnen + Hetzner-AVV abschließen.
 
   - id: dsg
     name: "DSG (Datenschutzgesetz Österreich)"
