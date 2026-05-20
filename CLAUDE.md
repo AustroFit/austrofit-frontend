@@ -34,10 +34,12 @@ No test suite is configured in this project.
 
 Regulatorische Übersicht in `docs/compliance.yaml`. Anwendbare Regularien: DSGVO/DSG, ePrivacy/TKG 2021, MDR (Disclaimer-Pflicht), ECG/KSchG, UWG, DSA, EU AI Act (ab 08/2026). Nicht anwendbar: BFSG (Kleinstunternehmen), GSpG (keine kaufbaren Punkte), ZaDiG (keine Bargeld-Einlösung), NIS2 (Schwellenwert nicht erreicht).
 
-**Offene Pflichten (erfordern Rechtsberatung — kein Code):**
-- DPIA (Datenschutz-Folgenabschätzung) für Gesundheitsdaten (Art. 35 DSGVO) — vor Go-Live
-- AGB erstellen (Punkte-Regeln, Nutzungsbedingungen, Haftung)
-- Art. 9-Consent im Onboarding rechtlich absichern
+**Offene Pflichten vor Go-Live (priorisiert):**
+- **[P1] Hetzner AVV** — Kundencenter → Datenschutz → AV-Vertrag (kostenlos, ~5 min). Hetzner hostet Directus + PostgreSQL mit allen Nutzerdaten.
+- **[P2] Vercel Pro-Upgrade** — DPA (vercel.com/legal/dpa) gilt nur für Pro/Enterprise (bestätigt). Hobby-Plan: kein AVV verfügbar. DPA wird automatisch Teil des Agreements nach Upgrade.
+- **[P3] DPIA** (Datenschutz-Folgenabschätzung) für Gesundheitsdaten (Art. 35 DSGVO) — erfordert Rechtsberatung
+- **[P4] Art. 9-Consent** im Onboarding rechtlich absichern — erfordert Rechtsberatung
+- **[P5] AGB erstellen** (Punkte-Regeln, Nutzungsbedingungen, Haftung) — erfordert Rechtsberatung
 
 **Consent-Banner** (`src/lib/components/dashboard/ConsentBanner.svelte`):
 - Analytics (PostHog) wird erst nach Einwilligung initialisiert (localStorage `austrofit_analytics_consent`)

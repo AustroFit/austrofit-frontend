@@ -134,11 +134,16 @@ regulations:
           (bestätigt: directus.io/commercial-license). Erledigt.
           PostHog EU Cloud: AVV standardmäßig enthalten. Erledigt.
           AWIN/TradeDoubler: eigenständige Verantwortliche, kein AVV nötig, DSE-Hinweis vorhanden. Erledigt.
-          Vercel: Aktuell Hobby-Plan – kein signierbarer DPA verfügbar. Vercel verarbeitet
-          technische Verbindungsdaten (IP-Adressen) als Auftragsverarbeiter → AVV vor Go-Live
-          zwingend erforderlich. Lösung: Upgrade auf Vercel Pro vor Launch (vercel.com/legal/dpa).
-          Hetzner: AVV über Hetzner-Kundencenter → Datenschutz → AV-Vertrag noch abzuschließen.
-          BLOCKEND VOR GO-LIVE: Vercel Pro-Upgrade + DPA unterzeichnen + Hetzner-AVV abschließen.
+          Vercel: DPA gilt laut vercel.com/legal/dpa (Part 1, Table 1) explizit nur für
+          Pro- und Enterprise-Plan-Kunden ("This Addendum applies to Customers who are on
+          Enterprise and Pro plans."). Aktuell Hobby-Plan → kein AVV. Vercel verarbeitet
+          IP-Adressen + Verbindungsmetadaten als Auftragsverarbeiter → AVV vor Go-Live
+          zwingend erforderlich. Lösung: Upgrade auf Vercel Pro, DPA wird automatisch
+          bindend durch Agreement (keine separate Unterschrift nötig).
+          Hetzner: Betreibt den Server auf dem Directus + PostgreSQL laufen (alle echten
+          Nutzerdaten). AVV über Hetzner-Kundencenter → Datenschutz → AV-Vertrag
+          abzuschließen (kostenlos, ca. 5 Minuten).
+          BLOCKEND VOR GO-LIVE: (1) Hetzner-AVV abschließen, (2) Vercel Pro-Upgrade + DPA.
 
   - id: dsg
     name: "DSG (Datenschutzgesetz Österreich)"
@@ -569,20 +574,41 @@ regulations:
 
 open_actions:
   - prioritaet: 1
+    regulierung: dsgvo-avv
+    aktion: "Hetzner AVV abschließen (Kundencenter → Datenschutz → AV-Vertrag)"
+    frist: "sofort umsetzbar, vor Go-Live"
+    aufwand: gering
+    verantwortlich: Betreiber
+    hinweis: >
+      Kostenlos, ca. 5 Minuten. Hetzner hostet Directus + PostgreSQL mit allen
+      Nutzerdaten (Gesundheitsdaten, Profile, Punkte) – wichtigster offener AVV.
+
+  - prioritaet: 2
+    regulierung: dsgvo-avv
+    aktion: "Vercel auf Pro upgraden → DPA wird automatisch Teil des Agreements"
+    frist: "vor Go-Live mit echten Nutzern"
+    aufwand: gering
+    verantwortlich: Betreiber
+    hinweis: >
+      Vercel DPA (vercel.com/legal/dpa) gilt nur für Pro/Enterprise-Plan
+      (bestätigt Mai 2026). Vercel verarbeitet IP-Adressen als Auftragsverarbeiter.
+      Hobby-Plan: kein signierbarer AVV verfügbar.
+
+  - prioritaet: 3
     regulierung: dsgvo-art35-dpia
     aktion: "DPIA (Datenschutz-Folgenabschätzung) erstellen"
     frist: "vor Go-Live / vor erstem echten Nutzer"
     aufwand: hoch
     verantwortlich: Betreiber + Rechtsberatung
 
-  - prioritaet: 2
+  - prioritaet: 4
     regulierung: dsgvo-art9-consent
     aktion: "Art. 9-konformen Gesundheitsdaten-Consent im Onboarding sicherstellen"
     frist: "vor Go-Live"
     aufwand: mittel
     verantwortlich: Entwicklung + Rechtsberatung
 
-  - prioritaet: 3
+  - prioritaet: 5
     regulierung: ecg-agb
     aktion: "AGB erstellen mit Punkte-Regeln, Nutzungsbedingungen, Haftungsausschluss"
     frist: "vor Go-Live"
