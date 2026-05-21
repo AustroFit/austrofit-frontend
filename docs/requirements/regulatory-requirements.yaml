@@ -1,0 +1,437 @@
+# AustroFit Regulatorische Anforderungen (Regulatory Requirements)
+# Formale Abbildung der Compliance-Pflichten als REQ-R-IDs.
+# Ablage: docs/requirements/regulatory-requirements.yaml
+# Erstellt: 2026-05-21
+#
+# Cross-References:
+#   compliance_ref    → docs/compliance.yaml (requirement id)
+#   req_ref           → docs/requirements/product-requirements.yaml (REQ-P-ID)
+
+meta:
+  titel: AustroFit Regulatorische Anforderungen
+  version: "1.0"
+  erstellt: "2026-05-21"
+  beschreibung: >
+    Jede REQ-R-ID entspricht einer Pflicht aus docs/compliance.yaml.
+    compliance_ref verweist auf den genauen Status und Nachweis dort.
+    Fokus: Was muss vor Go-Live erledigt sein?
+  status_werte:
+    compliant:  "Erfüllt und nachweisbar"
+    partial:    "Teilweise erfüllt – offene Punkte in notes"
+    open:       "Nicht umgesetzt – P1-MVP-Pflicht vor Go-Live"
+    deferred:   "Zurückgestellt (Phase 2 / Phase 3+)"
+    not_applies: "Nicht anwendbar"
+
+requirements:
+
+  # ═══════════════════════════════════════════════════════════════════
+  # DSGVO (Art. 9 – Gesundheitsdaten)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-001
+    titel: Explizite Einwilligung für Gesundheitsdaten (Art. 9 Abs. 2 lit. a DSGVO)
+    compliance_ref: dsgvo-art9-consent
+    prioritaet: P1-MVP
+    status: partial
+    kategorie: datenschutz
+    beschreibung: >
+      Verarbeitung von Gesundheitsdaten (Schritte, Workouts, Aktivitätsgruppe) setzt
+      explizite Einwilligung nach Art. 9 Abs. 2 lit. a DSGVO voraus.
+    akzeptanzkriterien:
+      - Separater Consent-Schritt für Gesundheitsdaten-Verarbeitung im Onboarding vorhanden
+      - Consent-Text nennt explizit: Zweck, verarbeitete Daten (Schritte, Workouts, Gruppe), Widerrufsmöglichkeit
+      - Einwilligung ist dokumentiert und widerrufbar
+      - Rechtsberatung bestätigt Art. 9-Tauglichkeit des Consents
+    req_ref: REQ-P-030
+    notes: >
+      Aktuell: Health-Connect-Permission informiert Nutzer, aber separater DSGVO-Art.9-Consent-Schritt
+      fehlt im Onboarding. Rechtsberatung erforderlich vor Go-Live.
+
+  - id: REQ-R-002
+    titel: Datenschutzerklärung (Art. 13 / 14 DSGVO)
+    compliance_ref: dsgvo-art13-dse
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: datenschutz
+    beschreibung: "Vollständige und aktuelle Datenschutzerklärung unter /datenschutz."
+    akzeptanzkriterien:
+      - DSE nennt alle Verarbeiter mit Rechtsgrundlage (PostHog, AWIN, Vercel, Hetzner, Google)
+      - Gesundheitsdaten mit Art. 9 Abs. 2 lit. a dokumentiert
+      - Betroffenenrechte Art. 15–21 beschrieben
+      - DSE-Stand nach jedem neuen Verarbeiter aktualisieren
+    foerdernachweis: "DSE vollständig Mai 2026. Pfad: src/routes/datenschutz/+page.svelte."
+
+  - id: REQ-R-003
+    titel: Recht auf Löschung und Datenportabilität (Art. 17 / 20 DSGVO)
+    compliance_ref: dsgvo-art17-loeschung
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: datenschutz
+    beschreibung: "Nutzer können ihr Konto und alle Daten löschen (Art. 17)."
+    akzeptanzkriterien:
+      - Kaskaden-Löschung aller Nutzerdaten via /api/profile/delete
+      - Löschung erfolgt innerhalb von 30 Tagen nach Antrag (Standard)
+      - Datenexport (Art. 20) als Phase-2-Arbeit dokumentiert
+    req_ref: REQ-P-032
+
+  - id: REQ-R-004
+    titel: Privacy by Design / Default (Art. 25 DSGVO)
+    compliance_ref: dsgvo-art25-privacy-by-design
+    prioritaet: P1-MVP
+    status: partial
+    kategorie: datenschutz
+    beschreibung: "Datensparsamkeit und datenschutzfreundliche Voreinstellungen by Design."
+    akzeptanzkriterien:
+      - Keine Standortdaten, keine Social-Graph-Daten gesammelt
+      - Anonymous-ID-Mechanismus für Quiz-Flow (datenschutzfreundlich)
+      - JWT in localStorage ist in DPIA mit Begründung dokumentiert
+      - Default: Analytics deaktiviert bis Einwilligung
+    notes: "JWT-localStorage-Entscheidung (vs. httpOnly Cookie) muss in DPIA begründet sein."
+    req_ref: REQ-R-006
+
+  - id: REQ-R-005
+    titel: Technische und Organisatorische Maßnahmen (Art. 32 DSGVO)
+    compliance_ref: dsgvo-art32-tom
+    prioritaet: P1-MVP
+    status: partial
+    kategorie: datenschutz
+    beschreibung: "TOM-Dokument dokumentiert alle technischen Schutzmaßnahmen nach Art. 32."
+    akzeptanzkriterien:
+      - TOM-Dokument (docs/tom.yaml) aktuell und vollständig
+      - Backup-Konzept für Hetzner/PostgreSQL schriftlich dokumentiert
+      - AVV-Ablage dokumentiert (Hetzner-AVV, Vercel-DPA)
+      - Rate-Limiting, Security-Headers, Input-Validierung in TOM eingetragen
+    req_ref: REQ-R-007
+
+  - id: REQ-R-006
+    titel: DPIA – Datenschutz-Folgenabschätzung (Art. 35 DSGVO)
+    compliance_ref: dsgvo-art35-dpia
+    prioritaet: P1-MVP
+    status: open
+    kategorie: datenschutz
+    beschreibung: >
+      Pflicht bei umfangreicher Verarbeitung besonderer Datenkategorien (Art. 35 Abs. 3 lit. b).
+      Gesundheitsdaten + Fitness-Tracking = klarer Anwendungsfall.
+    akzeptanzkriterien:
+      - DPIA umfasst: Zweck, Notwendigkeit, Risiken, Gegenmaßnahmen, Residualrisiken
+      - DPIA durch Rechtsberatung geprüft und freigegeben
+      - Österreichische DSB-Blacklist geprüft (§ 4 DSFA-AV)
+      - DPIA-Entwurf: docs/dpia-entwurf.md (weiterentwickeln)
+    notes: "BLOCKEND VOR GO-LIVE. Erfordert Rechtsberatung."
+
+  - id: REQ-R-007
+    titel: Auftragsverarbeitungsverträge (Art. 28 DSGVO)
+    compliance_ref: dsgvo-avv
+    prioritaet: P1-MVP
+    status: partial
+    kategorie: datenschutz
+    beschreibung: "AVV mit allen Auftragsverarbeitern, die personenbezogene Daten verarbeiten."
+    akzeptanzkriterien:
+      - Hetzner AVV abgeschlossen (Kundencenter → Datenschutz → AV-Vertrag)
+      - Vercel Pro-Upgrade → DPA automatisch Teil des Agreements
+      - PostHog EU Cloud: AVV standardmäßig enthalten (erledigt)
+      - Directus self-hosted: kein AVV erforderlich (bestätigt)
+    notes: >
+      BLOCKEND VOR GO-LIVE:
+      (1) Hetzner AVV: kostenlos, ca. 5 Min. via Hetzner-Kundencenter.
+      (2) Vercel Pro-Upgrade: DPA gilt nur für Pro/Enterprise (bestätigt Mai 2026).
+
+  # ═══════════════════════════════════════════════════════════════════
+  # DSG (ÖSTERREICH)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-008
+    titel: Datenschutzbehörde als zuständige Aufsichtsbehörde (DSG)
+    compliance_ref: dsg-dsb
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: datenschutz
+    beschreibung: "Zuständige Aufsichtsbehörde: Datenschutzbehörde Wien."
+    akzeptanzkriterien:
+      - DSE nennt DSB Wien als zuständige Aufsichtsbehörde
+      - Beschwerdeweg für Nutzer dokumentiert
+
+  # ═══════════════════════════════════════════════════════════════════
+  # ePRIVACY / TKG 2021
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-009
+    titel: Einwilligungs-Banner für nicht-notwendige Verarbeitung (TKG 2021)
+    compliance_ref: eprivacy-consent-banner
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: tracking
+    beschreibung: "Analytics (PostHog) erst nach Nutzer-Einwilligung initialisiert."
+    akzeptanzkriterien:
+      - Consent-Banner erscheint bei erstem Dashboard-Besuch
+      - Ohne Einwilligung kein PostHog-Script geladen
+      - Accept und Decline gleichwertig dargestellt
+    req_ref: REQ-P-038
+
+  - id: REQ-R-010
+    titel: localStorage für funktionale Daten (kein Consent erforderlich)
+    compliance_ref: eprivacy-localstorage
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: tracking
+    beschreibung: >
+      Funktional notwendige localStorage-Keys (Auth-Token, anonymous_id, Sync-Timestamps)
+      benötigen keinen Consent (§ 165 Abs. 3 TKG 2021).
+    akzeptanzkriterien:
+      - Alle localStorage-Keys sind als funktional notwendig klassifiziert oder hinter Consent
+      - Kein Tracking-Cookie ohne Consent
+
+  # ═══════════════════════════════════════════════════════════════════
+  # MEDIZINPRODUKTERECHT (MDR)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-011
+    titel: Keine medizinischen Zweckbehauptungen (MDR-Prävention)
+    compliance_ref: mdr-no-medical-claims
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: produktrecht
+    beschreibung: >
+      AustroFit darf keine Diagnose, Behandlung oder Überwachung von Krankheiten
+      behaupten (würde App zum Medizinprodukt machen → CE-Pflicht).
+    akzeptanzkriterien:
+      - Disclaimer im Onboarding: "AustroFit ist keine medizinische Anwendung"
+      - DSE enthält Section "Keine medizinische Anwendung"
+      - Gesundheitsartikel basieren nur auf WHO/FGOE-Bewegungsempfehlungen
+      - Redaktionelle Prüfung bei jedem neuen Artikel auf medizinische Claims
+    req_ref: REQ-P-030
+
+  # ═══════════════════════════════════════════════════════════════════
+  # E-COMMERCE / KONSUMENTENSCHUTZ
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-012
+    titel: Impressumspflicht (§ 5 ECG)
+    compliance_ref: ecg-impressum
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: konsumentenschutz
+    beschreibung: "Vollständiges Impressum mit Pflichtangaben unter /impressum."
+    akzeptanzkriterien:
+      - Name, Anschrift, E-Mail vorhanden
+      - DSA-Kontaktstelle und Aufsichtsbehörde eingetragen
+      - UID-Nummer nach Gewerbeanmeldung ergänzen
+    foerdernachweis: "Implementiert Mai 2026. Pfad: src/routes/impressum/+page.svelte."
+
+  - id: REQ-R-013
+    titel: Allgemeine Geschäftsbedingungen (§ 6 ff. ECG / KSchG)
+    compliance_ref: ecg-agb
+    prioritaet: P1-MVP
+    status: open
+    kategorie: konsumentenschutz
+    beschreibung: >
+      AGB mit Punkte-Regeln, Nutzungsbedingungen und Haftungsausschluss.
+      Punkte müssen explizit als Nicht-E-Geld und nicht übertragbar definiert sein.
+    akzeptanzkriterien:
+      - AGB unter /agb öffentlich zugänglich
+      - AGB-Inhalte: Leistungsbeschreibung, Punkte-Regeln (Verfall, Nicht-Übertragbarkeit,
+        kein Bargeldtausch), Haftungsausschluss, Widerrufsrecht
+      - AGB sind bei Registrierung aktiv akzeptiert (Checkbox mit Link)
+      - AGB durch Rechtsberatung geprüft
+    notes: "BLOCKEND VOR GO-LIVE. AGB-Entwurf: docs/agb-entwurf.md."
+    req_ref: REQ-R-014
+
+  - id: REQ-R-014
+    titel: Transparenz des Punkte-Systems (KSchG)
+    compliance_ref: kschg-transparenz-punkte
+    prioritaet: P1-MVP
+    status: open
+    kategorie: konsumentenschutz
+    beschreibung: >
+      Nutzer müssen vollständig verstehen wie Punkte berechnet werden, ob und wann
+      sie verfallen, und was bei Account-Löschung passiert.
+    akzeptanzkriterien:
+      - Punkte-Regeln in AGB oder FAQ dokumentiert
+      - Im UI sichtbar: Wie werden Punkte verdient? Verfallen Punkte? (nicht)
+      - Bei Account-Löschung: Punkte-Stand kommuniziert
+    notes: "Wird im Rahmen der AGB-Erstellung (REQ-R-013) abgedeckt."
+
+  - id: REQ-R-015
+    titel: Keine irreführenden Gestaltungsmuster / Dark Patterns (KSchG)
+    compliance_ref: kschg-no-dark-patterns
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: konsumentenschutz
+    beschreibung: "UI und Consent-Flows enthalten keine Dark Patterns."
+    akzeptanzkriterien:
+      - Kein Confirmshaming, kein verstecktes Ablehnen, keine Countdown-Täuschung
+      - Prüfung bei jedem neuen UI-Feature mit Consent-Bezug
+
+  # ═══════════════════════════════════════════════════════════════════
+  # ZAHLUNGSDIENSTE / E-GELD (ZaDiG)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-016
+    titel: Punkte als Nicht-E-Geld in AGB definieren (ZaDiG-Abgrenzung)
+    compliance_ref: zadig-agb-abgrenzung
+    prioritaet: P1-MVP
+    status: open
+    kategorie: finanzrecht
+    beschreibung: >
+      Explizite AGB-Klausel: Punkte sind kein Zahlungsmittel, nicht übertragbar,
+      nicht gegen Bargeld einlösbar, begründen keinen Rückzahlungsanspruch.
+    akzeptanzkriterien:
+      - AGB-Klausel vorhanden (Formulierung: "Punkte sind kein Zahlungsmittel…")
+    notes: "Wird im Rahmen der AGB-Erstellung (REQ-R-013) abgedeckt."
+
+  # ═══════════════════════════════════════════════════════════════════
+  # WERBERECHT (UWG)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-017
+    titel: Kennzeichnung von Affiliate-Links / Werbung (UWG)
+    compliance_ref: uwg-affiliate-kennzeichnung
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: werberecht
+    beschreibung: "Alle Affiliate-Angebote (AWIN, TradeDoubler) sind als Werbung gekennzeichnet."
+    akzeptanzkriterien:
+      - Jede AWIN/TradeDoubler-Karte trägt "Werbung"-Badge
+      - Seitenweiter Hinweis im Marketplace (Tab Offen) auf Affiliate-Provisionen
+      - Keine Affiliate-Links in redaktionellen Artikeln
+    req_ref: REQ-P-024
+
+  - id: REQ-R-018
+    titel: Keine irreführenden Gesundheitsaussagen (§ 2 UWG)
+    compliance_ref: uwg-health-claims
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: werberecht
+    beschreibung: "Gesundheitsaussagen basieren auf seriösen Quellen, keine medizinischen Versprechen."
+    akzeptanzkriterien:
+      - Artikel basieren ausschließlich auf WHO/FGOE-Bewegungsempfehlungen
+      - Redaktionelle Prüfung bei jedem neuen Artikel-Import
+
+  # ═══════════════════════════════════════════════════════════════════
+  # DIGITAL SERVICES ACT (DSA)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-019
+    titel: Zentrale Kontaktstelle für Behörden (Art. 11 DSA)
+    compliance_ref: dsa-kontaktstelle
+    prioritaet: P1-MVP
+    status: compliant
+    kategorie: plattformrecht
+    beschreibung: "Kontaktstelle und Aufsichtsbehörde im Impressum benannt."
+    akzeptanzkriterien:
+      - E-Mail-Kontaktstelle (kontakt@austrofit.at) im Impressum
+      - Aufsichtsbehörde (KommAustria / RTR-GmbH) im Impressum
+    foerdernachweis: "Implementiert Mai 2026. Pfad: src/routes/impressum/+page.svelte."
+
+  # ═══════════════════════════════════════════════════════════════════
+  # BARRIEREFREIHEIT (BFSG)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-020
+    titel: WCAG 2.1 AA – Barrierefreiheit (für B2G und Skalierung)
+    compliance_ref: bfsg-wcag-future
+    prioritaet: P2
+    status: deferred
+    kategorie: barrierefreiheit
+    beschreibung: >
+      BFSG gilt nicht für Kleinstunternehmen (aktuell). Für B2G-Kooperationen
+      (Krankenkassen) ist WCAG 2.1 AA aber Voraussetzung.
+    akzeptanzkriterien:
+      - WCAG 2.1 AA Konformität geprüft (Audit)
+      - Kontrast-Verhältnis ≥ 4,5:1 für Texte
+      - Keyboard-Navigation vollständig
+      - Screen-Reader-kompatible Labels (ARIA)
+
+  # ═══════════════════════════════════════════════════════════════════
+  # EU AI ACT
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-021
+    titel: Risikoklassifikation ML-Anomalie-Scoring (AI Act, ab 08/2026)
+    compliance_ref: ai-act-risikoklassifikation
+    prioritaet: P2
+    status: deferred
+    kategorie: ki
+    beschreibung: >
+      Vor Implementierung des Isolation-Forest-Anomalie-Scorings (Phase 2) muss die
+      Risikoklasse nach EU AI Act dokumentiert sein.
+    akzeptanzkriterien:
+      - Risikoklasse dokumentiert: angestrebt 'Limited Risk' (kein automatisiertes Sperren)
+      - Menschliche Prüfung vor jeder Nutzer-Einschränkung (human-in-the-loop)
+      - Falls Limited Risk: Transparenzpflicht (Art. 50) implementiert
+    notes: "Kein Handlungsbedarf vor Phase-2-Implementierung des Anomalie-Scorings."
+
+  - id: REQ-R-022
+    titel: Transparenz bei automatisierten Entscheidungen (Art. 50 AI Act)
+    compliance_ref: ai-act-transparenz
+    prioritaet: P2
+    status: deferred
+    kategorie: ki
+    beschreibung: >
+      Nutzer müssen informiert werden wenn eine automatisierte Analyse zu Einschränkungen
+      führt (Fraud Detection). Widerspruchsmöglichkeit vorhanden.
+    akzeptanzkriterien:
+      - Nutzer sieht verständliche Mitteilung bei automatisierter Einschränkung
+      - Widerspruchsprozess (E-Mail / Support) dokumentiert
+
+  # ═══════════════════════════════════════════════════════════════════
+  # NIS2 (NICHT ANWENDBAR – SCHWELLENWERT-CHECK)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-023
+    titel: NIS2-Schwellenwert-Check bei Wachstum
+    compliance_ref: nis2-future-check
+    prioritaet: P3
+    status: deferred
+    kategorie: cybersicherheit
+    beschreibung: >
+      NIS2 (NISG 2026) ist aktuell nicht anwendbar (unter Schwellenwert).
+      Bei ≥50 MA oder ≥10 Mio EUR Umsatz: Betroffenheit prüfen.
+    akzeptanzkriterien:
+      - Jährliche Schwellenwert-Prüfung dokumentiert
+      - Falls NIS2 greift: Registrierung beim BACS, Incident-Reporting-Prozess
+
+  # ═══════════════════════════════════════════════════════════════════
+  # GLÜCKSSPIEL (GSPG)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-024
+    titel: Gewinnspiele als Preisausschreiben ohne Kaufverpflichtung (GSpG)
+    compliance_ref: gspg-gewinnspiele-design
+    prioritaet: P2
+    status: deferred
+    kategorie: gluecksspiel
+    beschreibung: >
+      Sobald Gewinnspiele implementiert werden: Gestaltung als kostenloses
+      Preisausschreiben (kein Einsatz = kein Glücksspiel lt. GSpG).
+    akzeptanzkriterien:
+      - Keine Kaufverpflichtung für Gewinnspiel-Teilnahme
+      - Teilnahmebedingungen vor Feature-Launch rechtlich geprüft
+      - 5% Glücksspielsteuer auf Gewinne >10.000€ beachtet
+    req_ref: REQ-P-010
+
+  # ═══════════════════════════════════════════════════════════════════
+  # ZUSAMMENFASSUNG OFFENE PFLICHTEN VOR GO-LIVE
+  # ═══════════════════════════════════════════════════════════════════
+
+open_before_golive:
+  - prioritaet: 1
+    req_id: REQ-R-007
+    aktion: "Hetzner AVV abschließen"
+    aufwand: gering
+  - prioritaet: 2
+    req_id: REQ-R-007
+    aktion: "Vercel Pro-Upgrade + DPA"
+    aufwand: gering
+  - prioritaet: 3
+    req_id: REQ-R-006
+    aktion: "DPIA erstellen (mit Rechtsberatung)"
+    aufwand: hoch
+  - prioritaet: 4
+    req_id: REQ-R-001
+    aktion: "Art. 9-Consent im Onboarding rechtlich absichern"
+    aufwand: mittel
+  - prioritaet: 5
+    req_id: REQ-R-013
+    aktion: "AGB erstellen (mit Rechtsberatung)"
+    aufwand: hoch

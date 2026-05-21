@@ -1,0 +1,819 @@
+# AustroFit Produkt-Anforderungen (Product Requirements)
+# Formale Anforderungen mit REQ-P-IDs für Entwicklungssteuerung und Fördernachweis.
+# Ablage: docs/requirements/product-requirements.yaml
+# Erstellt: 2026-05-21
+#
+# Cross-References:
+#   feature_ref       → docs/features.yaml (slug)
+#   compliance_ref    → docs/compliance.yaml (requirement id)
+#   req_ref           → docs/requirements/*.yaml (anderes Dok.)
+
+meta:
+  titel: AustroFit Produkt-Anforderungen
+  version: "1.0"
+  erstellt: "2026-05-21"
+  mvp_ziel: "Code-Freeze v1.0, Q3 2026"
+  beschreibung: >
+    Produkt-Anforderungen nach Requirements-Driven Development.
+    Jede Anforderung trägt eine stabile REQ-P-ID, die in Code-Commits,
+    PR-Beschreibungen und Förderanträgen referenziert wird.
+    Implementierungs-Details (Formeln, API-Gotchas, Sicherheitsregeln)
+    bleiben in docs/features.yaml und CLAUDE.md.
+  status_werte:
+    implemented: "Im Code vorhanden und produktiv aktiv"
+    in-progress: "In Entwicklung oder teilweise implementiert"
+    open:         "Noch nicht implementiert (MVP-Pflicht)"
+    deferred:     "Bewusst auf spätere Phase verschoben"
+    rejected:     "Bewusst verworfen – Begründung in notes"
+  prioritaet_werte:
+    P1-MVP:  "Pflicht für Go-Live v1.0 (Q3 2026)"
+    P2:      "Phase 2 – nach erstem Launch (Jahr 1–3)"
+    P3:      "Phase 3+ – langfristig (Jahr 3+)"
+
+requirements:
+
+  # ═══════════════════════════════════════════════════════════════════
+  # GAMIFICATION
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-001
+    titel: Punkte-Buchungssystem (append-only Ledger)
+    feature_ref: punkte-ledger
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      Das System muss jede Punkte-Transaktion unveränderbar erfassen.
+      Der aktuelle Kontostand ergibt sich immer als Summe aller Buchungen.
+      Korrekturbuchungen sind als negative Deltas möglich (nie Löschung).
+    akzeptanzkriterien:
+      - Jede Buchung enthält: user_id, points_delta, source_type, source_ref, occurred_at, rule_version
+      - Kontostand = SUM(points_delta) stimmt nach jeder Transaktion
+      - Bereits geschriebene Einträge werden nie überschrieben (append-only)
+      - Einlösungen (negatives Delta) reduzieren den Kontostand, aber nicht das Level
+      - API /api/ledger-total liefert Netto-Kontostand und earned-Only-Kontostand (positive_only=true)
+    foerdernachweis: >
+      Implementiert März–Mai 2026. Directus Collection 'points_ledger'.
+      Code: src/lib/server/stepsService.ts, cardioService.ts, streak.ts,
+      src/routes/api/ledger-total/+server.ts, src/routes/api/ledger-entries/+server.ts.
+      Produktiv: https://dev.austrofit.at
+
+  - id: REQ-P-002
+    titel: Level-System (20 Stufen, österreichisches Branding)
+    feature_ref: level-system
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      Nutzer steigen in 20 Leveln auf, basierend auf verdienten Punkten (nur positive
+      Buchungen, sog. earnedPoints). Einlösungen dürfen das Level nie senken.
+      Die Level tragen AustroFit-Branding alle 5 Stufen (z. B. „AustroFit Aktiv" = Level 5).
+    akzeptanzkriterien:
+      - Level basiert ausschließlich auf earnedPoints (positive_only=true), nie auf Netto-Kontostand
+      - 20 Level von „Einsteiger" (0P) bis „AustroFit Olympier" (480.000P)
+      - Level-Name und Fortschrittsbalken werden im Dashboard korrekt angezeigt
+      - Einlösung von Punkten verändert das Level nicht
+      - AustroFit-Branding-Level (5, 10, 15, 20) sind visuell hervorgehoben
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/lib/utils/level.ts.
+      Dashboard-Integration: src/routes/dashboard/+page.svelte.
+
+  - id: REQ-P-003
+    titel: Schritt-Streak (täglich, 4 Tiers)
+    feature_ref: streak-schritte
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      Nutzer erhalten einen zusätzlichen Bonus für aufeinanderfolgende Tage mit ≥7.000 Schritten.
+      Der Bonus steigt in 4 Tiers (nach 2, 14, 28 und 56 Tagen).
+    akzeptanzkriterien:
+      - Tages-Streak-Bonus wird nur bei ≥7.000 Schritten ausgelöst
+      - 4 Tiers: +20P (2–13d), +30P (14–27d), +45P (28–55d), +60P (56+d)
+      - Streak-Zähler wird bei einem ausgelassenen Tag auf 0 zurückgesetzt
+      - Buchung erscheint im Ledger mit source_type='streak_tag'
+      - Streak-Tage-Zähler ist in user_profiles.streak_days persistent
+    foerdernachweis: >
+      Implementiert März–April 2026. Code: src/lib/server/streak.ts.
+      Streak-Speicherung: Directus Collection 'user_profiles' (streak_days, longest_streak).
+
+  - id: REQ-P-004
+    titel: Streak-Wochen-Bonus Schritte (wöchentlich, 4 Tiers)
+    feature_ref: streak-wochen-bonus
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      Jede vollständige Woche (7 Tage) im Streak löst zusätzlich einen Wochen-Bonus aus.
+      Der Bonus steigt ebenfalls in 4 Tiers.
+    akzeptanzkriterien:
+      - Wochen-Bonus feuert wenn (streak_days - 1) % 7 === 0
+      - 4 Tiers: +60P / +90P / +120P / +150P
+      - Dedup-Check verhindert Doppelbuchung bei parallelen Requests
+      - Buchung erscheint im Ledger mit source_type='streak'
+    foerdernachweis: >
+      Implementiert April 2026, Dedup-Fix Mai 2026.
+      Code: src/lib/server/streak.ts.
+
+  - id: REQ-P-005
+    titel: Cardio-Streak (wöchentlich, 4 Tiers)
+    feature_ref: streak-cardio
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      Nutzer erhalten einen Bonus für aufeinanderfolgende Wochen, in denen sie ihr
+      Cardio-Wochenziel vollständig erreichen. Ziel ist gruppenspezifisch (WHO-Empfehlungen).
+    akzeptanzkriterien:
+      - Bonus startet ab der zweiten aufeinanderfolgenden Vollwoche
+      - 4 Tiers: W2–3 +100P / W4–7 +200P / W8–11 +300P / W12+ +400P
+      - Bonus ist gruppenspezifisch (adult/senior/pregnant: 150 Min., chronic: 100 Min.)
+      - Buchung: source_type='streak', source_ref='cardio-streak-{weekKey}'
+    foerdernachweis: >
+      Implementiert April 2026. Code: src/lib/server/cardioService.ts, streak.ts.
+
+  - id: REQ-P-006
+    titel: Quiz-Streak (täglich + wöchentlich, 4 Tiers)
+    feature_ref: streak-quiz
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      Nutzer erhalten Bonus-Punkte für aufeinanderfolgende Tage mit abgeschlossenen Quizzen,
+      sowie wöchentliche Meilensteinboni.
+    akzeptanzkriterien:
+      - Tages-Bonus ab Tag 2: T1(2–6d)+5P / T2(7–13d)+10P / T3(14–29d)+15P / T4(30+d)+20P
+      - Wochen-Bonus bei 7 aufeinanderfolgenden Quiz-Tagen: T1+30P / T2+50P / T3+75P / T4+100P
+      - Buchung Tages-Bonus: source_type='streak_quiz'
+      - Buchung Wochen-Bonus: source_type='streak'
+      - Quiz-Streak-Tage in user_profiles.quiz_streak_days persistent
+    foerdernachweis: >
+      Implementiert April 2026. Code: src/lib/server/streak.ts,
+      src/routes/api/claim/+server.ts.
+
+  - id: REQ-P-007
+    titel: Milestones (22 einmalige Erstleistungs-Boni)
+    feature_ref: milestones
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      Nutzer erhalten einmalige Bonus-Punkte beim ersten Erreichen wichtiger Meilensteine
+      (erste Schritte, erste Woche Streak, erster Quiz, etc.).
+    akzeptanzkriterien:
+      - 22 Milestones über 3 Kategorien: Schritte (7), Cardio (4), Quiz (7), Sonstiges (4)
+      - Jeder Milestone wird nur einmal vergütet (Dedup via source_ref='milestone-{slug}')
+      - Vergabe erfolgt server-seitig nach dem jeweiligen Aktivitäts-Event
+      - Milestone-Buchungen sind im Ledger mit source_type='milestone' sichtbar
+    foerdernachweis: >
+      Implementiert April 2026. Code: src/lib/utils/milestones.ts,
+      src/lib/server/milestoneService.ts.
+
+  - id: REQ-P-008
+    titel: Badges (113 Österreich-Badges nach Schritten)
+    feature_ref: badges
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gamification
+    beschreibung: >
+      113 Badges repräsentieren österreichische Orte und Regionen. Earned-Status basiert
+      auf der Gesamtschritt-Summe des Nutzers (total_steps >= step_threshold).
+    akzeptanzkriterien:
+      - 113 Badges in Directus Collection 'Badges', alle status='published'
+      - Earned-Flag berechnet sich client-seitig: total_steps >= step_threshold
+      - Badges sind nach Typen gruppiert: hauptstadt, bundesland, oesterreich, wanderweg, see, berg
+      - Dashboard zeigt earned Badges in Vorschau; /profil/auszeichnungen zeigt alle
+      - Badge-Bilder: Emoji-Platzhalter bis Upload (Phase 2)
+    foerdernachweis: >
+      Implementiert März 2026 (Schema + Daten), UI April 2026.
+      Code: src/routes/api/badges/+server.ts, src/lib/utils/badges.ts.
+    notes: Badge-Bilder-Upload ist Phase-2-Arbeit.
+
+  - id: REQ-P-009
+    titel: Challenges (zeitlich begrenzte Aufgaben)
+    feature_ref: challenges
+    prioritaet: P1-MVP
+    status: in-progress
+    kategorie: gamification
+    beschreibung: >
+      Nutzer können zeitlich begrenzte Challenges mit klar definierten Zielen (Schritte,
+      Quiz-Streak, Cardio-Woche) absolvieren und dafür einmalig Punkte erhalten.
+    akzeptanzkriterien:
+      - Challenges werden im Dashboard angezeigt (aktiv_bis in der Zukunft, status='published')
+      - Completion-Typen: steps_total, steps_today, quiz_streak, cardio_week, manual
+      - Nutzer kann Challenge nur einmal claimen (Dedup: source_type='challenge', source_ref='challenge-{id}')
+      - Abgelaufene Challenges erscheinen nicht mehr im aktiven Dashboard
+      - Punkte-Vergabe via points_ledger
+    foerdernachweis: >
+      Schema in Directus Mai 2026 (Felder: aktiv_von, completion_type, target_value).
+      API /api/challenges implementiert. Completion-Logik: ausstehend.
+    notes: Completion-Logik und Claim-Button als offene MVP-Punkte.
+
+  - id: REQ-P-010
+    titel: Gewinnspiele / Lotteries
+    feature_ref: gewinnspiele
+    prioritaet: P2
+    status: deferred
+    kategorie: gamification
+    beschreibung: >
+      Regelmäßige Gewinnspiele für aktive Nutzer als Engagement-Element (Octalysis Core Drive 4).
+      Gestaltung als kostenloses Preisausschreiben (kein Einsatz = kein Glücksspiel lt. GSpG).
+    akzeptanzkriterien:
+      - Teilnahme ohne Kaufverpflichtung möglich
+      - Gewinnspiel-Mechanik ist rechtlich als Preisausschreiben gestaltet
+      - 5% Glücksspielsteuer auf Gewinne >10.000€ beachtet
+    compliance_ref: gspg-gewinnspiele-design
+
+  # ═══════════════════════════════════════════════════════════════════
+  # AKTIVITÄT / BEWEGUNGSTRACKING
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-011
+    titel: Schritt-Tracking Android via Health Connect
+    feature_ref: schritte-android
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: aktivitaet
+    beschreibung: >
+      Die Android-App synchronisiert Tagesschritte automatisch aus Google Health Connect
+      und vergibt Punkte nach der tiered Schritt-Formel.
+    akzeptanzkriterien:
+      - Schritte werden täglich automatisch im Hintergrund synchronisiert (Background Sync)
+      - Schritte unter 4.000/Tag ergeben 0P; ab 4.000P schrittweise Bonusstufen
+      - Max. 20.000 Schritte/Tag werden für die Punkte-Berechnung gezählt (Fraud-Cap)
+      - Dedup: Pro Tag und User maximal 1 Ledger-Eintrag; Korrekturen via PATCH
+      - Retroaktive Synchronisierung: letzte 90 Tage beim ersten Health-Connect-Connect
+      - Health-Permission-Flow ist für Nutzer verständlich (Datenschutz-Hinweis vor Anfrage)
+    foerdernachweis: >
+      Implementiert März 2026 (Health Connect Integration). Produktiv seit April 2026.
+      Code: src/lib/services/health.ts, src/lib/services/stepSync.ts,
+      src/lib/server/stepsService.ts, src/routes/api/steps/sync/+server.ts.
+    compliance_ref: dsgvo-art9-consent
+
+  - id: REQ-P-012
+    titel: Cardio-Tracking Android (Workouts via Health Connect)
+    feature_ref: cardio-android
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: aktivitaet
+    beschreibung: >
+      Die Android-App synchronisiert Workout-Sessions aus Google Health Connect und berechnet
+      Äquivalenz-Minuten (moderat×1, intensiv×2) gegen gruppenspezifische Wochenziele.
+    akzeptanzkriterien:
+      - Unterstützte Workout-Typen: mindestens Laufen, Radfahren, Schwimmen, Fitness
+      - Äquivalenz-Minuten: intensive Einheiten zählen doppelt (außer bei Gruppe 'pregnant')
+      - Wochenziel-Punkte: adult/senior/pregnant: Start=50Min, Full=150Min; chronic: Start=35, Full=100
+      - Dauer gecappt auf max. 4 Stunden pro Einheit (Fraud-Schutz)
+      - Dedup via start_date (Option C: bei mehr Aktivität wird bestehender Eintrag überschrieben)
+      - Cardio-Wochenkarte im Dashboard zeigt Fortschritt zur aktuellen ISO-Woche
+    foerdernachweis: >
+      Implementiert April 2026. Code: src/lib/services/cardioSync.ts,
+      src/lib/server/cardioService.ts, src/routes/api/cardio/sync/+server.ts.
+    compliance_ref: dsgvo-art9-consent
+
+  - id: REQ-P-013
+    titel: Background-Sync (Schritte, automatisch täglich)
+    feature_ref: background-sync
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: aktivitaet
+    beschreibung: >
+      Schritte werden täglich automatisch im Hintergrund synchronisiert, auch wenn die App
+      nicht aktiv geöffnet ist. Kein manuelles „Sync"-Tippen erforderlich.
+    akzeptanzkriterien:
+      - Periodic Background Sync ist im Service Worker registriert (Tag: 'austrofit-step-sync')
+      - Sync findet täglich auf Android Chrome statt
+      - Falls Sync im Hintergrund nicht möglich: Dashboard-Open triggert Sync
+      - Concurrency-Guard verhindert parallele Sync-Aufrufe
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/service-worker.ts, src/lib/services/stepSync.ts.
+
+  - id: REQ-P-014
+    titel: iOS HealthKit Tracking
+    feature_ref: ios-healthkit
+    prioritaet: P2
+    status: deferred
+    kategorie: aktivitaet
+    beschreibung: >
+      Schritte und Workouts via Apple HealthKit (iPhone/iPad). Identische Funktionalität
+      wie Android Health Connect.
+    akzeptanzkriterien:
+      - Schritte via HealthKit synchronisiert (täglich, retroaktiv 90 Tage)
+      - Workouts via HealthKit synchronisiert (Intensitätsmapping analog Android)
+      - Health Permission Flow auf iOS korrekt implementiert
+      - iOS-Build via Capacitor: TestFlight veröffentlicht
+
+  # ═══════════════════════════════════════════════════════════════════
+  # BILDUNG / QUIZ
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-015
+    titel: Gesundheitswegweiser (redaktionelle Artikel)
+    feature_ref: gesundheitswegweiser-artikel
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: bildung
+    beschreibung: >
+      SEO-optimierte Gesundheitsartikel im Directus CMS. Artikel sind der primäre
+      Akquisitionskanal: Leser → Quiz → Registrierung.
+    akzeptanzkriterien:
+      - Artikel erreichbar via /artikel/[slug] und /gesundheitswegweiser/[slug]
+      - Artikel werden aus Directus Collection 'articles' geladen (status='published')
+      - Jeder Artikel kann ein eingebettetes Quiz enthalten
+      - Artikel sind für Suchmaschinen indexierbar (kein Auth-Gate, SSR-freundlich)
+      - Mindestens 250 Artikel und zugehörige Quizze im CMS vorhanden
+    foerdernachweis: >
+      250 Artikel + 250 Quizze importiert in Directus (März 2026).
+      Frontend: src/routes/artikel/[slug]/+page.svelte.
+
+  - id: REQ-P-016
+    titel: Quiz (anonym, ohne Registrierung)
+    feature_ref: quiz-anonym
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: bildung
+    beschreibung: >
+      Nutzer können Quizze absolvieren ohne sich zu registrieren. Punkte werden angezeigt
+      aber nicht vergütet – als Anreiz zur Registrierung.
+    akzeptanzkriterien:
+      - Quiz ist direkt nach Artikel-Lesen ohne Login verfügbar
+      - Punkte werden nach Quiz-Abschluss angezeigt (Preview-Modus)
+      - anonymous_id wird in localStorage gespeichert (keine Cookies)
+      - Quiz-Versuch wird in Directus 'quiz_attempts' mit anonymous_id erfasst
+      - 30-Tage-Cooldown gilt auch für anonyme Versuche (verhindert Spam)
+    foerdernachweis: >
+      Implementiert Februar 2026. Code: src/lib/components/singlepage/Quiz.svelte,
+      src/routes/api/quiz-attempts/+server.ts.
+
+  - id: REQ-P-017
+    titel: Quiz (authentifiziert, mit Punktevergabe)
+    feature_ref: quiz-authentifiziert
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: bildung
+    beschreibung: >
+      Eingeloggte Nutzer erhalten Punkte für abgeschlossene Quizze. Punkte-Vergabe ist
+      server-seitig validiert (keine Client-Manipulation möglich).
+    akzeptanzkriterien:
+      - Punkte werden nur bei eingeloggtem Nutzer vergeben (nie anonym)
+      - Max. 200P pro Quiz (server-seitig gecappt)
+      - passed-Flag wird server-seitig berechnet (score >= max_score), nie vom Client übernommen
+      - max_score wird gegen Directus quiz_json.questions.length validiert (fail-closed)
+      - Quiz-Punkte erscheinen im Ledger mit source_type='education'
+      - Quiz-Streak-Boni werden nach Vergabe ausgelöst
+    foerdernachweis: >
+      Implementiert Februar 2026, Security-Hardening Mai 2026.
+      Code: src/routes/api/quiz-attempts/+server.ts, src/routes/api/claim/+server.ts.
+
+  - id: REQ-P-018
+    titel: Quiz Claim-Flow (anonym → authentifiziert)
+    feature_ref: quiz-claim-flow
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: bildung
+    beschreibung: >
+      Wenn ein anonymer Quiz-Nutzer sich registriert oder einloggt, werden ausstehende
+      Punkte automatisch seinem Konto gutgeschrieben.
+    akzeptanzkriterien:
+      - Anonymer Quiz-Versuch wird nach Login automatisch geclaimt
+      - Pending-Claim wird in localStorage als PENDING_CLAIM_KEY gespeichert
+      - Claim erfolgt über POST /api/claim mit Authorization-Header (kein Token im Body)
+      - Punkte erscheinen nach Login sofort im Dashboard
+      - Doppelter Claim desselben Versuchs ist nicht möglich
+    foerdernachweis: >
+      Implementiert Februar 2026, Security-Fix Mai 2026 (Token im Authorization-Header).
+      Code: src/routes/api/claim/+server.ts, src/lib/components/singlepage/Quiz.svelte.
+
+  - id: REQ-P-019
+    titel: Quiz-Cooldown (30 Tage pro Quiz und User)
+    feature_ref: quiz-cooldown
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: bildung
+    beschreibung: >
+      Dasselbe Quiz kann pro Nutzer nicht öfter als einmal pro Cooldown-Zeitraum
+      für Punkte absolviert werden (konfigurierbar in Directus, Standard: 30 Tage).
+    akzeptanzkriterien:
+      - Cooldown gilt pro Quiz und pro User (nicht global)
+      - Cooldown wird doppelt geprüft: bei /api/quiz-attempts (anonym) UND /api/claim (per User)
+      - Konfigurierbar via Directus 'cooldown_days'-Feld pro Quiz
+      - Anonyme Identitäten können Cooldown nicht umgehen (per-User-Check bei Claim)
+      - Nutzer sieht verständliche Fehlermeldung bei Cooldown-Überschreitung
+    foerdernachweis: >
+      Implementiert März 2026, Bypass-Fix Mai 2026.
+      Code: src/routes/api/quiz-attempts/+server.ts, src/routes/api/claim/+server.ts.
+
+  - id: REQ-P-020
+    titel: Refresh-Quiz (nach 90 Tagen erneut Punkte)
+    feature_ref: refresh-quiz
+    prioritaet: P2
+    status: deferred
+    kategorie: bildung
+    beschreibung: >
+      Nach 90 Tagen kann dasselbe Quiz erneut absolviert werden und gibt wieder volle Punkte.
+      Wissensvertiefung + wiederholter Reward-Mechanismus.
+    akzeptanzkriterien:
+      - 90-Tage-Refresh ist von 30-Tage-Cooldown getrennt (eigene Mechanik)
+      - Klare Kommunikation im UI (Countdown bis Refresh verfügbar)
+
+  # ═══════════════════════════════════════════════════════════════════
+  # BELOHNUNG / MARKETPLACE
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-021
+    titel: Direktpartner-Marketplace
+    feature_ref: direktpartner-marketplace
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: belohnung
+    beschreibung: >
+      Nutzer können verdiente Punkte gegen Gutscheine von regionalen Direktpartnern
+      und Affiliate-Angeboten einlösen. Marketplace ist unter /belohnung erreichbar.
+    akzeptanzkriterien:
+      - Marketplace zeigt aktive Angebote (active=true, valid_until in Zukunft)
+      - Drei Tabs: Offen (AWIN/Affiliate-Angebote), Aktiv (eingelöste Gutscheine), Archiv
+      - Nutzer sieht seinen aktuellen Punkte-Kontostand
+      - Angebote zeigen: Titel, Punkte-Kosten, Partner-Name, Ablaufdatum
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/routes/belohnung/+page.svelte,
+      src/routes/api/partner/+server.ts.
+
+  - id: REQ-P-022
+    titel: Direktpartner Einlösung (Redeem-Flow)
+    feature_ref: direktpartner-redeem
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: belohnung
+    beschreibung: >
+      Nutzer können Punkte gegen einen Gutschein-Code eines Direktpartners einlösen.
+      Double-Spend ist durch server-seitige Dedup verhindert.
+    akzeptanzkriterien:
+      - Einlösung erstellt Eintrag in reward_redemptions (status='active')
+      - Negativer Ledger-Eintrag über points_cost (source_type='einloesung')
+      - Parallele Einlösungsversuche desselben Gutscheins werden abgelehnt (409)
+      - Eingelöster Gutschein erscheint sofort im Tab 'Aktiv'
+      - Einlösung schlägt fehl wenn Kontostand < Punkte-Kosten des Angebots
+    foerdernachweis: >
+      Implementiert März 2026, Dedup-Fix Mai 2026.
+      Code: src/routes/api/redeem/+server.ts.
+
+  - id: REQ-P-023
+    titel: Partner-Filter (Kategorie, Region, ESG)
+    feature_ref: partner-filter
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: belohnung
+    beschreibung: >
+      Nutzer können Partnerangebote nach Kategorie, Region und ESG-Zertifizierung filtern.
+    akzeptanzkriterien:
+      - Filter: 9 Kategorien (fitnessstudio, sportgeraete, sportbekleidung, etc.)
+      - Filter: Region-Dropdown (nach Bundesland / Österreich-weit)
+      - Filter: ESG-Toggle (nur ESG-zertifizierte Partner)
+      - Filterung ist client-seitig ohne erneuten API-Call
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/routes/belohnung/+page.svelte.
+
+  - id: REQ-P-024
+    titel: AWIN / TradeDoubler Affiliate-Integration
+    feature_ref: awin-integration
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: belohnung
+    beschreibung: >
+      Affiliate-Angebote von AWIN und TradeDoubler werden als Online-Promotions angeboten.
+      Freischaltung erfordert Punkte-Abzug; Affiliate-Tracking-URL wird nach Freischaltung bereitgestellt.
+    akzeptanzkriterien:
+      - Affiliate-Angebote sind als "Werbung" gekennzeichnet (UWG-konform)
+      - Freischaltung via /api/awin/unlock-code: Punkte-Abzug + Tracking-URL-Ausgabe
+      - Nutzer sieht nach Freischaltung die Tracking-URL zum Angebot
+      - Mindestens 12 aktive Angebote im CMS (Stand Mai 2026)
+    compliance_ref: uwg-affiliate-kennzeichnung
+    foerdernachweis: >
+      AWIN Publisher-ID 1896704 aktiv. TradeDoubler Publisher-ID 2466954 aktiv.
+      14 AWIN-Codes und 3 TradeDoubler-Aktionen aus CSV importiert (Mai 2026).
+      Code: src/lib/components/partner/AwinAngebotKarte.svelte.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # COMMUNITY
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-025
+    titel: Leaderboard / Bestenliste
+    feature_ref: leaderboard
+    prioritaet: P2
+    status: deferred
+    kategorie: community
+    beschreibung: "Öffentliche Rangliste aktiver Nutzer nach verdienten Punkten oder Aktivitätsniveau."
+    akzeptanzkriterien:
+      - Leaderboard ist opt-in (Datenschutz)
+      - Nur Pseudonym (kein Klarname) sichtbar
+      - Filterbar nach Zeitraum (Woche/Monat) und Aktivitätstyp
+
+  - id: REQ-P-026
+    titel: Community Events
+    feature_ref: community-events
+    prioritaet: P2
+    status: deferred
+    kategorie: community
+    beschreibung: "Regionale Community-Events und Challenge-Wettbewerbe für Nutzer-Gruppen."
+    akzeptanzkriterien:
+      - Events werden mit Datum, Ort und Challenge-Beschreibung angezeigt
+      - Teilnahme vergibt Bonus-Punkte nach Abschluss-Verifikation
+
+  - id: REQ-P-027
+    titel: Invite-a-Friend / Referral
+    feature_ref: invite-a-friend
+    prioritaet: P2
+    status: deferred
+    kategorie: community
+    beschreibung: "Nutzer erhalten Bonus-Punkte für erfolgreich eingeladene Freunde."
+    akzeptanzkriterien:
+      - Einladungs-Link ist eindeutig pro Nutzer (Referral-Code)
+      - Bonus wird erst vergütet wenn eingeladener Nutzer sich registriert und ersten Quiz absolviert
+      - Ziel: Viral-K-Factor ≥ 0,2
+
+  # ═══════════════════════════════════════════════════════════════════
+  # AUTH & USER MANAGEMENT
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-028
+    titel: E-Mail + Passwort Login und Registrierung
+    feature_ref: email-password-auth
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: auth
+    beschreibung: >
+      Nutzer können sich mit E-Mail und Passwort registrieren (3-stufiger Flow)
+      und einloggen. JWT wird in localStorage gespeichert.
+    akzeptanzkriterien:
+      - Registrierung: 3 Schritte (Konto-Daten → Aktivitätsgruppe → E-Mail-Bestätigung)
+      - E-Mail-Bestätigung steuerbar via Umgebungsvariable (PUBLIC_EMAIL_VERIFICATION)
+      - Login: Weiterleitung zu /dashboard nach erfolgreichem Login
+      - Rate Limiting: 10 Versuche / 15 Min. pro IP, 5 Fehlversuche → Account-Lockout
+      - Passwort-Anforderungen: min. 8 Zeichen (Directus Standard)
+    compliance_ref: dsgvo-art9-consent
+    foerdernachweis: >
+      Implementiert Januar 2026. Code: src/routes/registrierung/+page.svelte,
+      src/routes/login/+page.svelte, src/routes/api/auth/register/+server.ts,
+      src/routes/api/auth/login/+server.ts.
+
+  - id: REQ-P-029
+    titel: Google OAuth (Login und Registrierung)
+    feature_ref: google-oauth
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: auth
+    beschreibung: >
+      Nutzer können sich mit ihrem Google-Konto einloggen oder registrieren.
+      Kein separates Passwort notwendig.
+    akzeptanzkriterien:
+      - Google-Login funktioniert auf Web (austrofit.at) und Preview (dev.austrofit.at)
+      - Neue Google-User werden automatisch angelegt und aktiviert
+      - Bestehende User via Google einloggen ohne Datenverlust
+      - CSRF-State-Cookie verhindert OAuth-Redirect-Angriffe
+      - Redirect-URIs in Google Cloud Console registriert und aktuell
+    compliance_ref: dsgvo-art13-dse
+    foerdernachweis: >
+      Implementiert Mai 2026. Google Cloud Projekt 'austrofit-production'.
+      Code: src/routes/api/auth/google/+server.ts,
+      src/routes/api/auth/google/callback/+server.ts.
+
+  - id: REQ-P-030
+    titel: Aktivitätsgruppen-Auswahl (WHO-Bewegungsempfehlungen)
+    feature_ref: gruppenauswahl
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: auth
+    beschreibung: >
+      Nutzer wählen bei der Registrierung ihre Aktivitätsgruppe. Diese bestimmt das
+      Cardio-Wochenziel entsprechend WHO/FGOE-Empfehlungen. Gruppen: adult, senior, pregnant, chronic.
+    akzeptanzkriterien:
+      - Auswahl erfolgt im Registrierungs-Schritt 2 (Gruppenauswahl)
+      - Disclaimer "AustroFit ist keine medizinische Anwendung" ist sichtbar
+      - Gruppe wird in user_profiles.activity_group gespeichert
+      - Gruppe kann in Profil-Einstellungen jederzeit geändert werden
+      - Cardio-Wochenziel passt sich sofort nach Gruppen-Änderung an
+    compliance_ref: mdr-no-medical-claims
+    foerdernachweis: >
+      Implementiert Februar 2026. Code: src/routes/registrierung/+page.svelte,
+      src/routes/api/auth/init-onboarding/+server.ts.
+
+  - id: REQ-P-031
+    titel: Profil & Einstellungen
+    feature_ref: profil-einstellungen
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: auth
+    beschreibung: >
+      Nutzer können persönliche Daten, Health-Verbindung und Datenschutz-Einstellungen
+      verwalten.
+    akzeptanzkriterien:
+      - Persönliche Daten (Name, Aktivitätsgruppe) editierbar
+      - Health-Connect-Verbindungsstatus sichtbar
+      - Einwilligungen (Analytics) widerrufbar
+      - Account-Löschung unter Datenschutz-Abschnitt zugänglich
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/routes/profil/+page.svelte.
+
+  - id: REQ-P-032
+    titel: DSGVO Konto-Löschung (Recht auf Vergessenwerden)
+    feature_ref: dsgvo-loeschung
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: auth
+    beschreibung: >
+      Nutzer können ihr Konto vollständig löschen. Alle personenbezogenen Daten werden
+      kaskadierend gelöscht (Art. 17 DSGVO).
+    akzeptanzkriterien:
+      - Account-Löschung via /profil → Datenschutz → Konto löschen
+      - Kaskaden-Löschung: points_ledger, quiz_attempts, user_profiles, directus_users
+      - Bestätigung via Dialog vor der Löschung
+      - Nach Löschung: automatischer Logout und Redirect zu Startseite
+    compliance_ref: dsgvo-art17-loeschung
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/routes/api/profile/delete/+server.ts.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PLATTFORM
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-033
+    titel: Progressive Web App (PWA) mit Offline-Shell
+    feature_ref: pwa-service-worker
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: plattform
+    beschreibung: >
+      AustroFit ist als PWA installierbar. Die App-Shell wird gecacht und ist ohne
+      Netzwerkverbindung sofort navigierbar. API-Calls benötigen weiterhin Netzwerk.
+    akzeptanzkriterien:
+      - App ist über "Zum Startbildschirm hinzufügen" installierbar (Manifest vorhanden)
+      - App-Shell (HTML/CSS/JS) lädt aus Cache bei wiederholtem Besuch
+      - Neuer Deploy invalidiert alten Cache automatisch (version-basierter Cache-Name)
+      - /api/*-Requests werden nie gecacht (Network Only)
+    foerdernachweis: >
+      Implementiert Januar 2026. Code: src/service-worker.ts.
+
+  - id: REQ-P-034
+    titel: Android App (Capacitor, Local Build Mode)
+    feature_ref: capacitor-android-build
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: plattform
+    beschreibung: >
+      AustroFit ist als native Android-App verfügbar. Die App-Shell ist in der APK
+      eingebettet (sofortige Navigation, kein Netzwerk für UI-Loads notwendig).
+    akzeptanzkriterien:
+      - App-Bundle ist in der APK eingebettet (Local Build Mode)
+      - Navigation zwischen Seiten ist ohne Netzwerkverzögerung möglich
+      - API-Calls gehen gegen https://austrofit.at (PUBLIC_API_BASE)
+      - Health Connect Permission-Flow funktioniert in der nativen App
+      - CORS-Header erlauben Requests von https://localhost (Capacitor WebView-Origin)
+    foerdernachweis: >
+      Implementiert Februar 2026. App ID: at.austrofit.app.
+      Code: capacitor.config.ts, android/, src/hooks.server.ts.
+
+  - id: REQ-P-035
+    titel: Google Play Store Publikation
+    feature_ref: google-play-upload
+    prioritaet: P1-MVP
+    status: in-progress
+    kategorie: plattform
+    beschreibung: "Android-App ist im Google Play Store öffentlich verfügbar."
+    akzeptanzkriterien:
+      - App ist im Google Play Store unter at.austrofit.app veröffentlicht
+      - Store-Listing enthält korrekte Datenschutzerklärung und Health-App-Erklärung
+      - App besteht Google Play Sicherheits-Review (Health Connect Permissions)
+      - Automatisierter Build-Prozess via GitHub Actions (optional)
+    notes: Android-Projekt und Build-Prozess vorbereitet; Upload ausstehend.
+
+  - id: REQ-P-036
+    titel: iOS App (TestFlight, HealthKit)
+    feature_ref: ios-app
+    prioritaet: P2
+    status: deferred
+    kategorie: plattform
+    beschreibung: "AustroFit als iOS-App via Capacitor, verfügbar in TestFlight und App Store."
+    akzeptanzkriterien:
+      - iOS-Build kompiliert ohne Fehler
+      - HealthKit-Integration funktioniert (Schritte + Workouts)
+      - App ist über TestFlight für Beta-Tester verfügbar
+
+  # ═══════════════════════════════════════════════════════════════════
+  # ANALYTICS
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-037
+    titel: Analytics (PostHog, DSGVO-konform, 7 Core-Events)
+    feature_ref: posthog-core-events
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: analytics
+    beschreibung: >
+      Nutzungsstatistiken werden DSGVO-konform via PostHog EU Cloud erhoben.
+      Analytics startet erst nach ausdrücklicher Einwilligung des Nutzers.
+    akzeptanzkriterien:
+      - PostHog wird NICHT geladen bevor Nutzer dem Analytics-Consent zustimmt
+      - 7 Core-Events werden korrekt erfasst: user_registered, user_logged_in,
+        dashboard_viewed, health_permission_result, quiz_completed, steps_synced, voucher_redeemed
+      - Nutzer-ID wird nach Login pseudonymisiert übertragen (keine Klarnamen)
+      - EU-Region-Endpoint: eu.i.posthog.com (Serverstandort Frankfurt)
+    compliance_ref: eprivacy-consent-banner
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/lib/utils/mixpanel.ts,
+      src/lib/components/dashboard/ConsentBanner.svelte.
+
+  - id: REQ-P-038
+    titel: Einwilligungs-Banner (Analytics-Consent)
+    feature_ref: posthog-core-events
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: analytics
+    beschreibung: >
+      Beim ersten Dashboard-Besuch wird ein Consent-Banner angezeigt.
+      Analytics wird nur nach expliziter Einwilligung initialisiert.
+    akzeptanzkriterien:
+      - Banner erscheint beim ersten Besuch der App (vor Analytics-Initialisierung)
+      - "Akzeptieren" und "Ablehnen" sind gleichwertig sichtbar (kein Confirmshaming)
+      - Entscheidung wird persistent in localStorage gespeichert ('austrofit_analytics_consent')
+      - Ohne Einwilligung: kein PostHog-Script geladen, kein Tracking
+    compliance_ref: eprivacy-consent-banner
+    foerdernachweis: >
+      Implementiert März 2026. Code: src/lib/components/dashboard/ConsentBanner.svelte.
+
+  - id: REQ-P-039
+    titel: UTM-Tracking (Kampagnen-Attribution)
+    feature_ref: utm-tracking
+    prioritaet: P2
+    status: deferred
+    kategorie: analytics
+    beschreibung: "UTM-Parameter in Kampagnen-Links für Kanal-Attribution und ROAS-Messung."
+    akzeptanzkriterien:
+      - UTM-Parameter (source, medium, campaign) werden in PostHog erfasst
+      - ROAS-Report (Umsatz/Marketingkosten) messbar via PostHog-Dashboard
+
+  # ═══════════════════════════════════════════════════════════════════
+  # B2B
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-040
+    titel: B2B Partner Self-Service Dashboard
+    feature_ref: partner-dashboard-b2b
+    prioritaet: P2
+    status: deferred
+    kategorie: b2b
+    beschreibung: >
+      Partner können ihre Angebote selbst verwalten und Einlösungsstatistiken einsehen.
+      Kein manueller Eingriff von AustroFit notwendig.
+    akzeptanzkriterien:
+      - Partner-Login mit eigenem Account (getrennt von Nutzer-Accounts)
+      - Angebots-Upload via CSV-Template oder Formular
+      - KPI-Dashboard: Impressions, Klicks, Einlösungen, Punkte-Kosten
+
+  - id: REQ-P-041
+    titel: Partnerpakete (Basic / Plus / Premium / Nachhaltigkeit)
+    feature_ref: partner-pakete
+    prioritaet: P2
+    status: deferred
+    kategorie: b2b
+    beschreibung: >
+      Strukturiertes Paket-Modell für Partner mit monatlicher Abrechnung via Stripe.
+    akzeptanzkriterien:
+      - 4 Pakete: Basic (0€), Plus (19€), Premium (39€), Nachhaltigkeit (29€, ESG-Pflicht)
+      - Abrechnung via Stripe, Rechnungsstellung via lexoffice API
+      - KMU-Sonderkonditionen (kostenlose Listung)
+
+  # ═══════════════════════════════════════════════════════════════════
+  # B2G
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-042
+    titel: Krankenkassen-Integration (ÖGK / SVS)
+    feature_ref: krankenkassen-integration
+    prioritaet: P3
+    status: deferred
+    kategorie: b2g
+    beschreibung: >
+      AustroFit-Aktivitätsnachweise können in Bonusmodelle von ÖGK oder SVS integriert werden.
+      Pilotgespräche ab Jahr 3.
+
+  - id: REQ-P-043
+    titel: ELGA-Schnittstelle (Präventionsnachweise)
+    feature_ref: elga-schnittstelle
+    prioritaet: P3
+    status: deferred
+    kategorie: b2g
+    beschreibung: >
+      Verifizierte Präventionsnachweise (Impfungen, Vorsorgeuntersuchungen) via ELGA-Anbindung.
+      Punktevergabe bei verifiziertem Nachweis.
+
+  - id: REQ-P-044
+    titel: Impact Analytics API (für öffentliche Gesundheitsakteure)
+    feature_ref: impact-analytics-api
+    prioritaet: P3
+    status: deferred
+    kategorie: b2g
+    beschreibung: >
+      DSGVO-konforme Impact-Analytics-API mit differential privacy für Wirkungsmessung ohne
+      Weitergabe personenbezogener Daten.
+    compliance_ref: dsgvo-art25-privacy-by-design

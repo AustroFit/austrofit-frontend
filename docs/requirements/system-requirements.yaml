@@ -1,0 +1,365 @@
+# AustroFit System-Anforderungen (System Requirements)
+# Technische Constraints, Architektur-Invarianten, Sicherheits-Guardrails, Performance.
+# Ablage: docs/requirements/system-requirements.yaml
+# Erstellt: 2026-05-21
+#
+# Cross-References:
+#   feature_ref    → docs/features.yaml (slug)
+#   req_ref        → docs/requirements/product-requirements.yaml (REQ-P-ID)
+
+meta:
+  titel: AustroFit System-Anforderungen
+  version: "1.0"
+  erstellt: "2026-05-21"
+  beschreibung: >
+    Technische Anforderungen: Architektur, Sicherheit, Performance, Integrationen.
+    Diese Anforderungen sind nicht direkt nutzer-sichtbar, aber essenziell für
+    Korrektheit, Skalierbarkeit und Compliance.
+    Sicherheits-Guardrails (REQ-S-011 ff.) sind das Ergebnis des Security-Reviews Mai 2026
+    und dürfen NICHT rückgängig gemacht werden.
+  status_werte:
+    implemented: "Technisch umgesetzt"
+    partial:     "Teilweise umgesetzt"
+    open:        "Noch nicht umgesetzt"
+    deferred:    "Zurückgestellt"
+
+requirements:
+
+  # ═══════════════════════════════════════════════════════════════════
+  # ARCHITEKTUR
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-S-001
+    titel: API-Proxy Pattern (kein direkter Directus-Zugriff vom Client)
+    feature_ref: punkte-ledger
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: architektur
+    beschreibung: >
+      Client-Code darf Directus nie direkt aufrufen. Alle Datenbankzugriffe gehen
+      ausschließlich über SvelteKit-API-Routes unter /api/. Dies ermöglicht
+      server-seitige Validierung, Token-Rotation und Audit-Logging.
+    akzeptanzkriterien:
+      - Kein fetch('PUBLIC_CMSURL/...') in client-seitigem Code
+      - Alle Datenbankoperationen gehen durch /api/-Routes (server-side only)
+      - Server-Routes nutzen DIRECTUS_WRITE_TOKEN oder PRIVATE_CMS_STATIC_TOKEN
+      - Client-Code nutzt ausschließlich apiUrl('/api/...') für alle Requests
+    notes: "Verletzung = direkter Zugriff auf Datenbank ohne Validierung. Nie rückgängig machen."
+
+  - id: REQ-S-002
+    titel: Auth via localStorage JWT (kein httpOnly Cookie)
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: architektur
+    beschreibung: >
+      JWT wird in localStorage gespeichert (austrofit_access_token), nicht in httpOnly Cookies.
+      Bewusste Entscheidung für Capacitor-Kompatibilität. In DPIA begründet.
+    akzeptanzkriterien:
+      - getAccessToken() / setAccessToken() / clearAccessToken() in src/lib/utils/auth.ts
+      - Server-Routes lesen Bearer-Token aus Authorization-Header
+      - Kein Token wird in API-Request-Bodies übertragen (außer: Directus-interne Calls)
+      - DPIA-Dokumentation enthält Begründung für localStorage-Entscheidung
+    notes: "Security-Trade-off: XSS-Risiko vs. Capacitor-Notwendigkeit. In CSP und DPIA begründen."
+
+  - id: REQ-S-003
+    titel: Directus als CMS (read-only MCP, write via API-Routes)
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: architektur
+    beschreibung: >
+      Directus 11 ist das Backend CMS. Zwei Token-Arten: DIRECTUS_READ_TOKEN (publizierter Content),
+      PRIVATE_CMS_STATIC_TOKEN (Writes auf Custom Collections). Beide Token haben keinen
+      Zugriff auf directus_users – dafür DIRECTUS_ADMIN_TOKEN.
+    akzeptanzkriterien:
+      - DIRECTUS_READ_TOKEN: nur Lesezugriff auf publizierte Collections
+      - PRIVATE_CMS_STATIC_TOKEN: Writes auf Custom Collections (points_ledger, user_profiles, etc.)
+      - DIRECTUS_ADMIN_TOKEN: nur im Google-OAuth-Callback (directus_users-Zugriff)
+      - Neue Collections immer in beiden Policies freischalten (REQ-S-003-Gotcha)
+    notes: >
+      Policy-Gotcha: PRIVATE_CMS_STATIC_TOKEN hat keinen automatischen Zugriff auf neue Collections.
+      Bei neuer Collection immer beide Policies (Read + Write Content API) aktualisieren.
+
+  - id: REQ-S-004
+    titel: Deployment (Vercel + GitHub CI/CD, zwei Umgebungen)
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: architektur
+    beschreibung: >
+      Zwei Deployment-Umgebungen: dev branch → dev.austrofit.at (Preview, passwortgeschützt),
+      main branch → austrofit.at (Production).
+    akzeptanzkriterien:
+      - Jede Änderung zuerst auf dev committen und testen
+      - Production-Deploy nur via PR merge dev→main
+      - Env-Vars in Vercel Dashboard konfiguriert (nicht im Repo)
+      - Node.js Runtime: nodejs22.x
+
+  - id: REQ-S-005
+    titel: Dual Build-Target (Vercel SvelteKit / Capacitor Static SPA)
+    feature_ref: capacitor-android-build
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: architektur
+    beschreibung: >
+      Derselbe Codebase produziert zwei Build-Targets: adapter-vercel (Web) und
+      adapter-static (Capacitor). Unterscheidung via BUILD_TARGET=capacitor.
+    akzeptanzkriterien:
+      - Web-Build: adapter-vercel, SSR aktiv, /api/*-Routes als Serverless-Functions
+      - Capacitor-Build: adapter-static, SPA-Mode, prerender: { crawl: false }
+      - $env/static/public für alle client-seitigen Vars (dynamic/public = undefined in SPA)
+      - Dynamische Routen: universaler +page.js statt +page.server.js
+
+  # ═══════════════════════════════════════════════════════════════════
+  # SICHERHEITS-GUARDRAILS (Security Review Mai 2026)
+  # ACHTUNG: Diese Anforderungen dürfen NICHT rückgängig gemacht werden
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-S-011
+    titel: Quiz Allowlist-Payload + server-seitige Validierung
+    feature_ref: quiz-allowlist-payload
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: >
+      Client-Payload für Quiz-Attempts darf NICHT direkt an Directus weitergeleitet werden.
+      Server leitet nur explizit zugelassene Felder (Allowlist). passed wird server-seitig
+      berechnet. quiz_json.questions.length validiert max_score (fail-closed).
+    akzeptanzkriterien:
+      - safePayload mit explizitem Allowlist wird server-seitig gebaut
+      - passed = (score >= max_score) – nie vom Client übernommen
+      - eligible_points gecappt: Math.min(200, Number(eligible_points))
+      - completed_at kommt vom Server (nie vom Client)
+      - max_score wird gegen quiz_json.questions.length geprüft (Directus-Fetch, fail-closed)
+      - Ohne Directus-Verbindung schlägt die gesamte Anfrage fehl (fail-closed)
+    notes: "Security-Fix Mai 2026. Verhindert score:1, max_score:1-Bypass. Nie rückgängig machen."
+
+  - id: REQ-S-012
+    titel: Quiz Claim: JWT aus Authorization-Header (kein Body-Token)
+    feature_ref: claim-bearer-token
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: >
+      Der JWT wird bei /api/claim aus dem Authorization-Header gelesen (Bearer-Token).
+      Token im Request-Body ist nicht erlaubt.
+    akzeptanzkriterien:
+      - extractBearerToken(request) liest JWT aus Authorization-Header
+      - access_token im Request-Body wird ignoriert / abgelehnt
+      - Client (Quiz.svelte) setzt Authorization: Bearer <token>
+    notes: "Security-Fix Mai 2026. Nie rückgängig machen."
+
+  - id: REQ-S-013
+    titel: Per-User-Cooldown bei /api/claim (Bypass-Schutz)
+    feature_ref: claim-cooldown-server
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: >
+      30-Tage-Cooldown wird server-seitig bei /api/claim pro User+Quiz durchgesetzt,
+      zusätzlich zum anonymen Check in /api/quiz-attempts. Verhindert Bypass via neue anonymous_ids.
+    akzeptanzkriterien:
+      - /api/claim prüft ob User das Quiz innerhalb des Cooldown-Fensters bereits geclaimt hat
+      - Prüfung erfolgt VOR dem Ledger-Write (fail-fast)
+      - Bypass durch neue anonymous_ids ist damit ausgeschlossen
+    notes: "Security-Fix Mai 2026. Nie rückgängig machen."
+
+  - id: REQ-S-014
+    titel: Cardio Input-Validierung und Dauer-Cap
+    feature_ref: cardio-input-limits
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: >
+      Cardio-Sync-Endpoint validiert alle eingehenden Workouts. Dauer ist auf 4 Stunden
+      gecappt (in der Funktion, nicht nur im Endpoint).
+    akzeptanzkriterien:
+      - Max. 50 Workouts pro Request; darüber hinaus werden Einträge gefiltert (kein 400)
+      - date muss Format /^\d{4}-\d{2}-\d{2}$/ matchen
+      - date muss im Fenster ≤90 Tage Vergangenheit / ≤2 Tage Zukunft liegen
+      - startDate muss ein parsbares ISO-8601-Datum sein
+      - durationSeconds gecappt auf 14.400s (4h) in getEquivalentMinutes() selbst
+      - Schritt-Cap: max. 20.000 Schritte/Tag vor Punkte-Berechnung
+    notes: "Security-Fix Mai 2026. durationSeconds-Cap muss in der Funktion liegen, nicht nur im Endpoint."
+
+  - id: REQ-S-015
+    titel: Streak-Wochen-Bonus Dedup (Race Condition Schutz)
+    feature_ref: streak-wochen-bonus-dedup
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: >
+      Vor dem Schreiben des wöchentlichen Streak-Bonus wird ein Dedup-Check durchgeführt.
+      Verhindert Doppelbuchung bei parallelen API-Calls.
+    akzeptanzkriterien:
+      - Dedup-Check in streak.ts vor jedem Wochen-Bonus-Write
+      - Kein doppelter Bonus auch bei gleichzeitigen Requests (race condition)
+    notes: "Security-Fix Mai 2026. Nie rückgängig machen."
+
+  - id: REQ-S-016
+    titel: Redeem Dedup (Double-Spend Schutz)
+    feature_ref: redeem-dedup
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: >
+      Vor dem Erstellen eines reward_redemptions-Eintrags wird geprüft ob bereits
+      eine aktive/genutzte Einlösung für (user, reward) existiert. 409 bei Fund.
+    akzeptanzkriterien:
+      - /api/redeem prüft existierende Einlösungen vor dem Write
+      - 409 Conflict bei bereits eingelöstem Gutschein
+      - Verhindert parallele Double-Spend-Anfragen
+    notes: "Security-Fix Mai 2026. Nie rückgängig machen."
+
+  - id: REQ-S-017
+    titel: Rate Limiting + Account Lockout
+    feature_ref: rate-limiting
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: >
+      IP-basiertes Sliding-Window Rate Limiting auf kritischen Endpunkten.
+      Per-Account-Lockout nach 5 fehlgeschlagenen Login-Versuchen.
+    akzeptanzkriterien:
+      - Login: 10 Requests / 15 Min. pro IP
+      - Register: 5 Requests / 15 Min. pro IP
+      - Claim: 20 Requests / 60 Min. pro IP
+      - Redeem: 10 Requests / 60 Min. pro IP
+      - Manueller Schritt-Input: 5 Requests / 15 Min. pro IP
+      - Account-Lockout: 5 Fehlversuche / 10 Min. → temporäre Sperre
+      - 429-Response mit Retry-After: 900
+    notes: "In-Memory Rate Limiter (Serverless = keine gemeinsame Instanz). Ausreichend für MVP."
+
+  - id: REQ-S-018
+    titel: Security Headers (CSP, X-Frame, X-Content-Type, Referrer-Policy)
+    feature_ref: security-headers
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: sicherheit
+    beschreibung: "HTTP Security Headers via vercel.json für alle Routen."
+    akzeptanzkriterien:
+      - Content-Security-Policy: default-src 'self', object-src 'none', frame-ancestors 'none'
+      - X-Content-Type-Options: nosniff
+      - X-Frame-Options: DENY
+      - Referrer-Policy: strict-origin-when-cross-origin
+      - Permissions-Policy: camera=(), microphone=(), geolocation=()
+    notes: "CSP nutzt 'unsafe-inline' für script-src (SvelteKit-Hydration). Gilt nur für Vercel."
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PERFORMANCE
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-S-021
+    titel: API-Antwortzeiten (Vercel Serverless)
+    prioritaet: P1-MVP
+    status: partial
+    kategorie: performance
+    beschreibung: "API-Endpunkte antworten innerhalb akzeptabler Zeitrahmen."
+    akzeptanzkriterien:
+      - Einfache Leseanfragen (/api/ledger-total, /api/badges): < 2 Sekunden p50
+      - Sync-Endpunkte (/api/steps/sync, /api/cardio/sync): < 5 Sekunden p50
+      - Keine Anfrage überschreitet Vercel Serverless-Timeout (10 Sekunden Default)
+    notes: "Kein Monitoring aufgesetzt. Manuelle Prüfung via Dev-Tools ausreichend für MVP."
+
+  - id: REQ-S-022
+    titel: App Shell Ladezeit (PWA + Capacitor)
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: performance
+    beschreibung: >
+      App Shell (HTML/CSS/JS) lädt aus Service Worker Cache; wiederholte Seitenaufrufe
+      sind ohne Netzwerkverzögerung navigierbar.
+    akzeptanzkriterien:
+      - Dashboard öffnet in < 1 Sekunde bei wiederholtem Besuch (Cache Hit)
+      - Capacitor Local Build Mode: Navigation ohne Netzwerkroundtrip
+      - Service Worker Cache wird bei neuem Deploy automatisch geleert
+
+  # ═══════════════════════════════════════════════════════════════════
+  # INTEGRATIONEN
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-S-031
+    titel: Google Health Connect Integration (Android)
+    feature_ref: schritte-android
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: integration
+    beschreibung: >
+      @capgo/capacitor-health v8.2.17 liest Schritte und Workouts aus Google Health Connect.
+      Alle Health-Calls sind mit isNative() Guard abgesichert (silent no-op im Browser).
+    akzeptanzkriterien:
+      - isHealthAvailable(), checkHealthPermission(), requestHealthPermission() korrekt implementiert
+      - Health-Calls geben graceful no-op im Browser zurück (isNative() Guard)
+      - Schritte: getStepsForDate(), getStepsForLastDays()
+      - Workouts: getWorkoutsForLastDays() (WorkoutEntry Interface)
+
+  - id: REQ-S-032
+    titel: AWIN / TradeDoubler Affiliate API
+    feature_ref: awin-integration
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: integration
+    beschreibung: "AWIN Publisher-Account und TradeDoubler-Account aktiv. Promotions in Directus gepflegt."
+    akzeptanzkriterien:
+      - AWIN Publisher-ID 1896704 aktiv
+      - Promotions in Directus Collection 'online_promotions' konfigurierbar
+      - Freischaltung via /api/awin/unlock-code: Punkte-Abzug + Tracking-URL
+      - Policy-Gotcha: online_promotions in beiden Directus-Policies freigeschaltet
+
+  - id: REQ-S-033
+    titel: PostHog EU Cloud (Analytics)
+    feature_ref: posthog-core-events
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: integration
+    beschreibung: "PostHog EU Cloud (Frankfurt) für DSGVO-konforme Nutzungsanalyse."
+    akzeptanzkriterien:
+      - Endpoint: eu.i.posthog.com
+      - Initialisierung nur nach Consent (austrofit_analytics_consent=true in localStorage)
+      - identifyUser() verknüpft Session mit pseudonymisierter User-ID
+      - Kein PII (Name, E-Mail) an PostHog übertragen
+
+  - id: REQ-S-034
+    titel: CORS + OPTIONS-Handling für Capacitor
+    feature_ref: cors-capacitor
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: integration
+    beschreibung: >
+      Capacitor 8 Android nutzt https://localhost als WebView-Origin.
+      vercel.json setzt CORS-Header; hooks.server.ts fängt OPTIONS-Preflight ab.
+    akzeptanzkriterien:
+      - vercel.json: Access-Control-Allow-Origin: https://localhost für /api/*
+      - hooks.server.ts: OPTIONS-Request → 204 mit CORS-Headern
+      - POST/PATCH/DELETE funktionieren aus nativer App ohne 405-Fehler
+
+  # ═══════════════════════════════════════════════════════════════════
+  # DATEN-INTEGRITÄT
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-S-041
+    titel: Punkte-Ledger Integrität (Dedup, Append-Only, Concurrency)
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: daten
+    beschreibung: >
+      Das points_ledger darf keine Doppelbuchungen enthalten. Concurrency-Guards
+      verhindern Race Conditions bei parallelen Sync-Aufrufen.
+    akzeptanzkriterien:
+      - syncSteps() hat Modul-Level _syncing-Flag (blockiert parallele Aufrufe)
+      - Streak-Wochen-Bonus: Dedup-Check vor Write (REQ-S-015)
+      - Redeem: Dedup-Check vor Write (REQ-S-016)
+      - source_ref-basierte Dedup für Schritte (max. 1 Eintrag pro Tag und User)
+    notes: "Concurrency-Guard in stepSync.ts darf nicht entfernt werden."
+
+  - id: REQ-S-042
+    titel: Directus Query-Konsistenz (source_ref _in, keine zwei simultanen _in-Filter)
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: daten
+    beschreibung: >
+      Bekannte Directus-Gotchas in API-Queries einhalten um stille Datenverluste zu vermeiden.
+    akzeptanzkriterien:
+      - source_ref: immer _in mit expliziter Liste (nie _gte/_lte auf String-Feldern)
+      - Nie zwei simultane _in-Filter auf verschiedenen Feldern (gibt leere Response)
+      - Monatsansicht Schritte: client-seitige Filterung via source_ref (kein occurred_at)
+      - Cardio-History: source_ref[_in] mit ISO-Wochen-Keys (source_type via _eq, nicht _in)
+    notes: "Directus 11 Bug: zwei _in-Filter = leere Response ohne Fehlermeldung."

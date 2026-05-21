@@ -1,0 +1,330 @@
+# AustroFit Nutzer-Anforderungen (User Requirements)
+# User Stories und Nutzer-Bedürfnisse aus Perspektive der 4 Aktivitätsgruppen.
+# Ablage: docs/requirements/user-requirements.yaml
+# Erstellt: 2026-05-21
+#
+# Cross-References:
+#   req_ref  → docs/requirements/product-requirements.yaml (REQ-P-ID)
+
+meta:
+  titel: AustroFit Nutzer-Anforderungen
+  version: "1.0"
+  erstellt: "2026-05-21"
+  beschreibung: >
+    User Stories in der Form "Als [Persona] möchte ich [Ziel], damit [Nutzen]."
+    Personas basieren auf den 4 Aktivitätsgruppen (adult, senior, pregnant, chronic)
+    aus den WHO/FGOE-Bewegungsempfehlungen. Jede User Story hat klare Akzeptanzkriterien.
+  format: "Als [Persona] möchte ich [Ziel], damit [Nutzen]."
+
+# ═══════════════════════════════════════════════════════════════════
+# PERSONAS
+# ═══════════════════════════════════════════════════════════════════
+
+personas:
+
+  - id: P-ANNA
+    name: Anna
+    alter: 28
+    gruppe: adult
+    beschreibung: >
+      Berufstätige in Wien, gesundheitsbewusst aber zeitarm. Nutzt Android-Smartphone.
+      Möchte Bewegung in den Alltag integrieren und dafür belohnt werden.
+      Motiviert durch Gamification (Level, Badges, Streaks) und attraktive Gutscheine.
+    goals:
+      - Schritte automatisch tracken ohne manuelle Eingabe
+      - Level-Fortschritt täglich sehen
+      - Gutscheine für lokale Partner einlösen
+
+  - id: P-WALTER
+    name: Walter
+    alter: 68
+    gruppe: senior
+    beschreibung: >
+      Pensionierter Lehrer in Graz, aktiv aber mit eingeschränkter Technik-Affinität.
+      Nutzt Android-Tablet oder Smartphone. Braucht einfache Navigation,
+      große Schrift und verständliche Erklärungen. Cardio-Ziel: 150 Min. moderate Bewegung/Woche.
+    goals:
+      - Wöchentliche Bewegungsziele verständlich visualisiert
+      - Einfache Registrierung (Google OAuth bevorzugt)
+      - Gesundheitsartikel in verständlicher Sprache
+
+  - id: P-LAURA
+    name: Laura
+    alter: 31
+    gruppe: pregnant
+    beschreibung: >
+      Schwangere, im 2. Trimester, in Wien. Bewegt sich regelmäßig (Spazieren, Schwimmen)
+      aber vermeidet intensive Belastung. Braucht Empfehlungen für schwangerschaftsgerechte
+      Bewegung. Intensive Workouts werden als moderat gewertet.
+    goals:
+      - Schwangerschafts-gerechte Bewegungsempfehlungen
+      - Kein Druck bei Zielverfehlung (positive Verstärkung)
+      - Disclaimer dass App keine medizinische Beratung ersetzt
+
+  - id: P-THOMAS
+    name: Thomas
+    alter: 45
+    gruppe: chronic
+    beschreibung: >
+      Diabetiker in Linz. Möchte sich mehr bewegen, aber hat Einschränkungen.
+      Niedrigere Wochenziele (35/100 Min.) sind realistischer.
+      Nutzt regelmäßig das Bildungsfeature (Diabetes-Artikel + Quizze).
+    goals:
+      - Realistische (niedrigere) Bewegungsziele für seine Gruppe
+      - Bildungsinhalte zu Diabetes und Prävention
+      - Keine Überforderung durch zu hohe Leistungsanforderungen
+
+# ═══════════════════════════════════════════════════════════════════
+# USER REQUIREMENTS
+# ═══════════════════════════════════════════════════════════════════
+
+requirements:
+
+  # ─────────────────────────────────────────────────────────────────
+  # ONBOARDING & REGISTRATION
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: REQ-U-001
+    titel: Schnelle Registrierung (E-Mail oder Google)
+    persona: [P-ANNA, P-WALTER, P-LAURA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als neuer Nutzer möchte ich mich in unter 2 Minuten registrieren können,
+      damit ich sofort mit dem Verdienen von Punkten beginnen kann.
+    akzeptanzkriterien:
+      - Registrierung via E-Mail + Passwort: max. 3 Schritte
+      - Registrierung via Google OAuth: 1 Klick (kein Passwort nötig)
+      - Nach Registrierung sofortiger Zugriff auf Dashboard
+      - Kein Telefonummer-Pflichtfeld, kein Adress-Pflichtfeld
+    req_ref: [REQ-P-028, REQ-P-029]
+
+  - id: REQ-U-002
+    titel: Aktivitätsgruppe wählen (altersgerecht, ohne medizinische Diagnose)
+    persona: [P-WALTER, P-LAURA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer mit besonderen Bewegungsanforderungen möchte ich eine Gruppe wählen,
+      die meiner Lebenssituation entspricht, damit meine Bewegungsziele realistisch sind.
+    akzeptanzkriterien:
+      - Verständliche Beschreibung jeder Gruppe (adult, senior, pregnant, chronic) ohne Medizin-Jargon
+      - Disclaimer: "Keine medizinische Anwendung" sichtbar
+      - Gruppe jederzeit in den Profil-Einstellungen änderbar
+      - Nach Gruppen-Änderung: Cardio-Ziel passt sich sofort an
+    req_ref: REQ-P-030
+
+  # ─────────────────────────────────────────────────────────────────
+  # BEWEGUNGSTRACKING
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: REQ-U-003
+    titel: Schritte automatisch tracken (kein manuelles Eingeben)
+    persona: [P-ANNA, P-WALTER]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Android-Nutzer möchte ich meine Tagesschritte automatisch erfasst haben,
+      damit ich nicht jeden Tag manuell eine Zahl eintippen muss.
+    akzeptanzkriterien:
+      - App liest Schritte automatisch aus Google Health Connect
+      - Permission-Anfrage ist verständlich erklärt (Zweck + Nutzen)
+      - Schritte erscheinen im Dashboard ohne manuelle Aktion
+      - Historische Schritte (bis 90 Tage zurück) werden beim ersten Sync nachgeladen
+    req_ref: REQ-P-011
+
+  - id: REQ-U-004
+    titel: Workouts tracken (Laufen, Radfahren, Schwimmen)
+    persona: [P-ANNA, P-LAURA]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als aktive Nutzerin möchte ich, dass meine Workouts aus Google Health Connect
+      automatisch für meine wöchentlichen Bewegungsziele gezählt werden.
+    akzeptanzkriterien:
+      - Workouts werden automatisch aus Health Connect synchronisiert
+      - Fortschrittsbalken im Dashboard zeigt Wochenfortschritt
+      - Intensive Einheiten zählen als 2× Äquivalenz-Minuten (außer bei Gruppe 'pregnant')
+      - Dashboard-Karte zeigt: heutige Minuten, Wochenziel, erreichte Punkte
+    req_ref: REQ-P-012
+
+  # ─────────────────────────────────────────────────────────────────
+  # PUNKTE & FORTSCHRITT
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: REQ-U-005
+    titel: Punkte sofort nach Aktivität sehen
+    persona: [P-ANNA, P-WALTER, P-LAURA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer möchte ich sofort sehen wie viele Punkte ich für eine Aktivität erhalten habe,
+      damit ich den Zusammenhang zwischen Bewegung/Quiz und Belohnung verstehe.
+    akzeptanzkriterien:
+      - Nach Schritt-Sync: Ledger-Eintrag sofort im Dashboard sichtbar
+      - Nach Quiz-Abschluss: verdiente Punkte sofort angezeigt (auch anonym als Preview)
+      - Punkte-Zähler im Dashboard aktualisiert sich ohne Page-Reload
+    req_ref: [REQ-P-001, REQ-P-016, REQ-P-017]
+
+  - id: REQ-U-006
+    titel: Level-Fortschritt verfolgen (täglich Motivation)
+    persona: [P-ANNA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer möchte ich meinen Level-Fortschritt täglich im Dashboard sehen,
+      damit ich motiviert bleibe und meinen nächsten Meilenstein kenne.
+    akzeptanzkriterien:
+      - Level-Name, aktueller Level-Nummer und Fortschrittsbalken im Dashboard
+      - Nächstes Level mit benötigten Punkten angezeigt
+      - Level sinkt nicht wenn ich Punkte einlöse (earnedPoints-Basis)
+    req_ref: REQ-P-002
+
+  - id: REQ-U-007
+    titel: Streak verfolgen (täglicher Anreiz)
+    persona: [P-ANNA, P-WALTER]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer möchte ich meinen aktuellen Streak (Schritte + Quiz) im Dashboard sehen,
+      damit ich weiß ob ich heute noch aktiv sein muss um meinen Streak nicht zu brechen.
+    akzeptanzkriterien:
+      - Schritt-Streak und Quiz-Streak getrennt sichtbar
+      - Streak-Anzeige zeigt: aktuell aktiver Streak, aktuelle Tier-Stufe, Bonus-Punkte
+      - Warnung wenn heutiger Streak noch nicht aktiviert (optionales Feature)
+    req_ref: [REQ-P-003, REQ-P-006]
+
+  - id: REQ-U-008
+    titel: Badges und Auszeichnungen entdecken (österreichische Orte)
+    persona: [P-ANNA, P-WALTER, P-LAURA]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer möchte ich meine verdienten Badges (österreichische Bergregionen,
+      Bundesländer, etc.) sehen und neue entdecken, damit Schritte sammeln
+      einen Sinn und Bezug zu Österreich bekommt.
+    akzeptanzkriterien:
+      - Earned Badges im Dashboard als Vorschau sichtbar
+      - Vollständige Badge-Galerie unter /profil/auszeichnungen
+      - Nächstes erreichbares Badge mit benötigten Schritten angezeigt
+      - 113 Badges aus 6 Kategorien (hauptstadt, bundesland, etc.)
+    req_ref: REQ-P-008
+
+  # ─────────────────────────────────────────────────────────────────
+  # BILDUNG
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: REQ-U-009
+    titel: Quizze ohne Registrierung absolvieren (niedrige Einstiegshürde)
+    persona: [P-ANNA, P-WALTER, P-LAURA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als neuer Besucher möchte ich ein Quiz nach dem Lesen eines Artikels
+      direkt ausprobieren ohne mich zu registrieren, damit ich die App
+      kennenlernen kann bevor ich mich entscheide.
+    akzeptanzkriterien:
+      - Quiz sofort nach Artikel verfügbar ohne Login
+      - Punkte-Vorschau nach Quiz-Abschluss ("Du hättest X Punkte verdient")
+      - Klarer Call-to-Action: Registriere dich um Punkte zu claimen
+    req_ref: REQ-P-016
+
+  - id: REQ-U-010
+    titel: Gesundheitsinhalte in verständlicher Sprache lesen
+    persona: [P-WALTER, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer mit wenig medizinischem Vorwissen möchte ich Gesundheitsartikel
+      in allgemeinverständlicher Sprache lesen, damit ich mein Wissen erweitern kann.
+    akzeptanzkriterien:
+      - Artikel basieren auf WHO/FGOE-Bewegungsempfehlungen (seriöse Quellen)
+      - Keine medizinischen Diagnose-Claims
+      - Artikel sind ohne Login zugänglich (SEO, niedrige Einstiegshürde)
+    req_ref: REQ-P-015
+
+  # ─────────────────────────────────────────────────────────────────
+  # BELOHNUNG
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: REQ-U-011
+    titel: Gutscheine für verdiente Punkte einlösen
+    persona: [P-ANNA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer mit genug Punkten möchte ich meinen Punkte-Kontostand gegen
+      einen Gutschein eines lokalen Partners einlösen, damit meine Aktivität
+      einen konkreten, greifbaren Nutzen hat.
+    akzeptanzkriterien:
+      - Einlösung mit wenigen Klicks (max. 3 Schritte)
+      - Gutschein-Code sofort nach Einlösung sichtbar
+      - Kontostand wird sofort nach Einlösung aktualisiert
+      - Eingelöste Gutscheine unter "Aktiv" gesammelt
+    req_ref: [REQ-P-021, REQ-P-022]
+
+  # ─────────────────────────────────────────────────────────────────
+  # DATENSCHUTZ & KONTROLLE
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: REQ-U-012
+    titel: Analytics ablehnen ohne Funktionsverlust
+    persona: [P-ANNA, P-WALTER, P-LAURA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als datenschutzbewusster Nutzer möchte ich Analytics ablehnen können,
+      ohne dass meine App-Erfahrung dadurch eingeschränkt wird.
+    akzeptanzkriterien:
+      - Ablehnen und Akzeptieren gleichwertig im Consent-Banner dargestellt
+      - Ohne Einwilligung: App vollständig nutzbar (keine Funktionseinschränkung)
+      - Entscheidung jederzeit in /profil → Datenschutz änderbar
+    req_ref: REQ-P-038
+
+  - id: REQ-U-013
+    titel: Konto vollständig löschen (Recht auf Vergessenwerden)
+    persona: [P-ANNA, P-WALTER, P-LAURA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als Nutzer möchte ich mein Konto und alle meine Daten vollständig löschen können,
+      damit ich sicher bin dass keine persönlichen Daten verbleiben.
+    akzeptanzkriterien:
+      - Konto-Löschung unter /profil → Datenschutz → Konto löschen
+      - Bestätigungsdialog vor Löschung (irreversibel kommuniziert)
+      - Alle personenbezogenen Daten (Aktivitäten, Punkte, Profil) werden gelöscht
+      - Sofortiger Logout nach Löschung
+    req_ref: REQ-P-032
+
+  # ─────────────────────────────────────────────────────────────────
+  # APP-VERHALTEN & ZUGÄNGLICHKEIT
+  # ─────────────────────────────────────────────────────────────────
+
+  - id: REQ-U-014
+    titel: App schnell und ohne Ladezeit öffnen (native & PWA)
+    persona: [P-ANNA, P-WALTER]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als täglicher Nutzer möchte ich die App sofort öffnen ohne lange Ladezeiten,
+      damit der tägliche Check-in kein Aufwand ist.
+    akzeptanzkriterien:
+      - PWA: App Shell aus Cache, Dashboard-Render in < 2 Sek.
+      - Native Android: App lädt aus eingebettetem Bundle (kein Netzwerk für UI)
+      - Keine "Loading..."-Spinner für grundlegende Navigation
+    req_ref: [REQ-P-033, REQ-P-034]
+
+  - id: REQ-U-015
+    titel: App auf Deutsch (österreichische Sprache und Kultur)
+    persona: [P-ANNA, P-WALTER, P-LAURA, P-THOMAS]
+    prioritaet: P1-MVP
+    status: implemented
+    user_story: >
+      Als österreichischer Nutzer möchte ich eine App die auf Deutsch ist und
+      österreichische Werte und Orte widerspiegelt, damit ich mich damit identifizieren kann.
+    akzeptanzkriterien:
+      - Gesamte UI auf Deutsch (keine englischen Textfragmente im produktiven UI)
+      - Österreichische Orte und Landmarks in Badges (Großglockner, Bodensee, Wien, etc.)
+      - Österreichische Partner-Kategorien und Regionen im Marketplace
+      - AustroFit-Branding-Level als Bezug zu Österreich (z. B. "AustroFit Aktiv")
+    req_ref: [REQ-P-008, REQ-P-021]

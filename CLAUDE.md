@@ -27,8 +27,19 @@ No test suite is configured in this project.
 - `docs/features.yaml` — Maschinenlesbare Feature-Registry (54 Features, 12 Kategorien). Primäre Referenz für Roadmap, Feature-Status (implemented/in-progress/planned/to-discuss/rejected) und regulatorische Checks. Bei neuen Features oder Statusänderungen hier aktualisieren.
 - `docs/compliance.yaml` — Regulierungs-Registry (12 Regularien, Mai 2026). Enthält Anwendbarkeit, Anforderungen mit Status, Nachweis-Typ und priorisierte `open_actions`. Bei neuen Features auf regulatorische Auswirkungen prüfen und Status hier pflegen.
 - `docs/tom.yaml` — TOM-Dokument (Technische und Organisatorische Maßnahmen, Art. 32 DSGVO, Mai 2026). 9 Kategorien, 20 Maßnahmen. Erforderlich für DPIA und DSB-Anfragen. Offene Punkte: Rate-Limiting, Backup-Konzept, CSP-Header, AVV-Ablage.
+- `docs/requirements/` — Requirements-Driven Development (REQ-IDs). Vier YAML-Dateien für Entwicklungssteuerung und Fördernachweis:
+  - `product-requirements.yaml` — REQ-P-001–044: Produkt-Anforderungen (MVP P1/P2/P3), feature_ref → features.yaml
+  - `regulatory-requirements.yaml` — REQ-R-001–024: Regulatorische Pflichten, compliance_ref → compliance.yaml
+  - `system-requirements.yaml` — REQ-S-001–042: Architektur, Security-Guardrails, Performance, Integrationen
+  - `user-requirements.yaml` — REQ-U-001–015: User Stories (4 Personas: Anna/Walter/Laura/Thomas)
 - `Directus-JSON-AustroFit/austrofit-business-plan.yaml` — Business Plan v1.3 (Markt, Finanzen, Gamification-Formeln)
 - `Directus-JSON-AustroFit/service-blueprint.html` — Service Blueprint B2C v1.1 (User Journey, Phasen)
+
+### Requirements-Driven Development (REQ-IDs)
+
+REQ-IDs referenzieren in Commit-Messages, PR-Beschreibungen und Förderanträgen (aws, FFG, WA Wien).
+Format: `REQ-P-001` (Produkt), `REQ-R-001` (Regulatorisch), `REQ-S-001` (System), `REQ-U-001` (User).
+Cross-References: `feature_ref` → `docs/features.yaml` (slug), `compliance_ref` → `docs/compliance.yaml`.
 
 ## Compliance
 
