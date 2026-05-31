@@ -142,6 +142,19 @@ export async function GET({ url, cookies, fetch }: RequestEvent) {
 
   if (!userId) return failRedirect('no_user_id');
 
+  // Art. 9-Consent prüfen: Nutzer ohne Einwilligung → Onboarding erzwingen
+  let needsOnboarding = true;
+  try {
+    const profileCheckRes = await fetch(
+      `${PUBLIC_CMSURL}/items/user_profiles?filter[user_id][_eq]=${encodeURIComponent(userId)}&fields=gesundheitsdaten_consent_at&limit=1`,
+      { headers: { Authorization: `Bearer ${env.DIRECTUS_ADMIN_TOKEN ?? ''}` } }
+    );
+    if (profileCheckRes.ok) {
+      const pb = await profileCheckRes.json();
+      needsOnboarding = !pb?.data?.[0]?.gesundheitsdaten_consent_at;
+    }
+  } catch { /* fail-safe: needsOnboarding bleibt true */ }
+
   // 5) Mit temporärem Passwort einloggen → Directus JWT erhalten
   const loginRes = await fetch(`${PUBLIC_CMSURL}/auth/login`, {
     method: 'POST',
@@ -191,15 +204,21 @@ export async function GET({ url, cookies, fetch }: RequestEvent) {
         localStorage.setItem('austrofit_access_token', ${JSON.stringify(accessToken)});
         localStorage.setItem('austrofit_refresh_token', ${JSON.stringify(refreshToken)});
         localStorage.setItem('austrofit_token_expires_at', ${JSON.stringify(String(expiresAt))});
-        var group = localStorage.getItem('austrofit_activity_group') || 'adult';
-        localStorage.removeItem('austrofit_activity_group');
-        fetch('/api/auth/init-onboarding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + ${JSON.stringify(accessToken)} },
-          body: JSON.stringify({ activity_group: group })
-        }).catch(function(){});
-      } catch(e) {}
-      window.location.replace('/dashboard');
+        if (${JSON.stringify(needsOnboarding)}) {
+          window.location.replace('/registrierung?oauth_onboarding=1&next=/dashboard');
+        } else {
+          var group = localStorage.getItem('austrofit_activity_group') || 'adult';
+          localStorage.removeItem('austrofit_activity_group');
+          fetch('/api/auth/init-onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + ${JSON.stringify(accessToken)} },
+            body: JSON.stringify({ activity_group: group })
+          }).catch(function(){});
+          window.location.replace('/dashboard');
+        }
+      } catch(e) {
+        window.location.replace('/dashboard');
+      }
     })();
   </script>
   <noscript>

@@ -1,0 +1,577 @@
+# AustroFit Verification & Validation Plan
+# V&V-Dokumentation für Qualitätssicherung und DPIA-Nachweis (Art. 32 DSGVO)
+# Ablage: docs/validation-plan.yaml
+# Erstellt: 2026-05-25
+#
+# Begriffe:
+#   Verification = "Haben wir es richtig gebaut?" → Technische Korrektheit (Tests, Typen, Lint)
+#   Validation   = "Haben wir das Richtige gebaut?" → Fachliche Korrektheit (Nutzer, Analytics)
+#
+# Cross-References:
+#   req_refs   → docs/requirements/*.yaml (REQ-S/P/R/B-IDs)
+#   feature_ref → docs/features.yaml (slug)
+
+meta:
+  titel: AustroFit Verification & Validation Plan
+  version: "1.0"
+  erstellt: "2026-05-25"
+  verantwortlich: Johannes Gnong / johannes.gnong@austrofit.at
+  zweck: >
+    Dokumentiert alle Maßnahmen zur Sicherung der Software-Qualität vor und nach Go-Live.
+    Dient als Nachweis "geeigneter technischer Maßnahmen" nach Art. 32 DSGVO (TOM),
+    als Fördernachweis (FFG Qualitätssicherung) und als Entwicklungssteuerung.
+  status_werte:
+    done:     "Implementiert und regelmäßig ausgeführt"
+    partial:  "Teilweise — offene Punkte dokumentiert"
+    planned:  "Geplant, noch nicht umgesetzt"
+    deferred: "Bewusst verschoben (Phase 2+)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VERIFICATION — Technische Korrektheit
+# ═══════════════════════════════════════════════════════════════════════════════
+
+verification:
+
+  # ─── Statische Analyse ──────────────────────────────────────────────────────
+
+  statische_analyse:
+    status: done
+    beschreibung: Automatisierte Code-Qualitätsprüfungen vor jedem Build.
+    tools:
+      - tool: TypeScript (strict mode)
+        befehl: npm run check
+        prueft: Typ-Korrektheit, fehlende Felder, API-Kontrakte
+        req_refs: [REQ-S-001, REQ-S-002]
+
+      - tool: ESLint + Prettier
+        befehl: npm run lint
+        prueft: Code-Stil, Svelte-spezifische Regeln, Import-Ordnung
+        req_refs: []
+
+      - tool: svelte-check
+        befehl: npm run check
+        prueft: Svelte-5-Runes-Korrektheit, Props, $state/$derived-Verwendung
+        req_refs: []
+
+    wie_ausfuehren: npm run check && npm run lint
+    frequenz: Vor jedem Commit auf dev-Branch (via /deploy-check)
+
+  # ─── Unit Tests — Phase 1 (DONE) ────────────────────────────────────────────
+
+  unit_tests:
+    status: done
+    framework: vitest@4.1.2
+    befehl: npm run test
+    ergebnis: 51 Tests, 3 Dateien, ~400ms (Stand 2026-05-25)
+    konfiguration: vite.config.js → test.include / test.alias ($lib)
+    frequenz: Vor jedem Merge dev→main (via /deploy-check empfohlen)
+
+    dateien:
+
+      - datei: src/lib/utils/level.test.ts
+        status: done
+        test_anzahl: 15
+        feature_ref: level-system
+        req_refs: []  # Level-System ist reine Anzeige-Logik, kein eigener REQ-S
+        prueft:
+          - Alle 20 Level-Grenzen (min-Schwellen)
+          - AustroFit-Branding: Level 5/10/15/20 tragen korrekte Namen
+          - next: null bei Level 20 (kein Überlauf)
+          - percent=100 bei Maxlevel
+          - Fortschritt (progress, needed, percent) korrekt berechnet
+          - Extrem hohe Punktzahl → Level 20, nicht >20
+        kritische_faelle:
+          - getLevelInfo(0) → Level 1
+          - getLevelInfo(399) → Level 1 (Grenzwert)
+          - getLevelInfo(400) → Level 2 (Sprung)
+          - getLevelInfo(480000) → Level 20 (Maxlevel)
+          - getLevelInfo(9999999) → Level 20 (kein Überlauf)
+
+      - datei: src/lib/utils/streak.test.ts
+        status: done
+        test_anzahl: 28
+        feature_ref: streak-system
+        req_refs: [REQ-S-015]
+        prueft:
+          - calculatePoints: alle Schwellenwerte (0, 4000, 7000) und Staffeln
+          - lookupTierBonus: alle 4 Bonus-Typen (step_tag, step_week, cardio_week, quiz_tag)
+          - lookupTierBonus: alle Tier-Grenzen (min_value/max_value/null)
+          - calculateStreakDays: Streak-Zählung mit vi.useFakeTimers (deterministisch)
+          - calculateStreakDays: Lücken brechen Streak korrekt ab
+        kritische_faelle:
+          - calculatePoints(3999) → 0 (unter Schwelle)
+          - calculatePoints(4000) → 10 (genau Schwelle)
+          - calculatePoints(7000) → 40 (Sprung auf neue Basis)
+          - lookupTierBonus(1, tiers, 'step_tag') → 0 (Tag 1 kein Bonus)
+          - lookupTierBonus(56, tiers, 'step_tag') → 60 (Tier 4, max_value null)
+          - Streak-Lücke → Streak bricht auf 1 zurück
+
+      - datei: src/lib/utils/progress.test.ts
+        status: done
+        test_anzahl: 8
+        feature_ref: circle-ring
+        req_refs: []
+        prueft:
+          - lapDisplayPercent: Lap-Modulo-Logik (0–100, 101–200, 201–300)
+          - lapTailwindBg: Farb-Wechsel primary/primary-dark pro Lap
+          - lapCssColor: CSS-Variable Farb-Wechsel synchron mit lapTailwindBg
+          - Negative Werte → 0 (geclampt)
+          - Konsistenz: CSS-Farbe und Tailwind-Klasse wechseln an gleichen Lap-Grenzen
+
+  # ─── API Security Tests — Phase 2 (GEPLANT) ─────────────────────────────────
+
+  api_security_tests:
+    status: planned
+    framework: vitest@4.1.2 + fetch-Mock (msw oder vi.fn)
+    prioritaet: P1-vor-GoLive
+    beschreibung: >
+      Integration-Tests für die sicherheitskritischen API-Routes.
+      Jede Route wird mit echtem Request-/Response-Zyklus getestet —
+      Direktus-Calls werden via fetch-Mock simuliert (kein echter DB-Zugriff nötig).
+    setup_aufwand: "~1 Tag (Mock-Setup + 3 Dateien)"
+
+    dateien:
+
+      - datei: src/routes/api/claim/claim.test.ts
+        status: planned
+        req_refs: [REQ-S-012, REQ-S-013, REQ-S-017]
+        testfaelle:
+          - name: JWT aus Authorization-Header (nicht Body)
+            beschreibung: Token im Body wird ignoriert; fehlendes Bearer-Token → 401
+            req_ref: REQ-S-012
+          - name: Per-User-Cooldown schlägt doppelten Claim ab
+            beschreibung: Zweiter Claim desselben Users für dasselbe Quiz innerhalb 30d → 409
+            req_ref: REQ-S-013
+          - name: Dedup: kein doppelter Ledger-Eintrag bei parallelem Submit
+            beschreibung: Gleichzeitige POST-Requests → nur eine Buchung im Ledger
+            req_ref: REQ-S-013
+          - name: Rate-Limit 20 Claims/Stunde/IP
+            beschreibung: 21. Request in einer Stunde → 429 Too Many Requests
+            req_ref: REQ-S-017
+
+      - datei: src/routes/api/redeem/redeem.test.ts
+        status: planned
+        req_refs: [REQ-S-016, REQ-S-017]
+        testfaelle:
+          - name: Doppelte Einlösung → 409 Conflict
+            beschreibung: Zweiter Redeem-Versuch für denselben (User, Reward) → 409
+            req_ref: REQ-S-016
+          - name: Nicht ausreichend Punkte → 402
+            beschreibung: Einlösung mit zu wenig Punkten → abgelehnt
+            req_ref: REQ-S-016
+          - name: Rate-Limit 10 Einlösungen/Stunde/IP
+            beschreibung: 11. Request → 429
+            req_ref: REQ-S-017
+
+      - datei: src/routes/api/steps/manual/manual.test.ts
+        status: planned
+        req_refs: [REQ-S-017, REQ-S-041]
+        testfaelle:
+          - name: Rate-Limit 5 Einträge/15min/IP
+            beschreibung: 6. manueller Eintrag in 15 Minuten → 429
+            req_ref: REQ-S-017
+          - name: Fraud-Cap 30.000 Schritte wird angewendet
+            beschreibung: steps=35000 im Request → tatsächlich 30000 im Ledger; capped=true
+            req_ref: REQ-S-041
+          - name: Invalides Datum → 400
+            beschreibung: date='2024-13-45' → 400 Bad Request
+            req_ref: REQ-S-041
+          - name: Datum in der Zukunft → 400
+            beschreibung: date=morgen+1 → abgelehnt (außerhalb 90-Tage-Fenster)
+            req_ref: REQ-S-041
+
+      - datei: src/routes/api/quiz-attempts/quiz-attempts.test.ts
+        status: planned
+        req_refs: [REQ-S-011]
+        testfaelle:
+          - name: passed wird server-seitig berechnet (nicht vom Client übernommen)
+            beschreibung: Client sendet passed=true mit score=0 → passed=false im Ledger
+            req_ref: REQ-S-011
+          - name: max_score wird gegen quiz_json.questions.length validiert
+            beschreibung: max_score=1 bei Quiz mit 5 Fragen → 400 Bad Request
+            req_ref: REQ-S-011
+          - name: eligible_points gecappt auf 200
+            beschreibung: eligible_points=999 → wird auf 200 reduziert
+            req_ref: REQ-S-011
+
+  # ─── E2E Tests — Phase 3 (nach Go-Live) ─────────────────────────────────────
+
+  e2e_tests:
+    status: deferred
+    framework: playwright
+    beschreibung: >
+      End-to-End Tests der kritischen User-Flows in einem echten Browser.
+      Sinnvoll erst nach Go-Live wenn Flows stabil sind.
+    mindest_schwelle: "≥50 Nutzer, stabile API, nach Phase-2-Tests"
+
+    geplante_flows:
+      - flow: Registrierung (E-Mail)
+        schritte:
+          - Formular ausfüllen (Name, E-Mail, Passwort)
+          - Art. 9-Consent-Checkbox anhaken
+          - Gruppe auswählen
+          - Onboarding abschließen
+        akzeptanzkriterium: Nutzer landet auf /dashboard, Punkte = 0
+        req_refs: [REQ-R-001, REQ-P-030]
+
+      - flow: Login + Dashboard laden
+        akzeptanzkriterium: Punkte-Kontostand und Level sichtbar innerhalb 2s
+        req_refs: [REQ-S-002, REQ-S-022]
+
+      - flow: Manueller Schritt-Eintrag → Punkte erscheinen
+        akzeptanzkriterium: Punkte im Ledger nach Submit; capped-Warnung bei >30.000
+        req_refs: [REQ-S-041, REQ-S-017]
+
+      - flow: Consent widerrufen (Profil → Datenschutz)
+        akzeptanzkriterium: gesundheitsdaten_consent_revoked_at gesetzt; health_connected=false
+        req_refs: [REQ-R-001]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VALIDATION — Fachliche Korrektheit (Richtige Sache gebaut?)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+validation:
+
+  # ─── Beta-Testing ────────────────────────────────────────────────────────────
+
+  beta_testing:
+    status: planned
+    zielgruppe: "10–20 echte Nutzer vor Go-Live (Freunde, Familie, Netzwerk)"
+    zeitraum: "2 Wochen vor Go-Live"
+    methode:
+      - Direktes Feedback via Formular oder WhatsApp
+      - Fokus auf Onboarding-Flow (ist es ohne Erklärung verständlich?)
+      - Fokus auf Walter-Persona (55+, geringere Digitalkompetenz)
+      - Fokus auf Schritt-Sync (funktioniert Health Connect auf echten Geräten?)
+    akzeptanzkriterien:
+      - Onboarding ohne Hilfe durchführbar für ≥80% der Beta-Nutzer
+      - Schritt-Sync funktioniert auf ≥3 verschiedenen Android-Geräten
+      - Kein kritischer Bug (App-Absturz, Datenverlust) gemeldet
+    req_refs: [REQ-U-001, REQ-U-002, REQ-U-003]
+
+  # ─── PostHog Funnels (nach Go-Live) ─────────────────────────────────────────
+
+  analytics_funnels:
+    status: planned
+    tool: PostHog EU Cloud (phc_... Token konfiguriert)
+    beschreibung: >
+      PostHog misst automatisch ob Nutzer die kritischen Flows tatsächlich durchlaufen.
+      Funnels definieren Abbruchpunkte, die auf Usability-Probleme hinweisen.
+    setup_zeitpunkt: "Direkt nach Go-Live, wenn erste echte Nutzer vorhanden"
+
+    funnels:
+      - name: Registrierungs-Funnel
+        schritte:
+          - Registrierungs-Seite geladen
+          - Schritt 1 (Name/E-Mail) abgeschlossen
+          - Schritt 2 (Consent + Gruppe) abgeschlossen
+          - E-Mail bestätigt (falls PUBLIC_EMAIL_VERIFICATION=true)
+          - Onboarding abgeschlossen
+        ziel_konversionsrate: ">60%"
+        warnschwelle: "<40% → UX-Review nötig"
+
+      - name: 7-Tage-Retention
+        beschreibung: Kehrt der Nutzer nach 7 Tagen zurück?
+        ziel: ">30% 7-Tage-Retention"
+        warnschwelle: "<15% → Gamification oder Onboarding überarbeiten"
+
+      - name: Erster Schritt-Sync
+        beschreibung: Aktiviert der Nutzer Health Connect innerhalb der ersten 3 Tage?
+        ziel: ">50% der Android-Nutzer"
+        warnschwelle: "<30% → Onboarding-Hinweis verbessern"
+
+    req_refs: [REQ-U-001, REQ-P-001, REQ-P-002]
+
+  # ─── User Acceptance Tests (manuell) ─────────────────────────────────────────
+
+  nutzer_akzeptanztest:
+    status: planned
+    beschreibung: >
+      Strukturierte UAT-Sessions mit repräsentativen Nutzern der 4 Personas.
+      Ziel: Kritische Usability-Probleme VOR Go-Live finden.
+    personas:
+      - Anna (25, technikaffin, Fitness-Motivation)
+      - Walter (58, geringe Digitalkompetenz, Gesundheitsmotivation)
+      - Laura (35, Mutter, wenig Zeit)
+      - Thomas (42, B2B-BGM-Kontext)
+
+    kritische_szenarien:
+      - szenario: Walter registriert sich ohne Hilfe
+        akzeptanzkriterium: Schafft Onboarding in <10 Minuten ohne externe Hilfe
+        req_refs: [REQ-U-002]
+
+      - szenario: Anna verbindet Health Connect
+        akzeptanzkriterium: Schritte erscheinen im Dashboard innerhalb von 24h nach Verbindung
+        req_refs: [REQ-U-001, REQ-S-031]
+
+      - szenario: Nutzer widerruft Consent
+        akzeptanzkriterium: Widerruf in <3 Taps erreichbar; Bestätigungs-Dialog vorhanden
+        req_refs: [REQ-R-001]
+
+      - szenario: Nutzer löst Reward ein
+        akzeptanzkriterium: Einlösung klar, Punkte-Abzug sofort sichtbar
+        req_refs: [REQ-P-035]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TRACEABILITY MATRIX — REQ-IDs zu Tests
+# ═══════════════════════════════════════════════════════════════════════════════
+
+traceability_matrix:
+  beschreibung: >
+    Zeigt welche REQ-IDs durch welche Methode verifiziert werden.
+    Nicht jedes Requirement braucht einen Unit Test — entscheidend ist
+    dass JEDES Requirement eine dokumentierte Verifikationsmethode hat.
+    Vier Typen: automated (Unit/API/E2E), static (TypeScript/Lint),
+    manual (Checkliste/UAT/Review), legal (Anwalt/DSB).
+
+  # Legende:
+  #   verifikation_typ: automated | static | manual | legal
+  #   status:          done | planned | deferred | not_applicable
+
+  # ── REQ-S: Sicherheits-Guardrails (alle → automated) ──────────────────────
+
+  eintraege:
+    - req_id: REQ-S-001
+      titel: API-Proxy Pattern (kein direkter Directus-Zugriff)
+      verifikation_typ: static
+      methode: TypeScript-Imports geprüft; grep auf fetch(PUBLIC_CMSURL) in client-Code
+      status: done
+      akzeptanzkriterium_abgedeckt: "Kein fetch(PUBLIC_CMSURL/...) in src/routes/*.svelte"
+
+    - req_id: REQ-S-002
+      titel: Auth via localStorage JWT
+      verifikation_typ: static + manual
+      methode: TypeScript (getAccessToken in auth.ts), manuell: Login-Flow testen
+      status: done
+
+    - req_id: REQ-S-011
+      titel: Quiz Allowlist + server-seitige passed-Berechnung
+      verifikation_typ: automated
+      methode: api_security_tests → quiz-attempts.test.ts
+      status: planned
+      akzeptanzkriterien_abgedeckt:
+        - passed wird nie vom Client übernommen
+        - max_score gegen quiz_json.questions.length validiert
+        - eligible_points gecappt auf 200
+
+    - req_id: REQ-S-012
+      titel: JWT aus Authorization-Header (kein Body-Token)
+      verifikation_typ: automated
+      methode: auth.server.test.ts (DONE) + claim.test.ts (geplant)
+      status: partial
+      akzeptanzkriterien_abgedeckt:
+        - extractBearerToken: kein Header → null ✅
+        - extractBearerToken: "Bearer" ohne Token → null ✅ (Bug via Test gefunden + gefixt 2026-05-25)
+        - extractBearerToken: gültiger Token → Token-String ✅
+        - resolveUserId: 401 von Directus → null ✅
+        - Token im Body wird ignoriert (claim.test.ts → geplant)
+
+    - req_id: REQ-S-013
+      titel: Per-User-Cooldown bei /api/claim
+      verifikation_typ: automated
+      methode: api_security_tests → claim.test.ts
+      status: planned
+      akzeptanzkriterien_abgedeckt:
+        - Zweiter Claim desselben Users innerhalb 30d → 409
+        - Bypass via neue anonymous_id nicht möglich
+
+    - req_id: REQ-S-014
+      titel: Cardio Input-Validierung + durationSeconds-Cap
+      verifikation_typ: automated
+      methode: api_security_tests → cardio-sync.test.ts (Phase 2b, nach claim/redeem)
+      status: deferred
+      akzeptanzkriterien_abgedeckt:
+        - date außerhalb 90-Tage-Fenster → gefiltert
+        - durationSeconds > 14400 → gecappt auf 14400
+
+    - req_id: REQ-S-015
+      titel: Streak-Wochen-Bonus Dedup
+      verifikation_typ: automated
+      methode: >
+        unit_tests (streak.test.ts) deckt Tier-Logik ab — DONE.
+        Dedup-Check in server/streak.ts → api_security_tests Phase 2.
+      status: partial
+      akzeptanzkriterien_abgedeckt:
+        - Tier-Grenzen korrekt (streak.test.ts) ✅
+        - Kein Doppel-Bonus bei parallelem Request (Phase 2 → geplant)
+
+    - req_id: REQ-S-016
+      titel: Redeem Dedup (Double-Spend-Schutz)
+      verifikation_typ: automated
+      methode: api_security_tests → redeem.test.ts
+      status: planned
+      akzeptanzkriterien_abgedeckt:
+        - Zweite Einlösung (user, reward) → 409 Conflict
+        - Parallele Requests → nur eine Buchung
+
+    - req_id: REQ-S-017
+      titel: Rate Limiting + Account Lockout
+      verifikation_typ: automated
+      methode: api_security_tests → claim.test.ts, redeem.test.ts, manual.test.ts
+      status: planned
+      akzeptanzkriterien_abgedeckt:
+        - claim: 21. Request/Stunde/IP → 429
+        - redeem: 11. Request/Stunde/IP → 429
+        - manual steps: 6. Request/15min/IP → 429
+
+    - req_id: REQ-S-018
+      titel: Security Headers (CSP, X-Frame, etc.)
+      verifikation_typ: manual
+      methode: curl -I https://dev.austrofit.at | grep -i "content-security\|x-frame"
+      status: done
+      akzeptanzkriterien_abgedeckt:
+        - X-Frame-Options: DENY
+        - X-Content-Type-Options: nosniff
+        - Content-Security-Policy vorhanden
+
+    - req_id: REQ-S-034
+      titel: CORS + OPTIONS-Handling für Capacitor
+      verifikation_typ: manual
+      methode: /cap-test → nativer Build → POST von App an API testen
+      status: done
+
+    - req_id: REQ-S-041
+      titel: Punkte-Ledger Integrität (Dedup, Append-Only, Concurrency)
+      verifikation_typ: automated
+      methode: api_security_tests → manual.test.ts (Fraud-Cap, Datum-Validierung)
+      status: planned
+      akzeptanzkriterien_abgedeckt:
+        - steps=35000 → tatsächlich 30000 im Ledger, capped=true
+        - Invalides Datum → 400
+
+  # ── REQ-R: Regulatorische Anforderungen (legal + manual) ──────────────────
+
+    - req_id: REQ-R-001
+      titel: Art. 9-Consent (Gesundheitsdaten)
+      verifikation_typ: legal + manual
+      methode: >
+        Technisch: /consent-check prüft Implementierung.
+        Inhaltlich: Anwalt prüft Consent-Text (REQ-B-015).
+        Manuell: UAT-Szenario "Nutzer widerruft Consent".
+      status: partial
+      akzeptanzkriterien_abgedeckt:
+        - Checkbox in Registrierung Schritt 2 vorhanden ✅
+        - gesundheitsdaten_consent_at gesetzt nach Onboarding ✅
+        - Widerruf-Flow vorhanden ✅
+        - Consent-Text rechtlich geprüft (OFFEN → REQ-B-015)
+
+    - req_id: REQ-R-002
+      titel: Datenschutzerklärung (Art. 13/14 DSGVO)
+      verifikation_typ: manual + legal
+      methode: Manuell: /datenschutz-Route erreichbar; Anwalt-Review DSE-Inhalt
+      status: done
+      hinweis: Inhalt bei neuen Features aktualisieren (/consent-check)
+
+    - req_id: REQ-R-028
+      titel: DSA Art. 16 Meldeverfahren
+      verifikation_typ: manual
+      methode: abuse@austrofit.at eingerichtet? Link im Impressum vorhanden?
+      status: open
+      akzeptanzkriterien_abgedeckt:
+        - abuse@austrofit.at erreichbar (REQ-B-021, OFFEN)
+        - Link im Impressum/DSE (nach E-Mail-Einrichtung, ~15 min)
+
+  # ── REQ-P: Produkt-Anforderungen (manual + E2E) ────────────────────────────
+
+    - req_id: REQ-P-001
+      titel: Punkte-Buchungssystem (Ledger append-only)
+      verifikation_typ: automated + manual
+      methode: >
+        unit_tests: calculatePoints (streak.test.ts) ✅.
+        api_security_tests: Ledger-Write via manual.test.ts (geplant).
+        manuell: /ledger-audit <uuid> nach Schritt-Sync.
+      status: partial
+
+    - req_id: REQ-P-002
+      titel: Schritt-Tracking (Steps)
+      verifikation_typ: automated + manual
+      methode: >
+        unit_tests: calculatePoints Grenzwerte ✅.
+        manuell: Schritt-Sync auf echtem Android-Gerät (Beta-Testing).
+      status: partial
+
+    - req_id: REQ-P-010
+      titel: Level-System (20 Levels)
+      verifikation_typ: automated
+      methode: unit_tests → level.test.ts (alle 20 Grenzen, AustroFit-Branding) ✅
+      status: done
+      akzeptanzkriterien_abgedeckt:
+        - Alle Level-Grenzen korrekt
+        - AustroFit-Branding L5/10/15/20
+        - Level 20 als Maxlevel (kein Überlauf)
+        - Fortschritt/Prozent korrekt berechnet
+
+    - req_id: REQ-P-030
+      titel: Art. 9-Consent im Onboarding
+      verifikation_typ: manual + e2e
+      methode: >
+        Manuell: Registrierung durchlaufen, Checkbox prüfen.
+        E2E: geplant (Registrierungs-Flow mit Consent-Checkbox).
+      status: partial
+
+  # ── REQ-U: User Stories (manual UAT) ──────────────────────────────────────
+
+    - req_id: REQ-U-001
+      titel: Anna-Persona (technikaffin, Schritte + Dashboard)
+      verifikation_typ: manual
+      methode: UAT-Session + beta_testing (Schritt-Sync auf echtem Gerät)
+      status: planned
+
+    - req_id: REQ-U-002
+      titel: Walter-Persona (55+, Onboarding ohne Hilfe)
+      verifikation_typ: manual
+      methode: UAT-Session: Onboarding in <10 Min ohne externe Hilfe
+      status: planned
+
+  # ── REQ-B: Business Requirements (checkliste) ─────────────────────────────
+
+    - req_id: REQ-B-010
+      titel: AVV Hetzner
+      verifikation_typ: manual
+      methode: AVV-Dokument in Hetzner Kundencenter vorhanden und gespeichert?
+      status: open
+
+    - req_id: REQ-B-011
+      titel: AVV Vercel (Pro-Upgrade)
+      verifikation_typ: manual
+      methode: Vercel Pro-Plan aktiv? DPA unterzeichnet?
+      status: open
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OFFENE PUNKTE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+offene_punkte:
+
+  - id: VP-001
+    prioritaet: P1-vor-GoLive
+    titel: API Security Tests implementieren (Phase 2)
+    beschreibung: >
+      4 Test-Dateien für claim, redeem, steps/manual, quiz-attempts.
+      Mock-Setup für Directus-fetch-Calls (vi.fn oder msw).
+    aufwand: "~1 Tag"
+    req_refs: [REQ-S-011, REQ-S-012, REQ-S-013, REQ-S-016, REQ-S-017, REQ-S-041]
+
+  - id: VP-002
+    prioritaet: P1-vor-GoLive
+    titel: Beta-Testing organisieren (10–20 Nutzer)
+    beschreibung: >
+      Testgruppe aufbauen, Feedback-Kanal einrichten (Formular oder WhatsApp-Gruppe),
+      2 Wochen vor geplantem Go-Live starten.
+    aufwand: "~2–3 Stunden Vorbereitung + 2 Wochen Laufzeit"
+
+  - id: VP-003
+    prioritaet: P2-nach-GoLive
+    titel: PostHog Funnels einrichten
+    beschreibung: >
+      Registrierungs-Funnel, 7-Tage-Retention und erster Schritt-Sync Funnel
+      in PostHog konfigurieren. Erst sinnvoll wenn ≥50 echte Nutzer vorhanden.
+    aufwand: "~1 Stunde"
+
+  - id: VP-004
+    prioritaet: P3
+    titel: E2E Tests (Playwright) aufsetzen
+    beschreibung: >
+      Playwright für Browser-basierte E2E Tests. Erst nach Go-Live wenn
+      Flows stabil sind und 50+ Nutzer bestätigt haben dass der Golden Path funktioniert.
+    aufwand: "~2–3 Tage"

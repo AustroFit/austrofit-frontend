@@ -26,6 +26,13 @@
   let saveSuccess = $state(false);
   let saveError = $state('');
 
+  // Art. 9-Consent Status
+  let consentAt = $state<string | null>(null);
+  let consentRevoked = $state(false);
+  let showRevokeDialog = $state(false);
+  let revoking = $state(false);
+  let revokeError = $state('');
+
   // Daten-Export
   let exporting = $state(false);
 
@@ -113,9 +120,12 @@
 
       if (profileRes.ok) {
         const profileBody = await profileRes.json();
-        healthConnected  = Boolean(profileBody?.data?.health_connected);
-        activityGroup    = profileBody?.data?.activity_group ?? 'adult';
+        const pd = profileBody?.data ?? {};
+        healthConnected  = Boolean(pd.health_connected);
+        activityGroup    = pd.activity_group ?? 'adult';
         editGroup        = activityGroup;
+        consentAt        = pd.gesundheitsdaten_consent_at ?? null;
+        consentRevoked   = Boolean(pd.gesundheitsdaten_consent_revoked_at);
       }
 
       editBenutzername = benutzername;
@@ -242,6 +252,31 @@
   function toggleDevNative() {
     devNativeMode = !devNativeMode;
     localStorage.setItem('austrofit_dev_native', devNativeMode ? 'true' : 'false');
+  }
+
+  // ── Art. 9-Consent Widerruf ───────────────────────────────────────────────
+  async function revokeConsent() {
+    if (revoking) return;
+    revoking = true;
+    revokeError = '';
+    try {
+      const token = await getValidAccessToken();
+      const res = await fetch(apiUrl('/api/consent/revoke'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        throw new Error(b?.error ?? `Fehler (${res.status})`);
+      }
+      consentRevoked = true;
+      healthConnected = false;
+      showRevokeDialog = false;
+    } catch (e: unknown) {
+      revokeError = e instanceof Error ? e.message : 'Widerruf fehlgeschlagen.';
+    } finally {
+      revoking = false;
+    }
   }
 
   // ── Health-Verbindung ─────────────────────────────────────────────────────
@@ -691,6 +726,36 @@
             <span class="text-gray-400">→</span>
           </a>
 
+          <!-- Art. 9-Einwilligung: Status + Widerruf -->
+          {#if consentAt && !consentRevoked}
+            <div class="rounded-xl border border-black/10 px-4 py-3 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-700">Einwilligung Gesundheitsdaten</span>
+                <span class="text-xs text-primary font-medium">Aktiv</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-400">
+                Erteilt am {new Date(consentAt).toLocaleDateString('de-AT')} · Art. 9 DSGVO
+              </p>
+              <button
+                type="button"
+                onclick={() => { showRevokeDialog = true; revokeError = ''; }}
+                class="mt-2 text-xs text-error underline underline-offset-2 hover:text-error/80 transition-colors"
+              >
+                Einwilligung widerrufen
+              </button>
+            </div>
+          {:else if consentRevoked}
+            <div class="rounded-xl border border-black/10 px-4 py-3 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-500">Einwilligung Gesundheitsdaten</span>
+                <span class="text-xs text-gray-400">Widerrufen</span>
+              </div>
+              <p class="mt-1 text-xs text-gray-400">
+                Gesundheitsdaten werden nicht mehr verarbeitet.
+              </p>
+            </div>
+          {/if}
+
           <button
             type="button"
             onclick={downloadExport}
@@ -758,6 +823,55 @@
           class="flex-1 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
         >
           Einwilligen &amp; verbinden
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- ── Art.-9-Einwilligung-Widerruf-Dialog ────────────────────────────────── -->
+{#if showRevokeDialog}
+  <div
+    class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="revoke-dialog-title"
+  >
+    <div class="w-full max-w-md rounded-[var(--radius-card)] bg-white p-6 shadow-xl">
+      <h3 id="revoke-dialog-title" class="mb-2 text-lg font-bold text-heading">
+        Einwilligung widerrufen?
+      </h3>
+      <p class="mb-3 text-sm text-gray-600">
+        Du widerrufst deine Einwilligung zur Verarbeitung von Gesundheits- und Aktivitätsdaten
+        (Art. 9 DSGVO). Bereits gesammelte Punkte bleiben erhalten.
+      </p>
+      <ul class="mb-4 flex flex-col gap-1 text-xs text-gray-500">
+        <li>• Schritt- und Cardio-Synchronisation wird deaktiviert</li>
+        <li>• Keine neuen Punkte aus Aktivitätsdaten</li>
+        <li>• Widerruf kann nicht rückgängig gemacht werden</li>
+      </ul>
+
+      {#if revokeError}
+        <div class="mb-3 rounded-xl border border-error/30 bg-error/5 px-4 py-2.5 text-sm text-error">
+          {revokeError}
+        </div>
+      {/if}
+
+      <div class="flex gap-3">
+        <button
+          type="button"
+          onclick={() => (showRevokeDialog = false)}
+          class="flex-1 rounded-xl border border-black/15 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50"
+        >
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          onclick={revokeConsent}
+          disabled={revoking}
+          class="flex-1 rounded-xl bg-error py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+        >
+          {revoking ? 'Wird widerrufen…' : 'Ja, widerrufen'}
         </button>
       </div>
     </div>

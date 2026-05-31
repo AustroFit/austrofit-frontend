@@ -1,0 +1,992 @@
+# AustroFit Competitive Analysis
+# Source of Truth: Wettbewerbsanalyse aus AustroFit Business Plan v0.13 (August 2025)
+# Ablage: docs/market-research/competitive-analysis.yaml
+# Erstellt: 2026-05-24
+#
+# Cross-References:
+#   maps_to_req  → docs/requirements/product-requirements.yaml (REQ-P-ID)
+#                  "NEU" = noch kein REQ-P, sollte angelegt werden
+#   maps_to_user → docs/requirements/user-requirements.yaml (REQ-U-ID)
+#   competitor   → business-plan Kurzname (Quelle: austrofit-business-plan.yaml)
+
+meta:
+  titel: AustroFit Competitive Analysis
+  version: "1.3"
+  erstellt: "2026-05-24"
+  aktualisiert: "2026-05-24"
+  quelle: >
+    AustroFit Business Plan v0.13 (August 2025), Abschnitt 4.5 + Anhang A6.
+    Letzte Faktenprüfung: März 2026 (austrofit-business-plan.yaml v1.2).
+    WebSearch-Verifizierung: 2026-05-24 (WeWard, Sweatcoin, Paceline, Cadoo).
+  methodik: >
+    24 Apps identifiziert nach AustroFit-Kriterien: Punktesystem + Belohnungen (kein
+    reines Tracking). 11 Apps mit hoher Übereinstimmung in ≥1 Dimension detailliert bewertet.
+    Exkludiert: Apps die nur Daten tracken und keine Belohnungen bieten.
+  naechste_aktualisierung: "vor Phase-2-Launch (Community-Features)"
+
+# ═══════════════════════════════════════════════════════════════════
+# BEWERTUNGSSCHEMA
+# ═══════════════════════════════════════════════════════════════════
+
+bewertungsschema:
+  "+++": "Hohe Übereinstimmung mit AustroFit-Feature (voll ausgebaut)"
+  "+":   "Geringe Übereinstimmung (rudimentär oder als Nebenfeature)"
+  "-":   "Nicht vorhanden"
+
+dimensionen:
+  - id: D-01
+    name: Punktesystem
+    beschreibung: "Strukturiertes System zur Punkte-Vergabe für definierte Aktivitäten"
+  - id: D-02
+    name: Gamification
+    beschreibung: "Spielerische Elemente: Challenges, Badges, Leveling, Streaks, Maskottchen"
+  - id: D-03
+    name: Bewegung
+    beschreibung: "Tracking von Bewegungsaktivitäten (Schritte, Laufen, Radfahren, etc.)"
+  - id: D-04
+    name: Bildung
+    beschreibung: "Gesundheitsinhalte: Artikel, Quizze, Wissensvermittlung"
+  - id: D-05
+    name: Community
+    beschreibung: "Soziale Features: Events, Bestenliste, Schreiben & Kommentieren, Connecten"
+  - id: D-06
+    name: Belohnungssystem
+    beschreibung: "Einlösbare Vorteile bei Partnern oder als Geldwert"
+
+# ═══════════════════════════════════════════════════════════════════
+# APPS – HOCH ÜBEREINSTIMMEND (11 von 24)
+# ═══════════════════════════════════════════════════════════════════
+
+hoch_uebereinstimmend:
+  beschreibung: >
+    11 Apps mit hoher Übereinstimmung in ≥1 Dimension. Details + Insights pro App.
+    Quelle für Downloads/Umsatz: Business Plan A6 (Stand August 2025).
+
+  apps:
+
+    - id: C-01
+      name: Pandocs
+      url: "https://www.pandocs.com/de/"
+      typ: "Betriebliche Gesundheitsförderung (BGF)"
+      herkunft: Österreich
+      downloads_google_play: "5K+"
+      umsatz: "nicht publik"
+      scoring:
+        punktesystem: "+++"
+        gamification: "+++"
+        bewegung: "+"
+        bildung: "+++"
+        community: "+++"
+        belohnungssystem: "+"
+      key_insights:
+        - "Vollständiges BGF-Paket (Punkte + Gamification + Bildung + Community) im B2B-Kontext"
+        - "Kein starkes Belohnungssystem trotz hohem Engagement – B2B zahlt direkt für die Plattform"
+        - "Österreichischer Anbieter: zeigt lokale Marktakzeptanz für gamifizierte Gesundheitsapps"
+      austrofit_implication: >
+        BGF/Corporate-Wellness-Segment ist unbesetzt für B2C-Plattformen.
+        AustroFit könnte Unternehmen als 'Arbeitgeber-Gesundheitspaket' anbieten (B2B2C).
+        Pandocs ist potenzieller Kooperations- nicht Konkurrenzpartner.
+      maps_to_req: [REQ-P-040, REQ-P-041]
+
+    - id: C-02
+      name: Optimity
+      url: "https://www.myoptimity.com/"
+      typ: "Health & Rewards"
+      herkunft: Kanada
+      downloads_google_play: "100K+"
+      funding_mio_usd: 6.05
+      scoring:
+        punktesystem: "+++"
+        gamification: "+"
+        bewegung: "+++"
+        bildung: "+++"
+        community: "+"
+        belohnungssystem: "-"
+      key_insights:
+        - "Trotz starker Bewegungs- und Bildungsfeatures KEIN Belohnungssystem → Gap"
+        - "100K+ Downloads zeigen: Nutzer wollen mehr als reines Tracking"
+        - "Ohne Gamification-Tiefe und ohne Rewards ist die Retention schwach"
+      austrofit_implication: >
+        Validiert AustroFits Thesis: Bildung + Bewegung allein reicht nicht.
+        Das Belohnungssystem ist der entscheidende Differenziator gegenüber Optimity.
+      maps_to_req: [REQ-P-021, REQ-P-022]
+
+    - id: C-03
+      name: WeWard
+      url: "https://www.wewardapp.com/de"
+      typ: "Reward-for-Steps"
+      herkunft: Frankreich
+      downloads_google_play: "25M+"  # Aktualisiert Mai 2026 (war 10M+ in Business Plan Aug 2025)
+      umsatz_mio_usd: ">10"           # BusinessOfApps: "eight figures" (10–99M) — Business Plan-Schätzung bestätigt
+      funding_2025_mio_usd: 20
+      stand_verifiziert: "2026-05-24"
+      scoring:
+        punktesystem: "+"
+        gamification: "+++"
+        bewegung: "+"
+        bildung: "-"
+        community: "+++"
+        belohnungssystem: "+++"
+      key_insights:
+        - "25M+ Downloads Mai 2026 (Wachstum von 10M+ → 25M+ in ~9 Monaten: +150%)"
+        - "Venus Williams Investment Feb 2025 → signifikanter Celebrity-Endorsement"
+        - "B2B-Modell: Unternehmen zahlen für gebrandete Step-Challenges (ohne eigenes Belohnungsbudget)"
+        - "Keine Bildung – zeigt dass Rewards + Community schon für Masse reichen"
+        - "$20M VC-Runde 2025 + Venus-Williams-Investment bestätigt Investor-Vertrauen in Reward-for-Steps"
+      austrofit_implication: >
+        Beweist globale Skalierbarkeit des Reward-for-Steps-Modells — WeWard wächst exponentiell.
+        AustroFit kann WeWard mit Bildung + regionalem Fokus + DSGVO-Transparenz übertreffen.
+        Community-Features (REQ-P-025/026) sind für virales Wachstum kritisch.
+        WeWards Wachstum (+150% in 9 Monaten) zeigt: Reward-for-Steps-Markt ist noch nicht gesättigt.
+      maps_to_req: [REQ-P-025, REQ-P-026, REQ-P-027]
+
+    - id: C-04
+      name: SPAR Health Coach
+      url: "https://apps.apple.com/at/app/spar-health-coach/id952788997"
+      typ: "Retail-Wellness"
+      herkunft: Österreich
+      downloads_google_play: "10K+"
+      umsatz: "Teil von SPAR AT (Umsatz 2024: 21,4 Mrd €)"
+      scoring:
+        punktesystem: "+++"
+        gamification: "+"
+        bewegung: "+++"
+        bildung: "-"
+        community: "-"
+        belohnungssystem: "-"
+      key_insights:
+        - "Österreichischer Retail-Kontext validiert lokale Marktbereitschaft"
+        - "Kein Community-Feature und keine externen Rewards trotz SPAR-Ökosystem"
+        - "Zeigt: Retailer nutzen Gesundheits-Apps zur Kundenbindung (B2B-Kanal)"
+      austrofit_implication: >
+        Österreichischer Markt für Gesundheits-Apps ist validiert.
+        SPAR als potenzieller Direktpartner (Lebensmittel-Kategorie im Marketplace).
+        AustroFit bietet deutlich mehr Tiefe als der SPAR Health Coach.
+      maps_to_req: [REQ-P-021, REQ-P-023]
+
+    - id: C-05
+      name: moveeffect
+      url: "https://moveeffect.com/"
+      typ: "B2B BGM (Betriebliche Gesundheitsförderung)"
+      herkunft: Österreich
+      downloads_google_play: "10K+"
+      funding_seed_usd: 145_000
+      scoring:
+        punktesystem: "+++"
+        gamification: "+"
+        bewegung: "+"
+        bildung: "+"
+        community: "+++"
+        belohnungssystem: "-"
+      key_insights:
+        - "Österreichischer B2B-BGM-Anbieter: Community ohne Rewards funktioniert in B2B"
+        - "Seed-Funding €145K zeigt: Bootstrapped-Ansatz im AT-Markt möglich"
+        - "Kein Belohnungssystem – B2B-Firmen zahlen für die Community-Plattform"
+      austrofit_implication: >
+        B2B-BGM ist ein valider zweiter Markt neben B2C.
+        AustroFit könnte ein 'Team-Challenge'-Feature für Unternehmen anbieten (Phase 2).
+        Österreichischer Mitbewerber – Kooperation statt Konkurrenz möglich.
+      maps_to_req: [REQ-P-040]
+
+    - id: C-06
+      name: Cadoo
+      url: "https://www.cadoo.io/"
+      typ: "Fitness-Gaming mit Wett-Challenges"
+      herkunft: USA
+      downloads_google_play: "10K+"
+      funding_seed_mio_usd: 1.5
+      scoring:
+        punktesystem: "+"
+        gamification: "+++"
+        bewegung: "+++"
+        bildung: "-"
+        community: "+"
+        belohnungssystem: "-"
+      key_insights:
+        - "Echtes Geld als Einsatz für Fitness-Challenges steigert Commitment stark"
+        - "Modell funktioniert für intrinsisch motivierte Nutzer, schreckt aber Einsteiger ab"
+        - "GSpG-Risiko bei Einsatz-Mechanik – für AustroFit nicht direkt umsetzbar"
+      austrofit_implication: >
+        Commitment-Mechanik ist wertvoll, aber Geld-Einsatz ist GSpG-riskant (REQ-R-024).
+        Alternative: Punkte-Einsatz für Challenges (verliere deine Punkte wenn Ziel verfehlt)
+        ohne Kaufverpflichtung. Zeigt hohe Wirksamkeit von 'Stakes' in Challenges.
+      maps_to_req: [REQ-P-009]
+      compliance_note: "Geld-Wetten → GSpG (REQ-R-024). Punkte-Einsatz ohne Kaufpflicht = legal."
+
+    - id: C-07
+      name: Evidation
+      url: "https://evidation.com/"
+      typ: "Health Research & Rewards"
+      herkunft: USA
+      downloads_google_play: "1M+"
+      umsatz_jahres_mio_usd: 36.1
+      scoring:
+        punktesystem: "+++"
+        gamification: "-"
+        bewegung: "+"
+        bildung: "+"
+        community: "+"
+        belohnungssystem: "-"
+      key_insights:
+        - "$36M Jahresumsatz durch B2B-Forschungspartnerschaften (kein B2C-Monetarisierung)"
+        - "Nutzer spenden Daten für Forschung und erhalten dafür Punkte"
+        - "Kein Gamification – zeigt dass Forschungs-Segment andere Motivation hat"
+      austrofit_implication: >
+        Forschungspartnerschaften (Universitäten, Gesundheitsfonds) sind ein langfristiger
+        B2G-Umsatzkanal. Impact Analytics API (REQ-P-044) ist der AustroFit-Weg dorthin.
+      maps_to_req: [REQ-P-044]
+
+    - id: C-08
+      name: Sweatcoin
+      url: "https://sweatco.in/"
+      typ: "Reward-for-Steps"
+      herkunft: UK
+      downloads_google_play: "100M+"
+      registrierte_nutzer_mio: 200    # Claimed "200M+", aber aktive Nutzer deutlich niedriger
+      downloads_2025_mio: 22.5        # Verifiziert Mai 2026: deutliches Wachstums-Verlangsamung
+      umsatz_jahres_mio_usd: 21       # Verifiziert Mai 2026: rückläufig (war 32.7M in Business Plan Aug 2025)
+      umsatz_historisch_mio_usd: 32.7 # Business Plan Aug 2025 (BusinessOfApps 2024-Schätzung)
+      stand_verifiziert: "2026-05-24"
+      scoring:
+        punktesystem: "+"
+        gamification: "+++"
+        bewegung: "+"
+        bildung: "-"
+        community: "-"
+        belohnungssystem: "-"
+      key_insights:
+        - "200M+ Claimed-Nutzer, aber Umsatz fiel von $32.7M auf ~$21M → Monetarisierungsproblem"
+        - "22.5M Downloads in 2025 zeigt deutliche Wachstumsabschwächung gegenüber Vorjahren"
+        - "SWEAT-Token/Crypto-Ansatz (eigene Währung) hat Komplexität hinzugefügt ohne Mehrwert"
+        - "Schritt-zu-Coin-Animation bleibt zentraler Dopamin-Trigger – UI-Lektion für AustroFit"
+        - "Kein echtes Belohnungssystem (nur Markendeals + Werbung) limitiert Monetarisierungspotenzial"
+      austrofit_implication: >
+        Warnsignal: Reines Schritt→Währung-Modell ohne echtes Belohnungssystem verliert Monetarisierungskraft.
+        AustroFit-Vorteil: Echte, einlösbare Rewards bei regionalen Partnern + Bildung + Gamification
+        als nachhaltiges Retention-Modell — nicht reine Krypto-Währungsspekulaton.
+        Animations-Feedback bei Punkteevergabe übernehmen (Schritt-zu-Coin-Effekt).
+      maps_to_req: [REQ-P-001, REQ-P-005]
+
+    - id: C-09
+      name: BetterPoints
+      url: "https://www.betterpoints.ltd/"
+      typ: "Mobility & Climate Rewards"
+      herkunft: UK
+      downloads_google_play: "100K+"
+      umsatz_jahres_mio_usd: 2.1
+      funding_usd: 186_000
+      scoring:
+        punktesystem: "+"
+        gamification: "+"
+        bewegung: "+++"
+        bildung: "-"
+        community: "+"
+        belohnungssystem: "-"
+      key_insights:
+        - "Nachhaltigkeits-/Klimafokus bei Rewards: Punkte für aktive Mobilität (kein Auto)"
+        - "Stadtpartnerschaften (öffentlicher Nahverkehr, Gemeinden) als B2G-Kanal"
+        - "Niedrige Funding-Basis trotz UK-Markt – zeigt Bootstrap-Viabilität"
+      austrofit_implication: >
+        Nachhaltigkeits-Winkel passt zu AustroFits ESG-Positionierung.
+        Kooperation mit Wiener Linien oder 'Wien zu Fuß' als Stadtpartner möglich (B2G).
+        ESG-Filter im Marketplace (REQ-P-023) ist direkter Differenziator.
+      maps_to_req: [REQ-P-023, REQ-P-042]
+
+    - id: C-10
+      name: Runtopia
+      url: "https://www.runtopia.net/de"
+      typ: "Run-Tracker mit Rewards"
+      herkunft: China
+      downloads_google_play: "1M+"
+      umsatz: "nicht publik"
+      scoring:
+        punktesystem: "+"
+        gamification: "+"
+        bewegung: "+++"
+        bildung: "-"
+        community: "+"
+        belohnungssystem: "-"
+      key_insights:
+        - "Detaillierte Lauf-Analytics (Pace, Route, Herzfrequenz) binden aktive Läufer"
+        - "Rewards nur als Gutscheine ohne Fokus auf Gesundheitsförderung"
+        - "Zeigt: ernsthafte Sportler wollen Daten, nicht nur Punkte"
+      austrofit_implication: >
+        Aktive Nutzer (Anna, Walter) wollen Fortschritts-Details, nicht nur Punkte.
+        Detailliertere Aktivitäts-Analytics auf /mein-fortschritt könnten Retention steigern.
+        Cardio-History-Seite (/cardio) als Differenziator weiterentwickeln.
+      maps_to_req: [REQ-P-012]
+
+    - id: C-11
+      name: Paceline
+      url: "https://paceline.fit/"
+      typ: "iOS App + Wellness-Rewards (Herzfrequenz → Punkte für Marken-Rabatte)"
+      herkunft: USA
+      app_store_bewertungen: "18K+"
+      funding_gesamt_mio_usd: 54.9
+      umsatz_jahres_mio_usd: 11.5
+      stand_verifiziert: "2026-05-24"
+      scoring:
+        punktesystem: "+"
+        gamification: "+"
+        bewegung: "+++"
+        bildung: "-"
+        community: "-"
+        belohnungssystem: "+"
+      key_insights:
+        - "MODELLWECHSEL (verifiziert Mai 2026): Keine finanziellen Belohnungen mehr — jetzt Punkte für Wellness-Marken-Rabatte (ähnlich AustroFit-Modell)"
+        - "Business Plan (Aug 2025) beschrieb noch das ursprüngliche Finanz-Rewards-Modell — überholt"
+        - "$54.9M Funding bestätigt: Investor-Vertrauen in Activity→Reward-Modell bleibt stark"
+        - "Nur iOS – Android-Lücke; AustroFit hat hier direkten Vorteil"
+        - "Herzfrequenz-Tracking als Aktivitäts-Qualitätsmesser (statt nur Schritte) — differenzierter Ansatz"
+      austrofit_implication: >
+        Strategisch relevant: Paceline bewegt sich in Richtung AustroFit-Modell (Punkte → Wellness-Rabatte).
+        Konvergenz bestätigt AustroFits Modell-Thesis. AustroFit-Vorteile: Android-Support + Bildung +
+        lokale Partner + DSGVO.
+        B2G-Weg (SVS-Gesundheitshunderter) bleibt als Phase-3-Option: Aktivitätsnachweise exportierbar machen.
+      maps_to_req: [REQ-P-042, REQ-P-043]
+
+# ═══════════════════════════════════════════════════════════════════
+# APPS – ÖSTERREICHISCHE HERKUNFT (NICHT IN HOCH-ÜBEREINSTIMMEND)
+# ═══════════════════════════════════════════════════════════════════
+
+oesterreichische_apps:
+  beschreibung: >
+    Apps aus Österreich oder spezifisch für den österreichischen Markt entwickelt.
+    Pandocs und moveeffect sind bereits unter hoch_uebereinstimmend erfasst.
+
+  apps:
+
+    - id: C-12
+      name: "Generali Vitality"
+      typ: "Private Krankenversicherungs-Wellness (Generali AT)"
+      herkunft: Österreich
+      versicherte_gesamt: "Teil von Generali AT (3,5M Versicherte)"
+      key_insights:
+        - "Versicherungs-Wellness-Modell: Aktivität → Prämienrabatt – etablierter AT-Kanal"
+        - "Geschlossenes System: nur für Generali-Versicherte → keine direkte Konkurrenz für B2C"
+        - "Zeigt: PKV-Versicherte zahlen für gamifizierte Gesundheits-Incentives"
+      austrofit_implication: >
+        Kooperations-Potenzial: Generali als Direktpartner (PKV-Vergünstigung als Reward).
+        Oder: AustroFit-Nachweise als Input für Generali-Vitality-Punkte (Schnittstellenidee).
+      maps_to_req: [REQ-P-042]
+
+    - id: C-13
+      name: "Wien zu Fuß"
+      typ: "Öffentliche Gesundheitsinitiative (Stadt Wien)"
+      herkunft: Österreich (Wien)
+      key_insights:
+        - "Stadtgeförderte Initiative: kein Reward-System, kein Gamification"
+        - "Zeigt: Öffentliche Hand investiert in Bewegungsförderung ohne digitale Tools"
+        - "Kooperations-Potenzial für B2G-Pilotprojekt mit Stadt Wien"
+      austrofit_implication: >
+        B2G-Pilotpartner-Kandidat für Phase 3. AustroFit könnte 'Wien zu Fuß'-
+        Challenges digitalisieren und gamifizieren (Gemeinde zahlt für Impact).
+      maps_to_req: [REQ-P-042, REQ-P-044]
+
+    - id: C-14
+      name: "Mavie Move"
+      typ: "Versicherungs-Wellness (UNIQA AT)"
+      herkunft: Österreich
+      key_insights:
+        - "UNIQA-Pendant zu Generali Vitality: Bewegung → Versicherungsvorteile"
+        - "Zeigt: Beide großen AT-Versicherer haben eigene Wellness-Apps"
+        - "Geschlossenes System – nur für UNIQA-Kunden"
+      austrofit_implication: >
+        Versicherungs-Wellness ist in AT etabliert aber immer geschlossen (nur eigene Kunden).
+        AustroFit als offene Plattform ist das neutrale Gegenstück – kann mit beiden kooperieren.
+      maps_to_req: [REQ-P-042]
+
+# ═══════════════════════════════════════════════════════════════════
+# APPS – GERINGE ÜBEREINSTIMMUNG (13 von 24)
+# ═══════════════════════════════════════════════════════════════════
+
+niedrig_uebereinstimmend:
+  beschreibung: >
+    13 Apps mit geringer Übereinstimmung zu AustroFit-Kernfeatures.
+    Einzelne Features interessant aber kein direktes Benchmark.
+
+  apps:
+    - { name: HealthyWage,   typ: "Gewicht-Wetten (Geld-Einsatz)",         herkunft: USA,    notiz: "GSpG-Modell – nicht direkt umsetzbar in AT" }
+    - { name: Charity Miles, typ: "Schritte → Spenden für wohltätige Zwecke", herkunft: USA,  notiz: "CSR-Winkel; kein B2C-Reward" }
+    - { name: StepBet,       typ: "Step-Betting mit Geld-Einsatz",          herkunft: USA,    notiz: "Wie Cadoo – GSpG-Risiko" }
+    - { name: Carrot,        typ: "Abnehm-App mit Rewards",                  herkunft: USA,    notiz: "Fokus auf Gewichtsabnahme, nicht Prävention" }
+    - { name: DietBet,       typ: "Diät-Wetten mit Geld-Einsatz",           herkunft: USA,    notiz: "GSpG-Risiko + Fokus Abnehmen" }
+    - { name: Lifecoin,      typ: "Schritte → Kryptowährung",               herkunft: Global, notiz: "Crypto-Modell; regulatorisch komplex in AT" }
+    - { name: Cashwalk,      typ: "Schritte → Gutscheine (Korea)",          herkunft: Korea,  notiz: "Nur asiatischer Markt" }
+    - { name: Virgin Pulse,  typ: "B2B Enterprise Wellness",                herkunft: USA,    notiz: "Nur Enterprise (>1000 MA); kein B2C" }
+    - { name: winwalk,       typ: "Schritte → Gutscheine (Korea)",          herkunft: Korea,  notiz: "Nur asiatischer Markt" }
+    - { name: WayBetter,     typ: "Habit-Betting mit Geld-Einsatz",         herkunft: USA,    notiz: "GSpG-Modell; Habit-Tracking interessant" }
+    - { name: "Generali Vitality", typ: "Bereits unter oesterreichische_apps" }
+    - { name: "Wien zu Fuß",       typ: "Bereits unter oesterreichische_apps" }
+    - { name: "Mavie Move",        typ: "Bereits unter oesterreichische_apps" }
+
+# ═══════════════════════════════════════════════════════════════════
+# AUSGESCHLOSSENE APPS (Tracking-only, keine Belohnungen)
+# ═══════════════════════════════════════════════════════════════════
+
+ausgeschlossen:
+  begruendung: "Apps die nur Daten tracken und keine Belohnungen bieten"
+  apps:
+    - Google Fit
+    - MyFitnessPal
+    - Apple HealthKit
+    - Fitbit
+    - BetterMe
+    - Noom
+    - "Lose It!"
+    - WeightWatchers
+    - Flo
+    - Waterlogged
+    - Fastic
+    - Samsung Health
+    - MapMyFitness
+    - "Wag and Rover"
+    - Strava
+    - Sworkit
+    - "Couch to 5K"
+
+# ═══════════════════════════════════════════════════════════════════
+# MARKT-AGGREGAT-STATISTIKEN
+# ═══════════════════════════════════════════════════════════════════
+
+markt_statistiken:
+  basis: "24 analysierte Apps (Stand August 2025)"
+  quelle: "Anhang A6, AustroFit Business Plan v0.13"
+
+  punktesystem:
+    mit_bewegungsbasiertem_punkte_pct: 87     # 21/24
+    mit_kombination_bewegung_bildung_andere_pct: 13  # 3/24
+    mit_abnehm_fokus_pct: 12                  # 3/24
+
+  gamification:
+    apps_mit_gamification_pct: 70             # 17/24
+    challenges_pct: 82                        # 14/17 (beliebtestes Element)
+    badges_pct: 41                            # 7/17
+    leveling_system_pct: 35                   # 6/17
+
+  bewegung:
+    schritte_pct: 95                          # 20/21
+    laufen_pct: 47                            # 10/21
+    radfahren_pct: 23                         # 5/21
+
+  bildung:
+    apps_mit_bildung_pct: 20                  # 5/24 – AustroFit USP!
+    davon_mit_artikeln_pct: 100               # 5/5
+    davon_mit_quizzen_pct: 40                 # 2/5 – AustroFit hat beides!
+
+  community:
+    apps_mit_community_pct: 66               # 16/24
+    events_pct: 62                            # 10/16
+    leaderboard_pct: 43                       # 7/16
+    schreiben_kommentieren_pct: 37            # 6/16
+    connecten_pct: 37                         # 6/16
+
+  belohnungssystem:
+    apps_mit_belohnungssystem_pct: 92         # 22/24
+    allgemeine_angebote_pct: 81               # 18/22
+    gewinnspiele_geld_pct: 31                 # 7/22
+    gesundheitsfoerdernde_angebote_pct: 9     # 2/22 – AustroFit USP!
+
+  andere_features:
+    uebersichts_charts_pct: 66               # 16/24
+    individuelle_ziele_pct: 41               # 10/24
+    app_integrationen_pct: 37                # 9/24
+
+  zugang:
+    google_play_pct: 95                       # 23/24
+    app_store_pct: 91                         # 21/24
+    kostenlos_pct: 95                         # 23/24
+    in_app_kaeufe_pct: 33                     # 8/24
+
+# ═══════════════════════════════════════════════════════════════════
+# AUSTROFIT SELF-ASSESSMENT (Scoring-Vergleich)
+# ═══════════════════════════════════════════════════════════════════
+
+austrofit_self_assessment:
+  stand: "Mai 2026 (MVP vor Go-Live)"
+  scoring:
+    punktesystem:    { wert: "+++", status: "implementiert" }
+    gamification:    { wert: "+++", status: "implementiert (Streaks, Level, Badges, Challenges in-progress)" }
+    bewegung:        { wert: "+++", status: "implementiert (Android; iOS Phase 2)" }
+    bildung:         { wert: "+++", status: "implementiert – ALLEINSTELLUNGSMERKMAL (nur 20% der Apps!)" }
+    community:       { wert: "+",   status: "Phase 2 – aktuell größte Lücke vs. WeWard/Pandocs" }
+    belohnungssystem:{ wert: "+++", status: "implementiert + ALLEINSTELLUNGSMERKMAL (nur 9% gesundheitsfokussiert!)" }
+  fazit: >
+    AustroFit wäre nach Phase-2-Community-Launch die einzige App mit +++ auf allen
+    6 Dimensionen. Aktuell ist Community die größte Lücke gegenüber WeWard und Pandocs.
+
+# ═══════════════════════════════════════════════════════════════════
+# MARKTLÜCKEN
+# ═══════════════════════════════════════════════════════════════════
+
+marktluecken:
+  - "Kein Anbieter kombiniert Bewegung + Bildung + Community + Gamification + Prävention"
+  - "Globale Apps (Sweatcoin, WeWard) haben kaum KMU-Partner und keine regionale Wertschöpfung"
+  - "Community-Funktionen enden meist beim Leaderboard – kein echtes soziales Netzwerk"
+  - "Nachhaltigkeit ist selten integriert (meist nur Baumspendenmodell)"
+  - "Belohnungen haben keinen Fokus auf Gesundheitsförderung (81% allgemeine Angebote)"
+  - "Datenschutz ist bei internationalen Apps intransparent (kein Privacy-by-Design)"
+  - "Österreichische Apps (SPAR, Wien zu Fuß) ohne Gamification-Tiefe und ohne Belohnungssystem"
+  - "Institutionelle Budgets (SVS ≤120M€, ÖGK 21Mrd€) investieren in Offline-Kurse ohne digitale Gamification"
+
+# ═══════════════════════════════════════════════════════════════════
+# ÖSTERREICH-KONTEXT — NATIONALE RELEVANZ INTERNATIONALER ERKENNTNISSE
+# Quellen: Statista AT 2021–2024, Businessplan v0.13, Comparis 2025,
+#          Handelszeitung/Livv 2024, AIHTA, BMWKMS, quickbirdmedical.com
+# Letzte Erhebung: 2026-05-24 (WebSearch + Businessplan-Auswertung)
+# ═══════════════════════════════════════════════════════════════════
+
+oesterreich_kontext:
+
+  # ── Marktgröße & App-Nutzung ────────────────────────────────────
+  marktdaten:
+    smartphone_nutzer_18_64: "5,5 Mio."                  # Business Plan v0.13
+    fitness_app_nutzer_2022: "1,8 Mio."                   # Statista AT
+    gesundheits_fitness_app_nutzung_generell_pct: 29      # Statista 2021
+    nutzung_unter_30_pct: 46                              # Statista 2021 (15–29 J.)
+    kostenpflichtige_apps_genutzt_pct: 9.1                # Statista 2023 (16–74 J.)
+    marktvolumen_2024_mio_eur: 15.8                       # Statista-Prognose
+    marktvolumen_2027_mio_eur: 21.0                       # Statista-Prognose, CAGR 10.3%
+    top_app_google_play_fitness_aug2024: "Komoot (hike, bike & run)"  # Statista AT
+    vorsorge_nutzung_pct: 15                              # Business Plan (nur 1,08 Mio. nutzen Vorsorgeangebote)
+    praevention_anteil_gesundheitsausgaben_pct: 5         # Business Plan (1,8 Mrd. € von 35+ Mrd.)
+    schlussfolgerung: >
+      Nur 9% zahlen für Gesundheits-Apps → Free-to-use ist Pflicht, keine Paywall.
+      Nur 15% nutzen Vorsorgeangebote → riesiger unteradressierter Markt.
+      Top-App ist Komoot (Wandern/Radfahren) → österreichische Aktivitätskultur ist outdoor-geprägt,
+      nicht nur urban-steps-basiert.
+
+  # ── Datenschutz & Vertrauen ─────────────────────────────────────
+  datenschutz_und_vertrauen:
+    vertrauen_datenschutz_generell_pct: 81               # Comparis Datenvertrauensstudie 2025
+    bedenken_handynummer_online_pct: 45.4                # Comparis 2025
+    dsb_beschwerden_2025: 5300                           # DSB Tätigkeitsbericht 2025
+    diga_rahmen: >
+      Österreich schafft bis Ende 2026 rechtlichen Rahmen für digitale Gesundheitsanwendungen (DiGAs);
+      ab 2027 verschreibbar durch Ärzte (quickbirdmedical.com 2026).
+    schlussfolgerung: >
+      Österreicher vertrauen Datenschutz grundsätzlich (81%), aber wachsende DSB-Beschwerden
+      (5.300 in 2025) zeigen aktives Datenbewusstsein. Transparenz und EU-Server sind keine
+      Nice-to-have — sie sind aktive Vertrauensmerkmale die kommuniziert werden müssen.
+      DiGA-Rahmen ab 2027 ist langfristiger strategischer Kanal (B2G-Phase 3).
+
+  # ── Kulturelle Faktoren ─────────────────────────────────────────
+  kulturelle_faktoren:
+    aktivitaetskultur:
+      beschreibung: >
+        Österreichische Fitness-/Bewegungskultur ist stark outdoor-geprägt: Wandern, Radfahren,
+        Skifahren, Bergsteigen. Komoot als #1 Fitness-App bestätigt das. "Steps" allein greift
+        zu kurz — AustroFit tracked bereits Schritte + Cardio (Laufen, Radfahren), was zur
+        Aktivitätskultur passt.
+      austrofit_relevanz: >
+        Cardio-Tracking (REQ-P-012) ist in Österreich wichtiger als in reinen Step-Apps.
+        Content-Strategie (Bildungsartikel) sollte Outdoor-Aktivitäten priorisieren.
+
+    skeptizismus_gegenueber_zu_guten_angeboten:
+      beschreibung: >
+        Österreichisch-deutschen Nutzer sind bekannt skeptisch gegenüber "earn money for walking"
+        Versprechen. Sweatcoin und WeWard performen in DACH deutlich schlechter als in
+        angelsächsischen Märkten — der "too good to be true"-Filter ist aktiv.
+      austrofit_relevanz: >
+        Messaging vermeiden wie "Geld verdienen durch Gehen". Stattdessen: "Gesund leben und
+        dafür belohnt werden bei Partnern, die du kennst". Regionale, bekannte Partner
+        bauen Glaubwürdigkeit auf die internationale Apps nicht haben.
+
+    vertrauen_in_lokale_marken:
+      beschreibung: >
+        Österreicher vertrauen lokalen und bekannten Marken mehr als globalen Plattformen
+        (SPAR Health Coach, Generali Vitality trotz geringer Features etabliert).
+        Ein österreichischer Gründer (Johannes Gnong, Wien) ist ein aktives Vertrauensmerkmal.
+      austrofit_relevanz: >
+        "Made in Austria" und "Gründer aus Wien" prominent kommunizieren. Österreichische
+        Partner-Logos in Onboarding zeigen. DSGVO und EU-Server explizit erwähnen.
+
+    niederschwelligkeit_als_pflicht:
+      beschreibung: >
+        App richtet sich bewusst auch an Menschen mit wenig Berührung mit Prävention oder
+        Digitaltechnologie (Business Plan explizit). Walter-Persona (55+) ist ein Kernziel,
+        nicht ein Randfall. WCAG 2.1 AA-Konformität bereits im Business Plan verankert.
+      austrofit_relevanz: >
+        UX muss für beide Extrema funktionieren: Anna (20, digital-native) und Walter (55+,
+        wenig Digitalkompetenz). Accessibility-Features sind in Österreich besonders wichtig
+        da Altersdurchschnitt höher und Digitalisierungsgrad niedriger als in Nordeuropa.
+
+    gemeinschaftsorientierung:
+      beschreibung: >
+        Österreich hat starke Gemeinschafts- und Vereinskultur. Gesundheitsziel 5 (Sozialer
+        Zusammenhalt) ist staatliches Ziel — Community-Features resonieren kulturell stärker
+        als in individualistischeren Märkten.
+      austrofit_relevanz: >
+        Community-Features (Post-Go-Live) haben in Österreich kulturellen Rückenwind.
+        Vereinsintegration und Gemeinde-Challenges könnten ein einzigartiger B2G-Kanal sein.
+
+  # ── Institutionelle Verankerung (AustroFit-spezifisch) ─────────
+  institutionelle_verankerung:
+    beschreibung: >
+      AustroFit ist eng an österreichische Institutionen und Programme anschlussfähig —
+      kein internationaler Wettbewerber hat diesen strukturellen Vorteil.
+    programme:
+      - name: "Gesundheitsziele Österreich"
+        relevanz: "Ziel 3 (Gesundheitskompetenz), Ziel 5 (Sozialer Zusammenhalt), Ziel 8 (Bewegung im Alltag)"
+        vorteil: "Fördernachweis-Hebel für FFG/aws/WA Wien. Kein internationaler Wettbewerber referenziert das."
+      - name: "SVS Gesundheitshunderter"
+        relevanz: "Bis zu €120 Bonus für nachgewiesene Präventionsmaßnahmen"
+        vorteil: "Aktivitätsnachweise aus AustroFit direkt nutzbar (Phase 3, REQ-P-043)"
+      - name: "BGF-Förderung WKO/GKK"
+        relevanz: "Österreichische Unternehmen haben Budgets für betriebliche Gesundheitsförderung"
+        vorteil: "B2B-BGM-Kanal (REQ-P-047) — kein internationaler Wettbewerber erschließt das"
+      - name: "DiGA-Rahmen (ab 2027)"
+        relevanz: "Digitale Gesundheitsanwendungen verschreibbar durch Ärzte ab 2027"
+        vorteil: "Langfristiger B2G-Kanal; frühzeitige Positionierung relevant"
+      - name: "AIHTA-Studie"
+        relevanz: "Österreichisches Institut belegt: Gamification-Elemente tragen signifikant zur Verhaltensänderung bei"
+        vorteil: "Wissenschaftlicher Nachweis aus AT-Kontext für Förderanträge"
+      - name: "BMWKMS-Bewegungsempfehlungen"
+        relevanz: "≥150 min moderate Aktivität/Woche als offizielle Empfehlung"
+        vorteil: "AustroFit-Tagesziele sind an offizielle Empfehlungen geknüpft — schafft Legitimität"
+
+  # ── Übertragbarkeits-Assessment: Was gilt für Österreich? ──────
+  internationaler_vergleich_uebertragbarkeit:
+    gut_uebertragbar:
+      - insight: "Reward-for-Steps funktioniert (WeWard, Sweatcoin belegen Modell-Viabilität)"
+        einschraenkung: "Wachstumszahlen nicht direkt übertragbar — DACH-Markt ist kleiner und skeptischer"
+      - insight: "Gamification (Challenges, Badges, Streaks) steigert Engagement (82% der Apps)"
+        einschraenkung: "Keine Einschränkung — universell gültig, AIHTA-Studie bestätigt für AT"
+      - insight: "Bildung + Rewards ist stärkste Kombination (nur 20% der Apps)"
+        einschraenkung: "Keine Einschränkung — österreichische Bildungsaffinität sogar höher als in angelsächsischen Märkten"
+      - insight: "DSGVO-Compliance als Vertrauensmerkmal (Pandocs)"
+        einschraenkung: "In Österreich NOCH wichtiger als in anderen EU-Ländern (aktive DSB, 5.300 Beschwerden 2025)"
+
+    eingeschraenkt_uebertragbar:
+      - insight: "WeWards virales Community-Wachstum (+150% in 9 Monaten)"
+        einschraenkung: >
+          Virales Social-Sharing ist in Österreich durch Datenschutzsensibilität gebremst.
+          Opt-in-Mechanismen und Privacy-by-Default sind Pflicht. Wachstum wird langsamer sein.
+      - insight: "Sweatcoins 'earn money' Messaging"
+        einschraenkung: >
+          Österreichischer Skeptizismus macht dieses Messaging kontraproduktiv.
+          Framing umstellen: Belohnungen bei lokalen Partnern, nicht Geldverdienen.
+      - insight: "Pacelineals B2G-Insurance-Modell ($54.9M)"
+        einschraenkung: >
+          US-privates Krankenversicherungsmodell nicht übertragbar. Österreichisches Äquivalent:
+          SVS-Gesundheitshunderter und GKK-BGF-Programme. Andere Mechanik, ähnliches Ziel.
+
+    nicht_uebertragbar:
+      - insight: "Sweatcoin SWEAT-Token / Krypto-Mechanismus"
+        begruendung: "Österreichische Nutzer sind krypto-skeptisch; regulatorische Unsicherheit; kein kultureller Fit"
+      - insight: "WeWards globale Wachstumsstrategie (25M Downloads in 20+ Ländern gleichzeitig)"
+        begruendung: "AustroFit ist bewusst lokal verankert — regionale Partner sind der USP, nicht globale Skalierung"
+
+# ═══════════════════════════════════════════════════════════════════
+# USER SENTIMENT — WETTBEWERBS-REVIEWS
+# Quellen: App Store / Google Play / Trustpilot / Visu Network / BudgetDiet
+# Letzte Erhebung: 2026-05-24 (WebSearch)
+# Hinweis: Enthält nur Wettbewerb-Feedback. AustroFit-eigenes Feedback
+# (In-App-Ratings, NPS) nach Go-Live hier einzupflegen.
+# ═══════════════════════════════════════════════════════════════════
+
+user_sentiment:
+
+  # ── WeWard (C-03) ──────────────────────────────────────────────
+  - competitor: C-03
+    name: WeWard
+    rating_app_store: 4.0
+    quelle: "justuseapp.com / trustpilot.com / thebudgetdiet.com (Stand Mai 2026)"
+    hauptkritikpunkte:
+      - "Schritt-Tracking-Lücken: 4.000–8.000 Schritte täglich fehlen trotz Handy in der Tasche"
+      - "Kein Apple Watch-Support — Nutzer müssen Handy immer mitführen"
+      - "Manuelle Schritte-Konvertierung täglich nötig (nicht automatisch)"
+      - "Sehr langsames Earning: ~1 Jahr für $15 bei reinem Step-Walking"
+      - "Customer Support ghostet bei Reward-Problemen tagelang"
+      - "Reward-Auslieferung (z.B. gewonnenes iPhone 17) mit wochenlangen Verzögerungen"
+    positives:
+      - "Eindeutig legitim — zahlt tatsächlich aus"
+      - "Macht Spaß als Motivationsapp, Gamification-Elemente motivieren"
+      - "Community-Features (Challenges, Ranglisten) sind beliebt"
+    austrofit_implication:
+      - "Automatischer, zuverlässiger Schritt-Sync ist ein echter Differenziator — kein manuelles Trigger-Klicken"
+      - "Klare Kommunikation wie viel Punkte wie schnell erreichbar sind (Erwartungs-Management)"
+      - "Support-Reaktionszeit ist ein Vertrauens-Faktor — auch als kleines Team erreichbar sein"
+
+  # ── Sweatcoin (C-08) ───────────────────────────────────────────
+  - competitor: C-08
+    name: Sweatcoin
+    rating_app_store: 4.4
+    rating_google_play: 4.3
+    quelle: "trustpilot.com / visu.network / paidsurveys.net (Stand Mai 2026)"
+    hauptkritikpunkte:
+      - "Earning-Wert extrem niedrig: unter $1/Jahr an tatsächlich einlösbarem Wert"
+      - "Rewards sind meist Trials und Rabatt-Aktionen — keine 'echten' Belohnungen"
+      - "Indoor-Schritte werden nicht gezählt"
+      - "Coins verschwinden ohne Erklärung (Nutzer verliert 4.000 angesammelte Coins)"
+      - "SWEAT-Token/Krypto unklar für Durchschnittsnutzer — kein verständlicher Wert"
+      - "Customer Support unerreichbar bei Problemen"
+      - "Zahlungsverzögerungen (PayPal-Auszahlung 7+ Tage statt versprochener 3)"
+      - "Battery-Drain durch dauerhaftes GPS-Tracking"
+    positives:
+      - "Hohe Ratings trotz Beschwerden — Gamification-Erlebnis funktioniert"
+      - "Konzept 'Schritte = Währung' ist intuitiv verständlich"
+      - "Animation beim Schritt→Coin-Feedback als Dopamin-Trigger gut umgesetzt"
+    austrofit_implication:
+      - "KRITISCH: 'Rewards sind nur Trials/Rabatte, kein echter Wert' ist das Hauptproblem bei Wettbewerbern — AustroFits echte Partner-Rewards sind ein starker USP"
+      - "Coins/Punkte die verschwinden = sofortiger Vertrauensverlust — Ledger-Transparenz wichtig"
+      - "Keine Krypto-Komplexität — Punkte sollen intuitiv und direkt verständlich sein"
+      - "Schritt-Animations-Feedback übernehmen (was gut funktioniert), Reward-Substanz verbessern"
+
+  # ── Pandocs (C-01) ─────────────────────────────────────────────
+  - competitor: C-01
+    name: Pandocs
+    quelle: "pandocs.com / App Store AT / netzwerk-bgf.at (Stand Mai 2026)"
+    hauptkritikpunkte:
+      - "Wenig öffentliche Negativbewertungen (B2B-Kontext → Nutzer bewerten selten öffentlich)"
+      - "B2B-Abhängigkeit: App nur nutzbar wenn Arbeitgeber Pandocs-Kunde ist"
+    positives:
+      - "Ganzheitlicher Ansatz (Fitness + Mentale Gesundheit + Ernährung) wird explizit gelobt"
+      - "Gamification für 'kleine wichtige Dinge wie tägliche Schritte' als motivierend bewertet"
+      - "Datenschutz (EU-Server, Österreich) aktiv als Vertrauensmerkmal kommuniziert und gut aufgenommen"
+      - "Österreich-Fokus und regionale Relevanz als positiver Unterschied zu internationalen Apps"
+    austrofit_implication:
+      - "Ganzheitlicher Ansatz (Körper + Geist) resoniert bei Nutzern — AustroFit-Bildungsfeature ist richtig positioniert"
+      - "DSGVO und EU-Server aktiv kommunizieren — Nutzer schätzen das, besonders im DACH-Raum"
+      - "Österreich-Identität als Vertrauensanker nutzen (REQ-P-040)"
+
+  # ── moveeffect (C-02) ──────────────────────────────────────────
+  - competitor: C-02
+    name: moveeffect
+    quelle: "moveeffect.com / bgm-vergleich.de / LinkedIn AT (Stand Mai 2026)"
+    hauptkritikpunkte:
+      - "Kaum öffentliche Nutzerbewertungen verfügbar (B2B-Plattform, kein Consumer-App-Store-Fokus)"
+    positives:
+      - "10 Jahre Markterfahrung — etablierter BGF-Anbieter in Österreich"
+      - "Zweiter Standort Wien 2021 zeigt Wachstum"
+      - "KPI-Tracking und BGM-Analytics für Unternehmenskunden als Mehrwert"
+    austrofit_implication:
+      - "moveeffect ist kein direkter Wettbewerber im B2C-Segment — eher Referenz für B2B-BGM (REQ-P-047)"
+
+  # ── Übergreifende Muster (alle Apps) ───────────────────────────
+  uebergreifende_muster:
+    quelle: "Synthesis aus WeWard, Sweatcoin, Visu Network, myroomismyoffice.com (Mai 2026)"
+    top_beschwerden_industrie:
+      - rang: 1
+        muster: "Zu niedriges Earning — 'nicht die Zeit wert'"
+        frequenz: "sehr häufig (WeWard, Sweatcoin, Cash Walk, Macadam)"
+        austrofit_relevanz: >
+          Klare Onboarding-Kommunikation: Was ist realistisch in Woche 1, Monat 1?
+          Erste Punkte schnell verdienen (Milestone-Bonus bei Registrierung + erstem Quiz).
+      - rang: 2
+        muster: "Rewards sind Trials/Rabatte, kein echter Wert"
+        frequenz: "sehr häufig (Sweatcoin dominant)"
+        austrofit_relevanz: >
+          AustroFits direkt einlösbare Partner-Rewards (Gutscheine, Produkte) sind ein
+          echter Differenziator. In Onboarding und Marketing prominent kommunizieren.
+      - rang: 3
+        muster: "Schritt-Tracking-Probleme (Sync, Smartwatch, Indoor)"
+        frequenz: "häufig (WeWard, Sweatcoin)"
+        austrofit_relevanz: >
+          Zuverlässigkeit des Schritt-Syncs ist Basis-Vertrauen. Probleme hier kosten
+          mehr Vertrauen als jede Community-Feature gewinnt.
+      - rang: 4
+        muster: "Customer Support unerreichbar"
+        frequenz: "häufig (WeWard, Sweatcoin)"
+        austrofit_relevanz: >
+          Auch als kleines Team: E-Mail-Antwort innerhalb 48h als Standard.
+          FAQ + transparente Kommunikation bei bekannten Problemen.
+      - rang: 5
+        muster: "Vertrauensverlust durch verschwundene Coins/Punkte"
+        frequenz: "mittel (Sweatcoin)"
+        austrofit_relevanz: >
+          Ledger-Transparenz ist Pflicht. Nutzer müssen jeden Punkt nachvollziehen können
+          (/mein-fortschritt zeigt bereits Ledger — weiter ausbauen).
+    uster_die_funktionieren:
+      - "Animations-Feedback bei Punktevergabe (Dopamin-Trigger) — WeWard, Sweatcoin"
+      - "Ganzheitlicher Ansatz Körper+Geist — Pandocs"
+      - "Österreich/Datenschutz als explizites Vertrauensmerkmal — Pandocs"
+      - "Community Challenges als Engagement-Treiber — WeWard"
+
+# ═══════════════════════════════════════════════════════════════════
+# DERIVED INSIGHTS → REQUIREMENT-MAPPING
+# ═══════════════════════════════════════════════════════════════════
+# MI = Market Insight. Jede MI-ID begründet eine bestehende oder neue Anforderung.
+# maps_to_req:
+#   - "REQ-P-XXX" = bestehende Anforderung (validiert durch Markt)
+#   - "NEU: REQ-P-045" = neue Anforderung, noch nicht in product-requirements.yaml
+# ═══════════════════════════════════════════════════════════════════
+
+derived_insights:
+
+  - id: MI-001
+    titel: "Challenges sind das beliebteste Gamification-Element (82%)"
+    evidenz: "82% aller Apps mit Gamification nutzen Challenges; WeWard und Cadoo zeigen höchstes Engagement"
+    status_bei_austrofit: "in-progress (REQ-P-009 – Completion-Logik fehlt noch)"
+    handlungsbedarf: "Challenges-Completion-Logik ist MVP-Blocker – vor Go-Live fertigstellen"
+    prioritaet: P1-MVP
+    maps_to_req: [REQ-P-009]
+
+  - id: MI-002
+    titel: "Badges als Identitäts-Anker (41% der gamifizierten Apps)"
+    evidenz: "Österreich-Badges sind kulturell verankert – kein Mitbewerber macht das so"
+    status_bei_austrofit: "implementiert (113 Badges), Bilder ausstehend"
+    handlungsbedarf: "Badge-Bilder hochladen (Phase 2 – nicht MVP-Blocker)"
+    prioritaet: P2
+    maps_to_req: [REQ-P-008]
+
+  - id: MI-003
+    titel: "Individuelle Zielsetzung (41% der Apps bieten Custom Goals)"
+    evidenz: "41% der analysierten Apps erlauben Nutzern eigene Ziele zu setzen; im Business Plan als Optimierungsmöglichkeit erwähnt"
+    status_bei_austrofit: "nicht vorhanden"
+    handlungsbedarf: >
+      Phase-2-Feature: Nutzer können eigene Schritt- oder Cardio-Tagesziele setzen
+      (über dem Mindestziel). Erhöht intrinsische Motivation für fortgeschrittene Nutzer.
+    prioritaet: P2
+    maps_to_req: ["NEU: REQ-P-045"]
+
+  - id: MI-004
+    titel: "Community Schreiben & Kommentieren (37% der Community-Apps)"
+    evidenz: "37% der Apps mit Community-Features haben Write & Comment; steigert soziales Gefühl"
+    status_bei_austrofit: "nicht vorhanden (Community Phase 2)"
+    handlungsbedarf: >
+      Phase-2-Feature nach Leaderboard. Nutzen-Risiko-Analyse zu Social-Media-Problemen
+      erforderlich (Business Plan explizit erwähnt).
+    prioritaet: P2
+    maps_to_req: ["NEU: REQ-P-046"]
+
+  - id: MI-005
+    titel: "Sofortige visuelle Belohnungs-Animation (Sweatcoin-Effekt)"
+    evidenz: "Sweatcoin: 190M Nutzer durch Schritt→Coin-Animations-Feedback. Dopamin-Trigger ist kritisch für Retention."
+    status_bei_austrofit: "Punkte werden nach Sync angezeigt, aber ohne Animation"
+    handlungsbedarf: >
+      UX-Verbesserung: Punkte-Counter animiert hochzählen nach Sync/Quiz.
+      'Du hast +40 Punkte verdient' als kurze In-App-Notification nach Aktivität.
+    prioritaet: P2
+    maps_to_req: [REQ-P-001]
+    maps_to_user: [REQ-U-005]
+
+  - id: MI-006
+    titel: "B2G Insurance als größter Langzeit-Umsatzkanal (Paceline-Modell)"
+    evidenz: "$54.9M Funding für Paceline bestätigt; Hinweis: Paceline hat Modell gewechselt zu Wellness-Rabatte (ähnlich AustroFit) — B2G-Thesis bleibt via SVS/ÖGK-Kanal gültig"
+    status_bei_austrofit: "deferred Phase 3 (REQ-P-042)"
+    handlungsbedarf: >
+      Aktivitätsnachweise exportierbar machen für SVS-Gesundheitshunderter-Antrag.
+      Frühzeitig Pilotgespräch mit SVS aufnehmen (ab Jahr 2).
+    prioritaet: P3
+    maps_to_req: [REQ-P-042, REQ-P-043]
+
+  - id: MI-007
+    titel: "B2B Corporate Wellness / BGM (Pandocs + moveeffect – Österreich)"
+    evidenz: "Zwei österreichische Anbieter mit BGF-Fokus zeigen lokale Marktnachfrage"
+    status_bei_austrofit: "nicht als eigener Kanal definiert (nur B2B-Partner-Dashboard REQ-P-040)"
+    handlungsbedarf: >
+      B2B-BGM als eigenständigen Vertriebskanal definieren: Unternehmen zahlen
+      für AustroFit als Mitarbeiter-Gesundheitsplattform (Team-Challenges, Firmen-Leaderboard).
+      Separate von Direktpartner-B2B-Modell.
+    prioritaet: P3
+    maps_to_req: ["NEU: REQ-P-047"]
+
+  - id: MI-008
+    titel: "Bildung ist AustroFits stärkster Alleinstellungsmerkmal (nur 20% der Apps)"
+    evidenz: "Nur 5 von 24 Apps haben Bildungsfeatures; nur 2/5 haben Quizze. AustroFit hat beides (250+ Artikel + Quizze)."
+    status_bei_austrofit: "implementiert und überlegen"
+    handlungsbedarf: >
+      In Marketing und Förderanträgen stärker als USP positionieren.
+      Bildungs-Content regelmäßig erweitern (SEO-Flywheel).
+      Quiz-Variety erhöhen (verschiedene Formate: Multiple Choice, True/False, Bilder-Quizze).
+    prioritaet: P2
+    maps_to_req: [REQ-P-015, REQ-P-016, REQ-P-017]
+
+  - id: MI-009
+    titel: "Gesundheitsfokussierte Rewards – größtes Markt-Differenzierungsmerkmal (9%)"
+    evidenz: "Nur 2 von 22 Apps mit Belohnungssystem fokussieren auf gesundheitsfördernde Angebote. AustroFit ist einer davon."
+    status_bei_austrofit: "implementiert und überlegen"
+    handlungsbedarf: >
+      Partner-Portfolio aktiv in gesundheitsfördernde Kategorien lenken.
+      ESG-Filter und 'Gesundheitsfokus'-Label im Marketplace als Feature bewerben.
+    prioritaet: P1-MVP
+    maps_to_req: [REQ-P-021, REQ-P-023]
+
+  - id: MI-010
+    titel: "Community ist die kritischste Wachstums-Lücke (WeWard-Modell)"
+    evidenz: "WeWard: 25M+ Downloads durch Community + Rewards (verifiziert Mai 2026, +150% in 9 Monaten). AustroFit hat Rewards aber noch keine Community."
+    status_bei_austrofit: "Phase 2"
+    handlungsbedarf: >
+      Community-Features priorisieren nach MVP-Launch: Zuerst Leaderboard (opt-in),
+      dann Events, dann Write & Comment. Ohne Community bleibt virales Wachstum schwierig.
+    prioritaet: P2
+    maps_to_req: [REQ-P-025, REQ-P-026, REQ-P-027]
+
+  - id: MI-011
+    titel: "Detaillierte Aktivitäts-Analytics binden aktive Nutzer (Runtopia-Modell)"
+    evidenz: "Runtopia: 1M+ Downloads durch detaillierte Lauf-Analytics. Aktive Nutzer wollen Daten, nicht nur Punkte."
+    status_bei_austrofit: "rudimentär (/mein-fortschritt + Cardio-History)"
+    handlungsbedarf: >
+      Fortschritts-Seite erweitern: Wochenverlauf, persönliche Bestleistungen,
+      Entwicklung über Zeit. Besonders für Persona Anna (zeitarme Profi-Nutzerin).
+    prioritaet: P2
+    maps_to_req: ["NEU: REQ-P-048"]
+    maps_to_user: [REQ-U-006]
+
+  - id: MI-012
+    titel: "Wett-Challenges steigern Commitment – aber GSpG-konform gestalten"
+    evidenz: "Cadoo ($1.5M Seed), HealthyWage, StepBet: Geld-Einsatz steigert nachweislich Aktivität"
+    status_bei_austrofit: "nicht vorhanden; GSpG-Risiko bei Geld"
+    handlungsbedarf: >
+      Punkte-Einsatz-Challenges als GSpG-konformes Äquivalent:
+      Nutzer setzt X Punkte ein, bekommt 1.5X zurück bei Zielerreichung, verliert X bei Scheitern.
+      Keine Kaufverpflichtung → kein GSpG-Fall (REQ-R-024).
+    prioritaet: P2
+    maps_to_req: [REQ-P-009, REQ-P-010]
+    compliance_note: "REQ-R-024: Keine Kaufverpflichtung = kein GSpG. Rechtsberatung empfohlen."
+
+  - id: MI-013
+    titel: "Österreichische Marktvalidierung durch 6 lokale Apps"
+    evidenz: "6 österreichische Apps (inkl. SPAR, Generali, UNIQA, Wien zu Fuß, Pandocs, moveeffect) – alle ohne Gamification-Tiefe"
+    status_bei_austrofit: "Differenziator durch Gamification-Tiefe"
+    handlungsbedarf: >
+      Bestehende österreichische Anbieter als Kooperations- nicht Konkurrenz-Partner verstehen.
+      Pandocs, moveeffect als B2B-Kanal; Generali/UNIQA/SPAR als Direktpartner im Marketplace.
+    prioritaet: P2
+    maps_to_req: [REQ-P-021, REQ-P-040]
+
+# ═══════════════════════════════════════════════════════════════════
+# VORGESCHLAGENE NEUE REQ-P-IDS (aus derived_insights)
+# ═══════════════════════════════════════════════════════════════════
+
+proposed_new_requirements:
+  beschreibung: >
+    Diese Anforderungen existieren noch nicht in product-requirements.yaml.
+    Sie sollten nach Review dort angelegt werden mit den unten vorgeschlagenen IDs.
+
+  - proposed_id: REQ-P-045
+    titel: "Individuelle Zielsetzung (Custom Step/Cardio Goals)"
+    herleitung: MI-003
+    kategorie: gamification
+    prioritaet: P2
+    kurzfassung: >
+      Nutzer können eigene Schritt- oder Cardio-Tagesziele über dem Minimum setzen.
+      Aktiviert wenn persönliches Ziel erreicht wurde, nicht nur das System-Minimum.
+
+  - proposed_id: REQ-P-046
+    titel: "Social Feed / Schreiben & Kommentieren"
+    herleitung: MI-004
+    kategorie: community
+    prioritaet: P2
+    kurzfassung: >
+      Nutzer können Aktivitäten teilen und andere kommentieren. Erfordert
+      Nutzen-Risiko-Analyse zu Social-Media-Problemen vor Implementierung.
+
+  - proposed_id: REQ-P-047
+    titel: "B2B Corporate Wellness / BGM-Kanal"
+    herleitung: MI-007
+    kategorie: b2b
+    prioritaet: P3
+    kurzfassung: >
+      Unternehmen zahlen für AustroFit als Mitarbeiter-Gesundheitsplattform.
+      Team-Challenges, Firmen-Leaderboard, BGF-Dashboard für HR.
+
+  - proposed_id: REQ-P-048
+    titel: "Erweiterte Aktivitäts-Analytics (Fortschritts-Detailseite)"
+    herleitung: MI-011
+    kategorie: aktivitaet
+    prioritaet: P2
+    kurzfassung: >
+      Wochenverlauf, persönliche Bestleistungen und Entwicklung über Zeit.
+      Schritte-/Cardio-Trends für aktive Nutzer sichtbar (Retention-Feature).

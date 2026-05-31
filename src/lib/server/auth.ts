@@ -4,8 +4,10 @@
 /** Extrahiert den Bearer-Token aus dem Authorization-Header. Gibt null zurück wenn kein Token vorhanden. */
 export function extractBearerToken(request: Request): string | null {
   const header = request.headers.get('authorization') ?? '';
-  const token = header.replace(/^Bearer\s+/i, '').trim();
-  return token || null;
+  // Requires at least one non-whitespace character after "Bearer " — prevents
+  // "Authorization: Bearer" (no token) from returning the string "Bearer".
+  const match = header.match(/^Bearer\s+(\S+)/i);
+  return match?.[1] ?? null;
 }
 
 /** Löst die Directus-User-ID via /users/me auf. Gibt null zurück bei ungültigem Token. */

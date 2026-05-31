@@ -26,34 +26,48 @@ export async function POST({
     ? body.activity_group
     : 'adult';
 
+  const consentGiven = body?.consent_given === true;
+  const consentVersion = typeof body?.consent_version === 'string' ? body.consent_version : null;
+
   const adminHeaders = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${PRIVATE_CMS_STATIC_TOKEN}`
   };
 
-  // Set activity_group on user_profiles (upsert)
+  // Upsert user_profiles: activity_group + Art.-9-Consent-Logging
   try {
     const profileListRes = await fetch(
-      `${PUBLIC_CMSURL}/items/user_profiles?filter[user][_eq]=${userId}&fields=id,activity_group&limit=1`,
+      `${PUBLIC_CMSURL}/items/user_profiles?filter[user][_eq]=${userId}&fields=id,activity_group,gesundheitsdaten_consent_at&limit=1`,
       { headers: adminHeaders }
     );
     if (profileListRes.ok) {
       const profileList = await profileListRes.json();
       const profile = profileList?.data?.[0];
       if (profile?.id) {
-        // Idempotenz: activity_group nur setzen wenn noch nicht gesetzt
-        if (!profile.activity_group) {
+        const patch: Record<string, unknown> = {};
+        if (!profile.activity_group) patch.activity_group = activityGroup;
+        // Consent nur setzen wenn noch nicht vorhanden (idempotent)
+        if (consentGiven && consentVersion && !profile.gesundheitsdaten_consent_at) {
+          patch.gesundheitsdaten_consent_at = new Date().toISOString();
+          patch.gesundheitsdaten_consent_version = consentVersion;
+        }
+        if (Object.keys(patch).length) {
           await fetch(`${PUBLIC_CMSURL}/items/user_profiles/${profile.id}`, {
             method: 'PATCH',
             headers: adminHeaders,
-            body: JSON.stringify({ activity_group: activityGroup })
+            body: JSON.stringify(patch)
           });
         }
       } else {
+        const newProfile: Record<string, unknown> = { user: userId, activity_group: activityGroup };
+        if (consentGiven && consentVersion) {
+          newProfile.gesundheitsdaten_consent_at = new Date().toISOString();
+          newProfile.gesundheitsdaten_consent_version = consentVersion;
+        }
         await fetch(`${PUBLIC_CMSURL}/items/user_profiles`, {
           method: 'POST',
           headers: adminHeaders,
-          body: JSON.stringify({ user: userId, activity_group: activityGroup })
+          body: JSON.stringify(newProfile)
         });
       }
     }

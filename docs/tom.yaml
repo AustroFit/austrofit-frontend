@@ -227,13 +227,25 @@ eingabekontrolle:
 
   - id: ek-5
     name: "Rate-Limiting auf API-Endpunkte"
-    status: geplant
+    status: umgesetzt
     nachweis: code
+    nachweis_ref:
+      - src/lib/server/rateLimit.ts
+      - src/routes/api/auth/login/+server.ts
+      - src/routes/api/auth/register/+server.ts
+      - src/routes/api/claim/+server.ts
+      - src/routes/api/redeem/+server.ts
+      - src/routes/api/steps/manual/+server.ts
     notes: >
-      Noch nicht implementiert. Dedup-Checks und Validierungen reduzieren das Risiko,
-      sind aber kein Ersatz für echtes Rate-Limiting.
-      Geplant: Vercel Edge Rate Limiting oder Upstash Redis für kritische Endpunkte
-      (/api/auth/login, /api/quiz-attempts, /api/redeem).
+      In-Memory Rate Limiter (rateLimit.ts) mit IP-basiertem Sliding-Window.
+      Login: max. 10 Versuche / 15 min pro IP.
+      Register: max. 5 Registrierungen / 15 min pro IP.
+      Claim: max. 20 Anfragen / 60 min pro IP.
+      Redeem: max. 10 Anfragen / 60 min pro IP.
+      Manuelle Schritte: max. 5 Anfragen / 15 min pro IP.
+      Login zusätzlich: Per-Account-Lockout (5 Fehlversuche / 10 min pro E-Mail-Adresse).
+      Limiter ist In-Process – funktioniert pro Serverless-Instanz; kein Redis erforderlich
+      für die aktuelle Nutzerzahl.
 
 # ─────────────────────────────────────────────────────────────────
 # 5. TRENNUNGSKONTROLLE
@@ -324,17 +336,22 @@ pseudonymisierung:
       Kein Passwort-Klartext in Logs, Datenbank oder API-Responses.
 
   - id: ps-3
-    name: "JWT-Token-Speicherung (Designentscheidung)"
+    name: "JWT-Token-Speicherung (Designentscheidung) + CSP"
     status: umgesetzt
     nachweis: code
     nachweis_ref:
       - src/lib/utils/auth.ts
+      - vercel.json
     notes: >
       JWT in localStorage (kein httpOnly Cookie) – bewusste Designentscheidung für
       Capacitor-Android-Kompatibilität (httpOnly Cookies funktionieren im Capacitor
       WebView nicht zuverlässig). Risiko: XSS-Angriffe könnten Token extrahieren.
-      Gegenmaßnahme: Content Security Policy empfohlen (noch offen).
-      Diese Entscheidung ist im CLAUDE.md dokumentiert.
+      Gegenmaßnahme (Mai 2026): Content Security Policy in vercel.json implementiert.
+      CSP schränkt Script-Quellen auf 'self' + PostHog ein; frame-ancestors 'none';
+      object-src 'none'; base-uri 'self'. 'unsafe-inline' für SvelteKit-Hydration
+      unvermeidbar – reduziert XSS-Schutz, verhindert aber Fremd-Script-Injection.
+      Weitere Security-Headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy,
+      Permissions-Policy (Mai 2026).
 
 # ─────────────────────────────────────────────────────────────────
 # 8. ORGANISATORISCHE MASSNAHMEN
@@ -411,16 +428,6 @@ organisatorische_massnahmen:
 
 offene_punkte:
 
-  - id: op-1
-    massnahme: ek-5
-    aktion: "Rate-Limiting für kritische API-Endpunkte implementieren"
-    prioritaet: mittel
-    frist: "Phase 2 / vor erstem Produktivbetrieb mit vielen Nutzern"
-    notes: >
-      Kritischste Endpunkte: /api/auth/login (Brute-Force), /api/quiz-attempts,
-      /api/redeem. Optionen: Vercel Edge Middleware mit IP-Rate-Limiting
-      oder Upstash Redis (serverless rate limiting).
-
   - id: op-2
     massnahme: vk-2
     aktion: "Automatisiertes Datenbankbackup-Konzept dokumentieren und testen"
@@ -429,16 +436,6 @@ offene_punkte:
     notes: >
       Hetzner Backup aktivieren (tägliche Snapshots), Aufbewahrungsdauer festlegen
       (empfohlen: 7 Tage), Wiederherstellungstest durchführen und dokumentieren.
-
-  - id: op-3
-    massnahme: ps-3
-    aktion: "Content Security Policy (CSP) Headers evaluieren"
-    prioritaet: niedrig
-    frist: "Phase 2"
-    notes: >
-      CSP würde XSS-Risiko beim localStorage-JWT reduzieren.
-      SvelteKit-kompatible CSP-Konfiguration in vercel.json testen.
-      Achtung: Inline-Scripts (SvelteKit Hydration) erfordern nonce-basierte CSP.
 
   - id: op-4
     massnahme: om-5

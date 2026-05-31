@@ -114,17 +114,8 @@ Die Gesamtpunktzahl (ausschließlich verdiente Punkte, nicht abgezogene) bestimm
 Nutzer-Level. Das Level-System umfasst 20 Stufen und wird serverseitig berechnet.
 Eingelöste Belohnungen reduzieren das Level nicht.
 
-### 4.4 Verfall von Punkten
+### 4.4 Verfall von Punkten ✅
 
-> 🔲 **ENTSCHEIDUNG OFFEN: Verfall von Punkten?**
-> Bitte entscheiden ob Punkte verfallen sollen und unter welchen Bedingungen.
->
-> Optionen:
-> - **Kein Verfall** (empfohlen): Punkte bleiben dauerhaft erhalten. Vorteil: höhere Nutzerbindung, keine Pflicht zur Vorab-Information über Verfall. Nachteil: wächst unbegrenzt in der Datenbank.
-> - **Verfall nach Inaktivität** (z.B. 12 Monate): Muss klar in AGB und im UI kommuniziert werden (KSchG-Transparenzgebot). Rechtscheck: Ist Verfall von virtuellen Punkten ohne Geldwert KSchG-konform?
-> - **Verfall bei Konto-Löschung**: Bereits implementiert (s. § 4.5).
-
-*(Entwurfstext – bitte nach Entscheidung anpassen):*
 Punkte verfallen nicht, solange das Nutzerkonto aktiv ist.
 
 ### 4.5 Punkte bei Konto-Löschung ✅
@@ -244,20 +235,22 @@ typischen Schadens.
 ## § 9 Änderungen der AGB
 
 (1) AustroFit behält sich vor, diese AGB mit einer Ankündigungsfrist von
-**4 Wochen** zu ändern. Änderungen werden dem Nutzer per E-Mail mitgeteilt.
+**4 Wochen** zu ändern. Änderungen werden dem Nutzer per E-Mail an die
+hinterlegte E-Mail-Adresse mitgeteilt. Die Mitteilung enthält eine
+Zusammenfassung der wesentlichen Änderungen.
 
-(2) Widerspricht der Nutzer den geänderten AGB nicht innerhalb von 4 Wochen
-nach Mitteilung, gelten die neuen AGB als akzeptiert. Auf diese Wirkung wird
-der Nutzer in der Mitteilung ausdrücklich hingewiesen.
+(2) Ist der Nutzer mit den geänderten AGB nicht einverstanden, kann er
+sein Nutzerkonto jederzeit und kostenlos löschen (Profil → Konto löschen).
 
-(3) Im Falle des Widerspruchs ist AustroFit berechtigt, den Nutzungsvertrag
-zum Zeitpunkt des Inkrafttretens der neuen AGB zu kündigen.
+(3) Nutzt der Nutzer die Plattform nach Ablauf der Ankündigungsfrist weiter,
+gelten die geänderten AGB als akzeptiert.
 
-> ⚠️ **RECHTSCHECK: Änderungsklausel (KRITISCH)**
-> Die sog. „Zustimmungsfiktion" (Schweigen = Zustimmung) ist nach § 6 Abs. 1 Z 2 KSchG
-> grundsätzlich unzulässig. Bitte prüfen ob und in welcher Form eine AGB-Änderungsklausel
-> gegenüber Verbrauchern wirksam ist (OGH-Rechtsprechung beachten).
-> Alternative: aktive Zustimmung bei nächstem Login.
+> ⚠️ **RECHTSCHECK: Änderungsklausel**
+> Zustimmungsfiktion (§ 6 Abs. 1 Z 2 KSchG) entfernt. Neues Modell: Ankündigung
+> 4 Wochen vorab + Kündigungsrecht des Nutzers bei Widerspruch (analog MoveEffect.com).
+> Bitte prüfen ob „fortgesetzte Nutzung nach Fristablauf = Zustimmung" (Abs. 3)
+> OGH-konform ist, oder ob aktive Zustimmung bei nächstem Login (Checkbox/Modal)
+> erforderlich ist. Letzteres ist sicherer, aber technisch aufwändiger.
 
 ---
 
@@ -292,10 +285,14 @@ zum Zeitpunkt des Vertragsschlusses).
 (4) Als alternative Streitbeilegungsstelle steht die Internet Ombudsstelle zur Verfügung:
 www.ombudsmann.at (Nutzung freiwillig, AustroFit ist zur Teilnahme nicht verpflichtet).
 
+(5) Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
+https://ec.europa.eu/consumers/odr. AustroFit ist zur Teilnahme an einem
+Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle nicht verpflichtet.
+
 > ⚠️ **RECHTSCHECK: Gerichtsstand und ADR-Hinweis**
 > Bitte prüfen ob der ADR-Hinweis (Alternative Dispute Resolution) gemäß
 > § 19 AStG (Alternativstreitbeilegungsgesetz) ausreichend ist.
-> Online-Streitbeilegungsplattform der EU (ODR) ggf. verlinken.
+> EU-ODR-Link ist ergänzt (Abs. 5) — Pflicht gemäß Art. 14 ODR-Verordnung (EU) Nr. 524/2013.
 
 ---
 
@@ -318,11 +315,11 @@ Anstelle der unwirksamen Bestimmung gilt die gesetzliche Regelung.
 | § 1 Vertragsschluss via Checkbox | AGB-Überraschungsverbot (§ 864a ABGB) | mittel |
 | § 2 Leistungsänderungsvorbehalt | § 6 Abs. 2 Z 3 KSchG | mittel |
 | § 3 Mindestalter 18 Jahre | Art. 8 DSGVO, praktische Prüfung | mittel |
-| § 4.3 Punkte-Verfall | KSchG-Transparenzgebot | **hoch** |
+| § 4.4 Punkte-Verfall | ✅ Entschieden: kein Verfall solange Konto aktiv | erledigt |
 | § 4.5 Punkte-Verfall bei Löschung | KSchG-Konformität | **hoch** |
 | § 5.3 Haftungsausschluss für Partner | § 6 Abs. 1 Z 9 KSchG | **hoch** |
 | § 8 Haftungsklausel | KSchG, OGH-Rechtsprechung | **KRITISCH** |
-| § 9 AGB-Änderungsklausel | § 6 Abs. 1 Z 2 KSchG (Zustimmungsfiktion) | **KRITISCH** |
+| § 9 AGB-Änderungsklausel | Zustimmungsfiktion entfernt; „fortgesetzte Nutzung = Zustimmung" OGH-konform? | **hoch** |
 | § 10 Außerordentliche Kündigung | Abmahnpflicht, Bestimmtheit | mittel |
-| § 11 ADR-Hinweis | § 19 AStG, EU-ODR | niedrig |
-| Punkte-Entscheidung (Verfall ja/nein) | Geschäftsentscheidung | **vor Rechtscheck** |
+| § 11 ADR-Hinweis | § 19 AStG; EU-ODR-Link ergänzt (Art. 14 VO 524/2013) | ✅ erledigt |
+| ~~Punkte-Entscheidung (Verfall ja/nein)~~ | ✅ Entschieden: kein Verfall | erledigt |

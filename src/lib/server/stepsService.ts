@@ -5,8 +5,8 @@ import { calculatePoints } from '$lib/utils/streak';
 import { updateStreak } from '$lib/server/streak';
 import { awardMilestoneIfNew } from '$lib/server/milestoneService';
 
-// Fraud cap: Blueprint Phase 1 Minimalschutz – max 20.000 Schritte pro Eintrag (≈ 20K/h Spike-Filter)
-const STEPS_FRAUD_CAP = 20_000;
+// Fraud cap: max 30.000 Schritte pro Eintrag – deckt realistische Hochleistungstage ab (Wandern etc.)
+const STEPS_FRAUD_CAP = 30_000;
 
 export interface StepEntryResult {
   success: boolean;

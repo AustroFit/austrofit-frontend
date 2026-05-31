@@ -15,8 +15,16 @@ import { PUBLIC_CMSURL } from '$env/static/public';
 import { PRIVATE_CMS_STATIC_TOKEN, DIRECTUS_READ_TOKEN } from '$env/static/private';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
 import { qs } from '$lib/utils/qs';
+import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
 
 export async function POST({ request, fetch }: { request: Request; fetch: typeof globalThis.fetch }) {
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('cf-connecting-ip') ??
+    'unknown';
+  // Max. 10 Einlösungen pro Stunde pro IP
+  if (isRateLimited(ip, 'redeem', 10, 60 * 60 * 1000)) return rateLimitResponse();
+
   const token = extractBearerToken(request);
   if (!token) return json({ error: 'unauthorized' }, { status: 401 });
 

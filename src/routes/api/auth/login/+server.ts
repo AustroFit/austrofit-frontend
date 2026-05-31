@@ -1,5 +1,5 @@
 import { PUBLIC_CMSURL } from '$env/static/public';
-import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
+import { isRateLimited, rateLimitResponse, recordAuthFailure, isAccountLocked } from '$lib/server/rateLimit';
 
 export async function POST({ request }) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -18,6 +18,12 @@ export async function POST({ request }) {
     return new Response(JSON.stringify({ error: 'Ungültige Anfrage' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
+  // Per-Account-Lockout: max. 5 Fehlversuche / 10 min pro E-Mail-Adresse
+  const email = (payload as Record<string, unknown>)?.email;
+  if (typeof email === 'string' && isAccountLocked(email)) {
+    return rateLimitResponse();
+  }
+
   let upstream: Response;
   try {
     upstream = await fetch(`${PUBLIC_CMSURL}/auth/login`, {
@@ -31,6 +37,11 @@ export async function POST({ request }) {
 
   if (upstream.status === 204) {
     return new Response(null, { status: 204 });
+  }
+
+  // Fehlgeschlagenen Versuch zählen (401 = falsches Passwort, 400 = ungültige Credentials)
+  if ((upstream.status === 401 || upstream.status === 400) && typeof email === 'string') {
+    recordAuthFailure(email);
   }
 
   const body = await upstream.text();

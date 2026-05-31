@@ -56,3 +56,38 @@ export function rateLimitResponse(): Response {
     { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '900' } }
   );
 }
+
+// ── Per-Account Auth-Failure Tracking ─────────────────────────────────────────
+// Zählt fehlgeschlagene Login-Versuche pro E-Mail-Adresse.
+// Sperrt das Konto temporär nach zu vielen Fehlversuchen (unabhängig von IP).
+
+const failureStore = new Map<string, RateLimitEntry>();
+
+/**
+ * Speichert einen fehlgeschlagenen Login-Versuch für eine E-Mail-Adresse.
+ * Fenster: 10 Minuten.
+ */
+export function recordAuthFailure(email: string): void {
+  const key = `auth_fail:${email.toLowerCase()}`;
+  const now = Date.now();
+  const windowMs = 10 * 60 * 1000;
+  const entry = failureStore.get(key);
+
+  if (!entry || entry.resetAt < now) {
+    failureStore.set(key, { count: 1, resetAt: now + windowMs });
+  } else {
+    entry.count += 1;
+  }
+}
+
+/**
+ * Gibt true zurück wenn das Konto nach zu vielen Fehlversuchen gesperrt ist.
+ * Standard: 5 Fehlversuche / 10 Minuten.
+ */
+export function isAccountLocked(email: string, maxFailures = 5): boolean {
+  const key = `auth_fail:${email.toLowerCase()}`;
+  const now = Date.now();
+  const entry = failureStore.get(key);
+  if (!entry || entry.resetAt < now) return false;
+  return entry.count >= maxFailures;
+}

@@ -1,0 +1,280 @@
+# AustroFit Strategische Meilensteine
+# Phasenziele mit Daten, Förderantrags-Deadlines und Abhängigkeiten.
+# Ablage: docs/strategy/milestones.yaml
+# Erstellt: 2026-05-28
+#
+# Designprinzip — Single Source of Truth:
+#   Dieser File definiert WAS für einen Meilenstein benötigt wird (requires_*).
+#   Den aktuellen Status der Anforderungen NICHT hier pflegen —
+#   er ergibt sich durch Lesen von:
+#     features.yaml     → feature status
+#     requirements/*.yaml → req status
+#     compliance.yaml   → compliance status
+#
+# Cross-References:
+#   requires_features  → docs/features.yaml (id)
+#   requires_reqs      → docs/requirements/*.yaml (REQ-ID)
+#   foerder_ref        → docs/strategy/financials.yaml (foerderungen[].id)
+
+meta:
+  titel: AustroFit Strategische Meilensteine
+  version: "1.0"
+  erstellt: "2026-05-28"
+  aktualisiert: "2026-05-28"
+  beschreibung: >
+    Drei Phasen (B2C → B2B2C → B2G) mit konkreten Meilensteinen.
+    Jeder Meilenstein referenziert seine Abhängigkeiten — Status wird nie
+    hier gepflegt, sondern immer aus den verlinkten Docs abgeleitet.
+    Förderantrags-Deadlines sind hier die primäre Referenz (nicht in requirements/).
+
+milestones:
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 1 — B2C LAUNCH
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: go-live
+    name: "Go-Live v1.0 (Google Play)"
+    phase: "Phase 1 – B2C"
+    zieldatum: "2026-Q3"
+    beschreibung: >
+      App im Google Play Store verfügbar. Alle P1-GoLive-Blocker (Compliance,
+      Recht, Hosting) gelöst. Grundlegende Gamification und Android-Bewegungstracking
+      aktiv. Basis für erste Nutzergewinnung und Förderanträge.
+    requires_features:
+      - schritte-android
+      - cardio-android
+      - punkte-ledger
+      - level-system
+      - streak-schritte
+      - streak-cardio
+      - streak-quiz
+      - milestones
+      - badges
+      - quiz-authentifiziert
+      - direktpartner-redeem
+      - consent-art9
+      - google-oauth
+    requires_reqs:
+      # Business (REQ-B): Unternehmens-Voraussetzungen
+      - REQ-B-001   # Gewerbeanmeldung
+      - REQ-B-002   # Gesellschaftsform / Haftungsfrage
+      - REQ-B-003   # Markenanmeldung AustroFit
+      - REQ-B-010   # Hetzner AVV
+      - REQ-B-011   # Vercel Pro (AVV-Pflicht)
+      - REQ-B-012   # AGB (KSchG-konform, Rechtsberatung)
+      # Regulatory (REQ-R): Compliance-Pflichten
+      - REQ-R-003   # Art. 9-Consent Rechtscheck (Wortlaut)
+      - REQ-R-004   # DPIA (Art. 35 DSGVO)
+      - REQ-R-005   # VVT (Art. 30 DSGVO, unterzeichnet)
+      - REQ-R-028   # DSA Art. 16 Meldeverfahren (abuse@austrofit.at)
+    kpi_targets:
+      nutzer_3mo_nach_launch: 50
+      nutzer_6mo_nach_launch: 100
+      partner_6mo: 5         # via AWIN, kein eigener Vertragsaufwand
+    notes: >
+      Status-Check: /go-live-check zeigt alle offenen Blocker.
+      Challenges (feature: challenges) sind MVP-Wunsch, aber kein hartes Go-Live-Gate.
+
+  - id: nutzer-200
+    name: "200 aktive Nutzer:innen"
+    phase: "Phase 1 – B2C"
+    zieldatum: "2027-Q1"
+    beschreibung: >
+      Erste kritische Nutzerbasis erreicht. Ab dieser Schwelle sind Community-
+      Features (Leaderboard) sinnvoll ohne Cold-Start-Problem. Basis für
+      Direktpartner-Akquise (zeigbarer Proof-of-Value). Voraussetzung für
+      Förderanträge die Nutzerzahlen erfordern.
+    requires_features:
+      - referral-programm     # Einladungsfunktion für virales Wachstum
+    requires_reqs: []
+    foerder_ref:
+      - aws-first-incubator   # Nutzerzahlen als Proof für Hauptphase
+    kpi_targets:
+      nutzer: 200
+      partner_awin: 10
+      day1_activation_rate_pct: 30
+      week4_retention_pct: 10
+      cps_eur: 2.50           # Cost-per-Signup Ziel ≤ 2,50 €
+    notes: >
+      Community-Features (REQ-P-025 Leaderboard) erst nach Erreichen dieser Schwelle
+      aktivieren. Siehe CLAUDE.md: "Cold-Start-Problem".
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 2 — B2B2C ERWEITERUNG
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: direktpartner-aufbau
+    name: "20 Direktpartner ongeboardet"
+    phase: "Phase 2 – B2B2C"
+    zieldatum: "2027-Q4"
+    beschreibung: >
+      Transition von reinem AWIN-Affiliate-Modell zu direkten B2B-Partnerschaften.
+      Erst nach Aufbau einer zeigbaren Nutzerbasis realistisch (Henne-Ei-Strategie).
+      Erfordert B2B-Dashboard, Onboarding-Prozess und erste Referenzpartner.
+    requires_features:
+      - partner-dashboard-b2b
+      - direktpartner-onboarding
+      - partner-analytics
+    requires_reqs:
+      - REQ-B-015   # CRM-System (z.B. HubSpot Free)
+      - REQ-B-016   # Standardisierte Pitch- und Onboarding-Materialien
+    foerder_ref:
+      - aws-impulse-xs        # WP3 Gamification-Iteration + B2B-Aufbau
+    kpi_targets:
+      nutzer: 500
+      partner_direkt: 20
+      partner_awin: 20        # AWIN bleibt aktiv als paralleler Kanal
+      arpu_eur_jahr: 4.90     # Capture-Rate 3%, Provision 5%
+    notes: >
+      Vertriebsstrategie: Direktansprache via Future Health Lab, WA Wien,
+      Fachverbände. Erst Referenzen aufbauen, dann skalieren (5.2 BP).
+
+  - id: community-launch
+    name: "Community-Features aktiv (Leaderboard)"
+    phase: "Phase 2 – B2B2C"
+    zieldatum: "2027-Q2"
+    beschreibung: >
+      Opt-in Leaderboard und erste Community-Challenges aktiviert.
+      Nur sinnvoll nach Erreichen von >= 200 aktiven Nutzern (Cold-Start-Schwelle).
+    requires_features:
+      - leaderboard-opt-in
+      - community-challenges
+    requires_reqs:
+      - REQ-P-025   # Leaderboard
+      - REQ-P-026   # Community Events / Challenges
+    foerder_ref: []
+    kpi_targets:
+      nutzer_vor_aktivierung: 200
+      viral_k_factor: 0.20
+    notes: >
+      Abhängigkeit von nutzer-200 Meilenstein. Nicht früher aktivieren.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PHASE 3 — B2G & BREAK-EVEN
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: break-even
+    name: "Break-Even (Jahr 4)"
+    phase: "Phase 3 – Skalierung"
+    zieldatum: "2029"
+    beschreibung: >
+      Operativer Break-Even bei ca. 1.010 aktiven Nutzern und 51 Direktpartnern.
+      Worst-Case verschiebt sich auf Jahr 5 (~1.686 Nutzer, 122 Partner).
+    requires_features: []
+    requires_reqs: []
+    foerder_ref: []
+    kpi_targets:
+      nutzer: 1010
+      partner: 51
+      mrr_eur: 1600           # ab dem die Deferred Salary ausgezahlt wird: ≥15.000 €
+      gesamtumsatz_jahr_eur: 22900
+    finanzref: financials.yaml  # Details in docs/strategy/financials.yaml
+
+  - id: b2g-pilot
+    name: "Erster B2G-Pilot"
+    phase: "Phase 3 – B2G"
+    zieldatum: "2030"
+    beschreibung: >
+      Erste Kooperation mit öffentlicher Gesundheitsinstitution
+      (Krankenkasse, Gemeinde Wien, SVS, ASKÖ/ASVÖ/SPORTUNION).
+      Erfordert nachweisbaren Impact (Nutzergesundheitsdaten, Auswertungen)
+      und regulatorisches Clearing für B2G-Datenverarbeitung.
+    requires_features:
+      - svs-aktivitaetsexport  # REQ-P-043: SVS Gesundheitshunderter Export
+      - impact-messung         # Wirkungsmessung für Förderanträge
+    requires_reqs:
+      - REQ-P-042   # DiGA-Rahmen Vorbereitung (ab 2027)
+      - REQ-P-047   # BGF-Förderung (WKO/GKK)
+    foerder_ref:
+      - ffg-projekt-start      # Wirkungsnachweis als Fördergrundlage
+    kpi_targets:
+      nutzer: 2000
+      partner: 150
+      gesundheitsziel_nachweise: 3  # Ziele 3, 5, 8 nachgewiesen (REQ-P-049-056)
+    notes: >
+      Institutionelle Anker: SVS Gesundheitshunderter (≤120€), BGF WKO/GKK,
+      Gesundheitsziele Österreich (REQ-P-049-056).
+      B2G-Kooperation erfordert Rechtsberatung + DPIA-Update.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # FÖRDERANTRAGS-DEADLINES
+  # (externe Deadlines — primäre Referenz für Timing)
+  # ═══════════════════════════════════════════════════════════════════
+
+foerderungen:
+  - id: neufoeg
+    name: "NeuFöG (Neugründungsförderungsgesetz)"
+    max_summe_eur: 450
+    foerderquote_pct: 100
+    timing: "vor/bei Gründung"
+    kombinierbar_mit: [aws-first-incubator, ffg-projekt-start]
+    notes: >
+      Kostenlose Gebühren (Firmenbuch). WKO-Formular.
+      Zusätzlich: Lohnnebenkosten-Ersparnis bei erste:r Angestellten (12 Mon.).
+    watchlist_ref: WATCH-F-001
+
+  - id: svs-gruenderbeguenstigung
+    name: "SVS Gründerbegünstigung"
+    max_summe_eur: 1000   # ca. −1.000€/Jahr Ersparnis
+    foerderquote_pct: 50  # KV/PV-Reduktion
+    timing: "Jahr 1–3 nach Gründung"
+    kombinierbar_mit: [neufoeg, aws-first-incubator]
+    notes: >
+      Gilt auch ohne Unternehmerlohn. Automatisch für Neugründer.
+    watchlist_ref: WATCH-F-002
+
+  - id: aws-first-incubator
+    name: "aws First Incubator"
+    max_summe_eur: 49000
+    foerderquote_pct: 90
+    timing: "vor/während Gründung (Monat 0–6)"
+    work_packages:
+      - "WP0: Markt & Regulatory"
+      - "WP1: MVP-Build"
+      - "WP2: Workspace & Tools (Coworking +2.000€)"
+    kombinierbar_mit: [ffg-projekt-start, neufoeg]
+    notes: >
+      Solo-Founder kann als Ein-Person-Team einreichen (< 4 Personen Regel).
+      Hauptphase + Coworking-Modul kombinierbar.
+      Einmalige De-minimis-Beihilfe.
+    milestone_ref: nutzer-200   # Nutzerzahlen als Nachweis für Hauptphase
+    watchlist_ref: WATCH-F-003
+
+  - id: ffg-projekt-start
+    name: "FFG Projekt.Start"
+    max_summe_eur: 10000
+    foerderquote_pct: 60
+    timing: "vor Gründung"
+    work_packages:
+      - "WP0: Markt & Regulatory (kombiniert mit aws WP0)"
+      - "WP1: MVP-Build (kombiniert mit aws WP1)"
+    kombinierbar_mit: [aws-first-incubator, neufoeg]
+    notes: >
+      Kostentrennung je WP wichtig (keine Doppelfinanzierung).
+      Einmalige De-minimis-Beihilfe.
+    milestone_ref: b2g-pilot    # Wirkungsnachweis als Fördergrundlage
+    watchlist_ref: WATCH-F-004
+
+  - id: gruendungsstipendium-wien
+    name: "WA Wien Gründungsstipendium"
+    max_summe_eur: 8000   # 1 Person
+    foerderquote_pct: 100
+    timing: "Monat 0–6, optional"
+    notes: >
+      Nur nutzen falls privates Einkommen nötig. Kein Einfluss auf Firmenbudget.
+      Persönliche Lebenskosten — nicht für Produktentwicklung.
+    watchlist_ref: WATCH-F-005
+
+  - id: aws-impulse-xs
+    name: "aws impulse XS / Creative Impact"
+    max_summe_eur: 50000
+    foerderquote_pct: 70
+    timing: "Monat 6–18 (Early Growth)"
+    work_packages:
+      - "WP3: Gamification-Iteration"
+      - "WP4: B2B-Aufbau"
+    notes: >
+      Geeignet bevor erste Mitarbeitende an Bord sind.
+    milestone_ref: direktpartner-aufbau
+    watchlist_ref: WATCH-F-006

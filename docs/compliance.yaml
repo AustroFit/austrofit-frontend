@@ -37,6 +37,7 @@ regulations:
     kategorie: datenschutz
     phase: mvp
     applicability: true
+    law_ref: docs/laws/dsgvo/
     begruendung: >
       AustroFit verarbeitet personenbezogene Daten (E-Mail, Aktivitätsdaten, Schritte,
       Workouts, Aktivitätsgruppe) und Gesundheitsdaten im Sinne von Art. 4 Nr. 15 DSGVO.
@@ -49,15 +50,21 @@ regulations:
         evidence_type: code
         evidence_ref:
           - src/routes/registrierung/+page.svelte
-          - src/routes/api/auth/register/+server.ts
+          - src/routes/api/auth/init-onboarding/+server.ts
+          - src/routes/api/consent/revoke/+server.ts
+          - src/routes/profil/+page.svelte
         notes: >
-          Aktivitätsgruppe (adult/senior/pregnant/chronic) ist Gesundheitsdatum.
-          Schritte + Workouts via Health Connect sind Gesundheitsdaten.
-          Beim Health-Connect-Permission-Request (requestHealthPermission) wird der User
-          über die Datenweitergabe informiert – aber: ein expliziter DSGVO-Art.9-Consent
-          (separates Häkchen mit Zweckangabe) fehlt im Onboarding-Flow.
-          Offen: Separater Consent-Schritt für Gesundheitsdaten-Verarbeitung einbauen
-          oder vorhandene Einwilligung auf Art. 9-Tauglichkeit prüfen lassen (Rechtsberatung).
+          Implementiert 2026-05-24: Explizites Consent-Checkbox in Registrierung Step 2
+          (Art. 9 Abs. 2 lit. a DSGVO). Consent-Logging in user_profiles:
+          gesundheitsdaten_consent_at + gesundheitsdaten_consent_version ("v1") via
+          /api/auth/init-onboarding. Widerruf via /api/consent/revoke (setzt
+          gesundheitsdaten_consent_revoked_at + health_connected=false). Widerruf-UI
+          in Profil → Datenschutz (zeigt Erteilungsdatum, Widerruf-Button, Bestätigungs-Dialog).
+          OFFEN (P1): Consent-Text auf Art.-9-Tauglichkeit von Anwalt prüfen lassen
+          (RECHTSCHECK-Kommentar in registrierung/+page.svelte). Bei Textänderung
+          CONSENT_VERSION von "v1" auf "v2" bumpen — alle v1-Einwilligungen bleiben
+          identifizierbar. OFFEN: Google-OAuth-Nutzer haben keinen Step-2-Consent
+          (Phase 2 — gesondertes Consent-Gate nach OAuth nötig).
 
       - id: dsgvo-art13-dse
         name: "Informationspflichten (Datenschutzerklärung, Art. 13/14)"
@@ -104,14 +111,29 @@ regulations:
         evidence_ref:
           - docs/tom.yaml
         notes: >
-          TOM-Dokument erstellt (Mai 2026): docs/tom.yaml mit 9 Kategorien, 20 Maßnahmen.
+          TOM-Dokument erstellt (Mai 2026): docs/tom.yaml mit 9 Kategorien, 23 Maßnahmen.
           Umgesetzt: HTTPS/TLS, CORS, JWT-Auth, Least-Privilege-Tokens, API-Proxy,
           Input-Validierung (Allowlist), Dedup-Checks, Datenwert-Caps, Race-Condition-Schutz,
-          Pseudonymisierung, Passwort-Hashing, Löschkonzept, Staged Deployment.
+          Pseudonymisierung, Passwort-Hashing, Löschkonzept, Staged Deployment,
+          Rate-Limiting (op-1 erledigt Mai 2026): IP + Per-Account-Lockout auf allen
+          kritischen Endpunkten, Security-Headers CSP/X-Frame/X-Content-Type/Referrer-Policy
+          (op-3 erledigt Mai 2026) in vercel.json, Dependency-Audit (18→6 low, unvermeidbar).
           Offen (in tom.yaml/offene_punkte dokumentiert):
-          Rate-Limiting (op-1), Backup-Konzept schriftlich (op-2),
-          CSP-Header (op-3), AVV-Ablage (op-4).
-          Status bleibt 'partial' bis Rate-Limiting und Backup-Konzept umgesetzt.
+          Backup-Konzept schriftlich (op-2), AVV-Ablage (op-4).
+          Status bleibt 'partial' bis Backup-Konzept dokumentiert ist.
+
+      - id: dsgvo-art30-vvt
+        name: "Verarbeitungsverzeichnis (Art. 30)"
+        status: open
+        evidence_type: document
+        notes: >
+          PFLICHT: Die Ausnahme für Unternehmen < 250 MA gilt NICHT wenn besondere
+          Kategorien (Art. 9) verarbeitet werden. AustroFit verarbeitet Gesundheitsdaten
+          → Verarbeitungsverzeichnis (VVT) ist zwingend erforderlich. Noch nicht erstellt.
+          Mindestinhalt (Art. 30 Abs. 1): Name/Kontakt Verantwortlicher, Zwecke,
+          Kategorien betroffener Personen und Datenkategorien, Empfänger,
+          Drittlandübermittlungen inkl. Garantien, Löschfristen, TOM-Beschreibung.
+          Detail: docs/laws/dsgvo/art-30.md (zu erstellen)
 
       - id: dsgvo-art35-dpia
         name: "Datenschutz-Folgenabschätzung DPIA (Art. 35)"
@@ -147,10 +169,18 @@ regulations:
 
   - id: dsg
     name: "DSG (Datenschutzgesetz Österreich)"
-    rechtsgrundlage: "BGBl. I Nr. 165/1999 idF BGBl. I Nr. 24/2018"
+    rechtsgrundlage: "BGBl. I Nr. 165/1999 idF BGBl. I Nr. 50/2025 (Fassung 23.05.2026)"
     kategorie: datenschutz
     phase: mvp
     applicability: true
+    law_ref: docs/laws/dsg/
+    screening_status: "vollständig (v1.0, 2026-05-24)"
+    screening_ergebnis: >
+      Vollständiges Paragraph-Screening aus RIS-PDF (Fassung 23.05.2026, 38 Seiten) erstellt.
+      3 direkt anwendbare Pflichten: § 4 Abs. 4 (Mindestalter 14), § 6 (Datengeheimnis),
+      § 62/63 (Strafbestimmungen bedingt). DSB Wien bleibt Aufsichtsbehörde.
+      Korrektur: AustroFit verarbeitet systematisch Gesundheitsdaten (Art. 9 DSGVO) →
+      DSB-Pflicht nach DSGVO Art. 37 Abs. 1 lit. c bei Wachstum prüfen.
     requirements:
 
       - id: dsg-dsb
@@ -158,9 +188,35 @@ regulations:
         status: compliant
         evidence_type: document
         notes: >
-          Zuständig: DSB Wien (Österreich). Keine eigene nationale Pflicht zum
-          Datenschutzbeauftragten für Kleinstunternehmen ohne systematische
-          Art. 9-Verarbeitung – Bestellung jedoch empfohlen oder externer DSB-Dienstleister.
+          Zuständig: DSB Wien (Österreich). DSB-Kontakt in DSE angegeben ✅.
+          ACHTUNG: AustroFit verarbeitet systematisch Gesundheitsdaten (Schritte, Cardio =
+          Art. 9 Abs. 1 DSGVO). Bei wachsender Nutzerbasis kann DSGVO Art. 37 Abs. 1 lit. c
+          eine DSB-Bestellungspflicht auslösen. Empfehlung: Externen DSB-Dienstleister
+          beauftragen (~500–1.500€/Jahr). Vorgänger-Notiz ("keine Pflicht ohne systematische
+          Art.-9-Verarbeitung") war irreführend – AustroFit HAT systematische Art.-9-Verarbeitung.
+
+      - id: dsg-mindestalter
+        name: "§ 4 Abs. 4 DSG – Mindestalter 14 Jahre für Einwilligung"
+        status: open
+        evidence_type: code
+        notes: >
+          § 4 Abs. 4 DSG setzt das Mindestalter für eigenständige Einwilligung bei
+          Diensten der Informationsgesellschaft auf 14 Jahre (DSGVO Art. 8 erlaubt bis 16).
+          AustroFit hat aktuell keine Altersverifikation / Altersschranke in der Registrierung.
+          Aktion: In AGB und Registrierungsprozess explizit "Mindestalter 14" verankern
+          (Checkbox + Hinweis). Zusammen mit AGB-Erstellung (Go-Live-Blocker) umsetzen.
+
+      - id: dsg-datengeheimnis
+        name: "§ 6 DSG – Datengeheimnis (vertragliche Mitarbeiterverpflichtung)"
+        status: open
+        evidence_type: document
+        notes: >
+          § 6 Abs. 2 DSG verpflichtet AustroFit, Mitarbeiter und Freelancer mit
+          Datenzugang vertraglich zur Geheimhaltung zu verpflichten und über
+          Übermittlungsanordnungen sowie Folgen von Verstößen schriftlich zu belehren (Abs. 3).
+          Aktuell: Einzelgründer (kein Handlungsbedarf sofort). Trigger: Vor erstem
+          Mitarbeiter-/Freelancer-Einsatz mit Zugang zu personenbezogenen Daten.
+          Maßnahme: Datengeheimnis-Klausel in Vertragsvorlage + Belehrungsformular erstellen.
 
 # ─────────────────────────────────────────────────────────────────
 # EPRIVACY / TRACKING
@@ -172,6 +228,14 @@ regulations:
     kategorie: tracking
     phase: mvp
     applicability: true
+    law_ref: docs/laws/tkg2021/_screening.md
+    screening_status: "vollständig (v1.0-pending-review, 2026-05-24)"
+    screening_ergebnis: >
+      Vollständiges Paragraph-Screening aus PDF (Fassung 24.05.2026) erstellt.
+      AustroFit ist kein TK-Betreiber, aber Informationsgesellschaftsdienst (ECG § 3 Z 1).
+      Direkt anwendbar: § 165 Abs. 3 (Cookie/localStorage Consent) und § 174 Abs. 3 (E-Mail-Werbung).
+      Ergebnis: ✅ compliant. ConsentBanner und localStorage-Klassifikation korrekt.
+      Keine Marketing-E-Mails implementiert. Trigger: bei Newsletter-/Push-Implementierung neu prüfen.
     requirements:
 
       - id: eprivacy-consent-banner
@@ -209,11 +273,16 @@ regulations:
     kategorie: produktrecht
     phase: mvp
     applicability: false
+    law_ref: docs/laws/mdr/_screening.md
+    screening_status: "vollständig (v1.0-pending-review, 2026-05-24)"
     begruendung: >
-      AustroFit ist eine Wellness- und Fitness-App ohne medizinische Zweckbestimmung.
-      Keine Diagnose, Behandlung oder Überwachung von Krankheiten.
-      Die App fällt nicht unter die MDR-Definition eines Medizinprodukts (Art. 2 Nr. 1 MDR),
-      solange keine medizinischen Claims kommuniziert werden.
+      Vollständiges Screening aus PDF (CELEX_32017R0745_DE_TXT.pdf) erstellt.
+      Art. 2 Nr. 1 MDR (Definition Medizinprodukt) + Erwägungsgrund 19 (Software/Wohlbefinden) ausgewertet.
+      AustroFit ist eine Wellness-/Fitness-App ohne medizinische Zweckbestimmung:
+      keine Diagnose, Behandlung, Überwachung oder Prognose von Krankheiten.
+      Erwägungsgrund 19 stellt explizit klar: Software für "Lebensstil und Wohlbefinden" ist kein Medizinprodukt.
+      Aktivitätsgruppen (adult/senior/pregnant/chronic) sind Gamification-Personalisierung, keine medizinischen Claims.
+      Einzige Voraussetzung für dauernde Nicht-Anwendbarkeit: kein medizinischer Claim in App + Marketing.
     requirements:
 
       - id: mdr-no-medical-claims
@@ -242,6 +311,16 @@ regulations:
     kategorie: konsumentenschutz
     phase: mvp
     applicability: true
+    law_ref: docs/laws/ecg/_screening.md
+    screening_status: "vollständig (v1.0-pending-review, 2026-05-24)"
+    screening_ergebnis: >
+      Vollständiges Paragraph-Screening aus PDF (Fassung 23.05.2026) erstellt.
+      §§ 1–27 ausgewertet. AustroFit = Diensteanbieter i.S.d. ECG (§ 3 Z 1).
+      Status: ⚠️ partial. P1-Blocker: § 11 AGB fehlen vollständig.
+      § 5 Impressum: ✅ Kernangaben vorhanden (UID/Kammer nach Gewerbeanmeldung).
+      § 6 kommerzielle Kommunikation: ✅ AWIN-Rewards als Werbung gekennzeichnet.
+      § 9/10: ⚠️ partial (vorvertragliche Info + Empfangsbestätigung an AGB-Erstellung geknüpft).
+      Neue open_action hinzugefügt: § 10 Abs. 2 Empfangsbestätigung (P2).
     requirements:
 
       - id: ecg-impressum
@@ -258,22 +337,54 @@ regulations:
           mangels Gewerbeanmeldung. Nach Gewerbeanmeldung: UID ergänzen.
 
       - id: ecg-agb
-        name: "Allgemeine Geschäftsbedingungen"
+        name: "Allgemeine Geschäftsbedingungen (§ 11 ECG)"
         status: open
+        priority: p1
         evidence_type: document
         notes: >
-          AGB fehlen oder sind unvollständig. Mindestinhalt: Leistungsbeschreibung,
-          Punkte-Regeln (Verfall, Nicht-Übertragbarkeit, kein Bargeldtausch),
-          Nutzungsbedingungen, Haftungsausschluss.
+          AGB fehlen vollständig — § 11 ECG: müssen speicher- und wiedergebbar bereitgestellt werden.
+          Mindestinhalt: Leistungsbeschreibung, Punkte-Regeln (Verfall, Nicht-Übertragbarkeit,
+          kein Bargeldtausch), Nutzungsbedingungen, Haftungsausschluss, Kündigung/Löschung,
+          geltendes Recht (AT), Online-Streitbeilegung (§ 14 ECG).
           Punkte ausdrücklich als "nicht übertragbar, nicht gegen Bargeld einlösbar,
           kein Geldwert" definieren (relevant für ZaDiG-Abgrenzung und GSpG).
+          Nach AGB-Erstellung: Registrierungsfluss um AGB-Checkbox + Hinweis auf
+          Vertragstext-Speicherung (§ 9 Abs. 1 Z 2) erweitern.
+
+      - id: ecg-empfangsbestaetigung
+        name: "Empfangsbestätigung nach Registrierung (§ 10 Abs. 2 ECG)"
+        status: open
+        priority: p2
+        evidence_type: code
+        notes: >
+          § 10 Abs. 2 ECG: Unverzügliche elektronische Bestätigung des Vertragsabschlusses.
+          Bei PUBLIC_EMAIL_VERIFICATION=false wird aktuell keine Bestätigungs-E-Mail versandt.
+          Empfehlung: Immer eine Bestätigungs-E-Mail nach Registrierung senden (auch ohne
+          Klick-Aktivierung) um § 10 Abs. 2 sicher zu erfüllen.
 
   - id: kschg
     name: "Konsumentenschutzgesetz (KSchG)"
-    rechtsgrundlage: "BGBl. Nr. 140/1979 idgF"
+    rechtsgrundlage: "BGBl. Nr. 140/1979 idgF; Fassung 24.05.2026"
     kategorie: konsumentenschutz
     phase: mvp
     applicability: true
+    law_ref: docs/laws/kschg/
+    screening_version: "1.0-pending-review"
+    screening_date: "2026-05-24"
+    open_actions:
+      - id: kschg-agb-§6-konformitaet
+        prioritaet: P1
+        aktion: >
+          AGB KSchG-§ 6-konform erstellen: kein Haftungsausschluss für Körperschäden
+          (§ 6 Abs. 1 Z 9), Punkteänderungs-Klausel mit sachlicher Rechtfertigung
+          (§ 6 Abs. 2 Z 3), kein exklusiver AustroFit-Gerichtsstand (§ 14), kein
+          pauschaler Gewährleistungsausschluss für digitale Leistungen (§ 9).
+          Verantwortlich: Rechtsberatung.
+      - id: kschg-vgg-screening
+        prioritaet: P2
+        aktion: >
+          VGG (Verbrauchergewährleistungsgesetz, BGBl. I Nr. 175/2021) screenen.
+          Von §§ 7d, 9, 9a KSchG referenziert. docs/laws/vgg/_screening.md anlegen.
     requirements:
 
       - id: kschg-transparenz-punkte
@@ -284,6 +395,7 @@ regulations:
           Nutzer muss klar verstehen: Wie werden Punkte berechnet? Verfallen Punkte?
           Wie lange sind Gutscheine gültig? Was passiert mit Punkten bei Account-Löschung?
           Aktuell im UI nicht explizit kommuniziert – in AGB und/oder FAQ dokumentieren.
+          Rechtsgrundlage: § 5a Abs. 1 Z 4 KSchG + § 6 Abs. 2 Z 3 (Änderungsvorbehalt).
 
       - id: kschg-no-dark-patterns
         name: "Keine irreführenden Gestaltungsmuster (Dark Patterns)"
@@ -293,6 +405,40 @@ regulations:
           Consent-Flow und Marketplace zeigen keine bekannten Dark Patterns
           (kein Confirmshaming, kein verstecktes Ablehnen, keine Countdown-Täuschung).
           Laufende Prüfung empfohlen bei neuen UI-Features.
+          Rechtsgrundlage: § 28a KSchG (Verbandsklage bei Informationspflichtverstößen).
+
+      - id: kschg-5a-informationspflichten
+        name: "Vorvertragliche Informationspflichten für digitale Leistungen (§ 5a)"
+        status: compliant
+        evidence_type: code
+        notes: >
+          Implementiert 2026-05-24 in src/routes/registrierung/+page.svelte (Step 1,
+          vor dem Formular). Info-Box zeigt alle 4 Pflichtangaben nach § 5a KSchG:
+          (1) Kostenlosigkeit (Z 3), (2) Funktionalität + Health Connect-Berechtigung
+          (Z 7), (3) Kompatibilität Android 8.0+ / minSdkVersion 26 (Z 8),
+          (4) Kündigungsbedingungen / Account-Löschung (Z 6). Hinweis auf VGG-Gewähr-
+          leistungsrecht (Z 5) folgt bei AGB-Erstellung. Strafe bei Verstoß war:
+          bis 1.450 EUR (§ 32 KSchG) + Verbandsklagerisiko (§ 28a KSchG).
+
+      - id: kschg-agb-§6-konformitaet
+        name: "AGB-Klauseln KSchG-§ 6-konform (Haftung, Gerichtsstand, Gewährleistung)"
+        status: open
+        evidence_type: document
+        notes: >
+          § 6 Abs. 1 Z 9: Kein Haftungsausschluss für Körperverletzungen durch
+          Vorsatz/grobe Fahrlässigkeit — in Fitness-App kritisch. § 14 Abs. 3:
+          Kein exklusiver Gerichtsstand des Unternehmers in AGB. § 9: Kein Pauschal-
+          ausschluss der VGG-Gewährleistungsrechte für digitale Leistungen.
+          Erfordert Rechtsberatung bei AGB-Erstellung.
+
+      - id: kschg-7d-bereitstellungspflicht
+        name: "Bereitstellungspflicht digitale Leistungen (§ 7d)"
+        status: partial
+        evidence_type: infrastructure
+        notes: >
+          § 7d KSchG: App-Bereitstellung ist implizite Hauptleistungspflicht.
+          Vercel/Hetzner bietet ausreichende Uptime. AGB-Klausel zu Wartungsfenstern
+          fehlt (bei AGB-Erstellung aufnehmen). VGG-Screening erforderlich.
 
 # ─────────────────────────────────────────────────────────────────
 # GLÜCKSSPIEL / GEWINNSPIELE
@@ -300,24 +446,45 @@ regulations:
 
   - id: gspg
     name: "Glücksspielgesetz (GSpG)"
-    rechtsgrundlage: "BGBl. Nr. 620/1989 idgF"
+    rechtsgrundlage: "BGBl. Nr. 620/1989 idgF (BGBl. I Nr. 50/2025, Fassung 23.05.2026)"
     kategorie: gluecksspiel
     phase: mvp
     applicability: false
+    law_ref: docs/laws/gspg/_screening.md
+    screened_date: "2026-05-24"
+    screened_version: "1.0-pending-review"
     begruendung: >
-      GSpG ist nicht anwendbar: AustroFit-Punkte werden ausschließlich durch Aktivität
-      verdient (keine Kaufmöglichkeit geplant). Geplante Gewinnspiele sind als
-      kostenlose Preisausschreiben gestaltbar (kein Geldeinsatz = kein Glücksspiel i.S.d. GSpG).
+      GSpG ist nicht anwendbar. Zwei kumulative Voraussetzungen sind nicht erfüllt:
+      (1) § 1 GSpG: kein Zufallselement — Schrittzählung, Cardio, Quiz und Rewards sind
+      vollständig deterministisch; (2) § 2 GSpG: kein monetärer Einsatz (Einsatz i.S.d.
+      § 2 Abs. 1 Z 2) — Punkte sind nicht käuflich, Teilnahme ist kostenlos.
+      Beide Schwellen (§ 1 Zufallselement + § 2 Einsatz) müssen kumulativ erfüllt sein
+      für eine "Ausspielung". Da beide fehlen, ist das gesamte GSpG nicht anwendbar.
     requirements:
 
       - id: gspg-gewinnspiele-design
-        name: "Gewinnspiele als Preisausschreiben gestalten (Phase 2)"
+        name: "Design-Guardrail: keine kaufbaren Punkte, keine zufallsbasierten Rewards"
+        status: compliant
+        evidence_type: code
+        notes: >
+          Punkte sind ausschließlich durch Aktivität verdienbar (Schritte, Cardio, Quiz).
+          Keine Lootbox-, Random-Drop- oder Kaufmechanismen implementiert.
+          Rewards werden deterministisch durch Nutzer ausgewählt (kein Zufalls-Outcome).
+          Trigger für GSpG-Anwendbarkeit: (1) Kaufmöglichkeit für Punkte, (2) zufallsbasierte
+          Reward-Vergabe (Lootboxen), (3) Bargeld-Einlösung von Punkten.
+          → Sind in `docs/laws/gspg/_screening.md` Trigger-Tabelle vollständig dokumentiert.
+
+      - id: gspg-gewinnspiele-steuer
+        name: "§ 58 Abs. 3 GSpG: 5% Abgabe auf zufallsbasierte Gewinnspiele (Phase 2)"
         status: deferred
         evidence_type: document
         notes: >
-          Sobald Gewinnspiele implementiert werden: Sicherstellen dass keine
-          Kaufverpflichtung für Teilnahme besteht. WKO-Leitfaden Gewinnspiele beachten.
-          5% Glücksspielsteuer auf Gewinne über €10.000 pro Kalenderjahr (§ 17 GSpG).
+          Wenn AustroFit zufallsbasierte Promo-Aktionen einführt (Verlosungen unter Nutzern,
+          kein Einsatz): § 58 Abs. 3 GSpG greift — 5% Glücksspielabgabe auf Gesamtpreiswert.
+          Steuerpflicht entfällt wenn Steuerbetrag < €500/Jahr (= Preiswert < €10.000).
+          ACHTUNG: Nicht § 17 GSpG (= Konzessionsabgabe für Lotterien) — § 17 gilt nicht
+          für AustroFit. Richtige Rechtsgrundlage ist § 58 Abs. 3.
+          Zusätzlich: Bewilligung nach § 36 GSpG beim Finanzamt Österreich für Verlosungen prüfen.
           Teilnahmebedingungen vor Feature-Launch rechtlich prüfen lassen.
 
 # ─────────────────────────────────────────────────────────────────
@@ -330,6 +497,7 @@ regulations:
     kategorie: finanzrecht
     phase: mvp
     applicability: false
+    law_ref: docs/laws/zadig/
     begruendung: >
       Nicht anwendbar: AustroFit-Punkte sind nicht gegen Bargeld einlösbar und nicht
       übertragbar. Sie erfüllen nicht die E-Geld-Definition (kein monetärer Gegenwert,
@@ -346,6 +514,10 @@ regulations:
           "Punkte sind kein Zahlungsmittel, nicht gegen Bargeld oder andere Währungen
           einlösbar, nicht auf andere Nutzer übertragbar und begründen keinen
           Rückzahlungsanspruch." → Wird im Rahmen der AGB-Erstellung abgedeckt.
+          HINWEIS: Die Abgrenzung zwischen virtuellem Guthaben und E-Geld ist ein
+          rechtlicher Graubereich, der von der konkreten Ausgestaltung des Punkte-Systems
+          abhängt. Rechtsberatung zur Bestätigung der Nicht-Anwendbarkeit empfohlen
+          (im Rahmen der AGB-Erstellung abdeckbar).
 
 # ─────────────────────────────────────────────────────────────────
 # BARRIEREFREIHEIT
@@ -353,15 +525,30 @@ regulations:
 
   - id: bfsg
     name: "BFSG / BaFG (Barrierefreiheitsstärkungsgesetz / Barrierefreiheitsgesetz Österreich)"
-    rechtsgrundlage: "EU European Accessibility Act (Richtlinie (EU) 2019/882); österr. BaFG; in Kraft seit 28.06.2025"
+    rechtsgrundlage: "Richtlinie (EU) 2019/882 (EAA); österr. BaFG BGBl. I Nr. 80/2023; in Kraft seit 28.06.2025"
     kategorie: barrierefreiheit
     phase: phase-2
     applicability: false
+    law_ref: docs/laws/bfsg/
+    screening_status: "vollständig (v1.1-pending-review, 2026-05-24, basiert auf PDF)"
+    screening_ergebnis: >
+      Vollständiges Artikel-Screening aus PDF CELEX_32019L0882_DE_TXT.pdf (ABl. L 151/2019, 42 S.) erstellt.
+      Zweistufige Prüfung: (1) Sachlicher Anwendungsbereich Art. 2: Keine der 6 Dienstleistungs-
+      kategorien greift. E-Commerce (Art. 2 Abs. 2 lit. f) ist nach Art. 3 Nr. 30 (Definition
+      aus PDF) auf Dienste beschränkt, die auf den "Abschluss eines Verbrauchervertrags" abzielen
+      — AustroFit ist kostenlos, kein Kaufvertrag auf der Plattform → eindeutig kein Grenzfall.
+      (2) Kleinstunternehmen-Ausnahme Art. 4 Abs. 5 (nicht Art. 15, das ist Konformitätsvermutung):
+      < 10 Beschäftigte + €0 Umsatz (pre-revenue) → Ausnahme greift vollständig.
+      Ergebnis: applicability: false. Keine BFSG-Pflichten.
+      Trigger: Wachstum ≥10 MA ODER >2 Mio EUR Umsatz → sofortige Pflicht.
+      Kostenpflichtiges Modell (Premium-Abo etc.) → Art. 3 Nr. 30 würde greifen.
+      Proaktiv: WCAG 2.1 AA für B2G (Krankenkassen, DiGA-AT) empfohlen.
     begruendung: >
-      Aktuell nicht anwendbar: AustroFit ist Kleinstunternehmen (<10 MA, <2 Mio EUR Umsatz)
-      und noch kein eingetragenes Unternehmen. Kleinstunternehmen sind für Dienstleistungen
-      von den erweiterten BFSG-Pflichten ausgenommen.
-      Beim Wachstum auf ≥10 MA oder ≥2 Mio EUR Umsatz wird die Pflicht aktiv.
+      Aktuell nicht anwendbar: (1) Art. 2 Abs. 2 greift nicht — AustroFit ist kein E-Commerce-
+      Dienst i.S.d. Art. 3 Nr. 30 (kein Verbrauchervertrag auf der Plattform; kostenloser Dienst).
+      (2) Art. 4 Abs. 5: AustroFit ist Kleinstunternehmen (<10 Beschäftigte, ≤2 Mio EUR Umsatz/
+      Bilanzsumme gem. Art. 3 Nr. 23) — vollständige Ausnahme von Dienstleistungspflichten.
+      Beim Wachstum auf ≥10 MA oder >2 Mio EUR Umsatz wird die Pflicht aktiv.
     requirements:
 
       - id: bfsg-wcag-future
@@ -385,6 +572,7 @@ regulations:
     kategorie: werberecht
     phase: mvp
     applicability: true
+    law_ref: docs/laws/uwg/
     requirements:
 
       - id: uwg-affiliate-kennzeichnung
@@ -417,6 +605,7 @@ regulations:
     kategorie: werberecht
     phase: mvp
     applicability: false
+    law_ref: docs/laws/health-claims-reg/
     begruendung: >
       Gilt für Lebensmittel und Nahrungsergänzungsmittel. AustroFit selbst verkauft
       keine Lebensmittel. Relevant nur falls Nahrungsergänzungs-Partner Produkte
@@ -432,6 +621,7 @@ regulations:
     kategorie: cybersicherheit
     phase: mvp
     applicability: false
+    law_ref: docs/laws/nis2/
     begruendung: >
       Nicht anwendbar: AustroFit unterschreitet die Schwellenwerte (≥50 MA ODER
       ≥10 Mio EUR Umsatz) und ist kein Anbieter kritischer Infrastruktur oder
@@ -457,12 +647,16 @@ regulations:
     kategorie: ki
     phase: phase-2
     applicability: true
-    begruendung: >
-      Geplantes ML-Anomalie-Scoring (Isolation Forest, Fraud Detection) fällt unter
-      den Geltungsbereich des AI Act. Klassifikation: voraussichtlich 'Minimal Risk'
-      oder 'Limited Risk' (internes Werkzeug, kein direkter Einfluss auf Dritte ohne
-      menschliche Überprüfung). Hochrisiko-Einstufung (Anhang III) wäre gegeben,
-      falls das System automatisiert Nutzer sperrt oder Leistungen verweigert.
+    law_ref: docs/laws/ai-act/_screening.md
+    screening_status: "vollständig (v1.0-pending-review, 2026-05-23)"
+    screening_ergebnis: >
+      Vollständiges Artikel-Screening aus PDF (OJ_L_202401689_DE_TXT.pdf) erstellt.
+      Ergebnis: Kein KI-System nach Art. 3 Nr. 1 aktuell implementiert (Gamification =
+      deterministisches Regelwerk, kein ML/KI). AI Act aktuell nicht anwendbar.
+      Geltungsbeginn allgemein: 02.08.2026. Art. 5 (verbotene Praktiken) seit 02.02.2025.
+      Screening muss VOR Implementierung von ML-Features wiederholt werden.
+      Geplantes Anomalie-Scoring: kein Hochrisiko (Anhang III nicht einschlägig),
+      sofern human-in-the-loop und kein automatisches Nutzersperren.
     requirements:
 
       - id: ai-act-risikoklassifikation
@@ -496,30 +690,113 @@ regulations:
     kategorie: plattformrecht
     phase: mvp
     applicability: true
+    law_ref: docs/laws/dsa/
+    screening_status: "vollständig (v1.0, 2026-05-24)"
+    screening_ergebnis: >
+      Vollständiges Artikel-Screening aus CELEX_32022R2065_DE_TXT.pdf (95 Artikel) erstellt.
+      Klassifikation: Hostingdiensteanbieter (Art. 3 g iii) JA; Online-Plattform (Art. 3 i) NEIN
+      (keine öffentliche UGC-Verbreitung aktuell); Kleinstunternehmen → Art. 15 + Art. 19 Ausnahme.
+      Aufsichtsbehörde: KommAustria / RTR-GmbH (Koordinator für digitale Dienste, AT).
+      Bußgeldrahmen: bis 6% Jahresumsatz.
+      Trigger: Leaderboard/Community-Features → Online-Plattform, aber Art. 19 Ausnahme bleibt.
     begruendung: >
-      AustroFit ist als App-Betreiber ein Anbieter von Vermittlungsdiensten im Sinne
-      des DSA. Als kleines Unternehmen (<50 MA, <10 Mio EUR) gelten nur die
-      Grundpflichten, keine erweiterten Plattformpflichten.
+      AustroFit ist Hostingdiensteanbieter (speichert nutzergenerierte Gesundheitsdaten,
+      Profil, Quiz-Antworten, Punkte-Ledger). Als Kleinstunternehmen (<10 MA, <2 Mio EUR)
+      gelten nur Grundpflichten (Kap. II + III Abschn. 1–2). Aktuell keine Online-Plattform
+      (keine öffentliche UGC-Verbreitung). Art. 15 (Transparenzbericht) und Art. 19–28
+      (Online-Plattform-Pflichten) ausgenommen.
+    open_actions:
+      - "[P1] Art. 16: Meldeverfahren für rechtswidrige Inhalte einrichten (abuse@austrofit.at
+        + Bestätigungs-Template) – vor Go-Live"
+      - "[P1] Art. 14: DSA-Inhaltsmoderationsregeln in AGB integrieren (ohnehin P1-Blocker) –
+        vor Go-Live"
+      - "[P2] Art. 17: Template für Begründungsmitteilung bei Kontosperrung erstellen –
+        vor Account-Suspension-Feature"
+      - "[P2] Art. 18: Internen Straftaten-Meldeprozess dokumentieren (Polizei 133 /
+        BKA-Online) – vor Community-Launch"
     requirements:
 
-      - id: dsa-kontaktstelle
-        name: "Zentrale Kontaktstelle für Behörden benennen (Art. 11)"
+      - id: dsa-kontaktstelle-behoerden
+        name: "Zentrale Kontaktstelle für Behörden (Art. 11)"
         status: compliant
         evidence_type: document
         evidence_ref:
           - src/routes/impressum/+page.svelte
         notes: >
           Kontaktstelle (kontakt@austrofit.at) und Aufsichtsbehörde (KommAustria / RTR-GmbH)
-          im Impressum eingetragen (Mai 2026).
+          im Impressum eingetragen (Mai 2026). Sprache: Deutsch ✅.
+
+      - id: dsa-kontaktstelle-nutzer
+        name: "Kontaktstelle für Nutzer (Art. 12)"
+        status: compliant
+        evidence_type: document
+        evidence_ref:
+          - src/routes/impressum/+page.svelte
+        notes: >
+          kontakt@austrofit.at im Impressum. E-Mail-Kontakt ist ausreichend; kein
+          ausschließlich automatisierter Chatbot vorhanden ✅.
+
+      - id: dsa-agb-inhaltsmoderation
+        name: "AGB: Beschränkungsregeln + Inhaltsmoderation beschreiben (Art. 14)"
+        status: open
+        evidence_type: document
+        evidence_ref: []
+        notes: >
+          AGB fehlen noch vollständig (bereits P1-Go-Live-Blocker).
+          DSA-Anforderung: AGB müssen Inhaltsmoderationsverfahren, Account-Suspendierungsregeln
+          und Rechtsbehelfe beschreiben. Bei Rechtsberatung für AGB-Erstellung einbeziehen.
+
+      - id: dsa-meldeverfahren
+        name: "Melde- und Abhilfeverfahren für rechtswidrige Inhalte (Art. 16)"
+        status: open
+        evidence_type: none
+        evidence_ref: []
+        notes: >
+          Fehlend. Einfache Umsetzung: abuse@austrofit.at oder Kontaktformular mit Label
+          "Rechtswidrige Inhalte melden". Link im Impressum/DSE.
+          Intern: Entscheidungsprozess definieren (Verantwortlicher: Johannes,
+          Frist: 24–72h), Empfangsbestätigung per E-Mail, Entscheidungsmitteilung.
+
+      - id: dsa-begruendungspflicht
+        name: "Begründungspflicht bei Nutzer-Einschränkungen (Art. 17)"
+        status: partial
+        evidence_type: none
+        evidence_ref: []
+        notes: >
+          Bei manuellen Konto-Sperrungen muss Nutzer eine Begründung + Rechtsbehelfshinweis
+          erhalten. Kein formaler Mechanismus vorhanden, da Account-Suspension-Feature
+          noch nicht implementiert. Vor dessen Implementierung Template erstellen.
+          Rate-Limit-429-Antworten fallen nicht unter Art. 17 (technische Limits, keine
+          inhaltliche Moderation).
+
+      - id: dsa-straftaten-meldung
+        name: "Meldung straftatverdächtiger Inhalte (Art. 18)"
+        status: partial
+        evidence_type: none
+        evidence_ref: []
+        notes: >
+          Bei Kenntnis lebensbedrohlicher Straftaten (z.B. Suizidankündigungen in
+          zukünftigen Community-Features) → unverzügliche Meldung Polizei/Staatsanwaltschaft.
+          Kein dokumentierter Prozess vorhanden. Vor Community-Feature-Launch definieren:
+          Eskalationspfad (Polizei 133 / BKA-Internetmeldestelle meldeportal.bundeskriminalamt.at).
 
       - id: dsa-nutzerbeschwerden
-        name: "Interne Beschwerdebehandlung (Art. 20, nur für Online-Plattformen)"
+        name: "Internes Beschwerdemanagementsystem (Art. 20)"
         status: not_applies
         evidence_type: none
         notes: >
-          Gilt nur für Online-Plattformen die nutzergenerierte Inhalte hosten.
-          AustroFit hostet keine UGC im DSA-Sinne (Artikel sind redaktionell).
-          Nicht anwendbar solange kein Social/Community-Feature (Leaderboard, Forum) live ist.
+          Gilt nur für Online-Plattformen. AustroFit ist aktuell keine Online-Plattform
+          (keine öffentliche UGC-Verbreitung). Trigger: Leaderboard/Community live.
+          Bei Online-Plattform-Status weiterhin ausgenommen als Kleinstunternehmen (Art. 19),
+          außer Art. 24 Abs. 3 (Nutzerzahl-Meldung auf Behördenanfrage).
+
+      - id: dsa-transparenzbericht
+        name: "Jährlicher Transparenzbericht (Art. 15)"
+        status: not_applies
+        evidence_type: none
+        notes: >
+          Art. 15 Abs. 2: Ausdrücklich ausgenommen für Kleinst- und Kleinunternehmen.
+          AustroFit als Kleinstunternehmen befreit. Kein Aufwand erforderlich.
 
 # ─────────────────────────────────────────────────────────────────
 # B2G / GESUNDHEITSTELEMATIK (PHASE 3+)
@@ -531,9 +808,22 @@ regulations:
     kategorie: b2g
     phase: phase-3+
     applicability: false
+    law_ref: docs/laws/gteleg/
+    screened_date: "2026-05-24"
     begruendung: >
-      Aktuell nicht anwendbar. Wird relevant bei Anbindung an ELGA oder
-      öffentliche Gesundheitsdaten-Infrastrukturen (Phase 3+).
+      Nicht anwendbar: AustroFit ist kein „Gesundheitsdiensteanbieter" im Sinne des § 2 Z 2
+      GTelG (kein Arzt, keine Apotheke, kein Krankenhaus, keine Pflegeeinrichtung, kein
+      Rettungsdienst). Das GTelG gilt nur für Stellen, die Gesundheitsdaten für Zwecke der
+      medizinischen Behandlung, Pflege, Abrechnung, Versicherung oder grenzüberschreitende
+      Gesundheitsversorgung verarbeiten. Vollständiges Paragraph-Screening (41 Seiten,
+      Fassung 24.05.2026) in docs/laws/gteleg/_screening.md dokumentiert.
+      Abgrenzung DSGVO: AustroFit verarbeitet Aktivitätsdaten, die Art. 4 Z 15 DSGVO
+      unterfallen können — diese Pflichten folgen direkt aus DSGVO Art. 9, nicht aus GTelG.
+    trigger_fuer_anwendbarkeit:
+      - ELGA-Anbindung (AustroFit sendet/empfängt Daten über ELGA)
+      - DiGA-Zertifizierung ab 2027 (REQ-P-042): verschreibbare digitale Gesundheitsanwendung
+      - SVS-Anbindung (Aktivitätsnachweise direkt an Sozialversicherungsträger, REQ-P-043)
+      - Kooperation mit Gesundheitsdiensteanbieter bei elektronischer Datenübermittlung
     requirements:
 
       - id: gteleg-elga-zulassung
@@ -541,10 +831,11 @@ regulations:
         status: deferred
         evidence_type: none
         notes: >
-          Für ELGA-Anbindung: Zulassungsverfahren beim ELGA GmbH / BMG.
-          Technische und organisatorische Anforderungen noch nicht bekannt.
-          Abhängig von politischen und regulatorischen Entscheidungen.
-          Kein Handlungsbedarf vor Jahr 3.
+          Für ELGA-Anbindung: Zulassungsverfahren beim ELGA GmbH / BMG erforderlich
+          (technische und organisatorische Anforderungen §§ 3–8 GTelG: Identität, Rolle,
+          Vertraulichkeit via Vollverschlüsselung, Integrität via qualifizierter Signatur,
+          IT-Sicherheitskonzept). Kein Handlungsbedarf vor Phase 3+ / DiGA-Planung.
+          Ansprechpartner: https://www.elga.gv.at/kontakt/
 
   - id: ehealth-strategie
     name: "eHealth-Strategie Österreich 2024"
@@ -552,6 +843,7 @@ regulations:
     kategorie: b2g
     phase: phase-3+
     applicability: false
+    law_ref: docs/laws/ehealth-strategie/
     begruendung: >
       Nicht-verbindliches Strategiepapier. Relevant als Signal für B2G-Kooperationen:
       Pilotprojekt zur Bewertung digitaler Gesundheitsanwendungen (DiGA-Äquivalent AT)
@@ -567,6 +859,50 @@ regulations:
           Zertifizierung als erstattungsfähige Gesundheitsanwendung wäre strategisch wertvoll
           für Krankenkassen-Integration. Stand 2026: Pilotprojekt in Vorbereitung.
           Voraussetzung: klinische Evidenz, DSGVO-Konformität, BFSG-Konformität.
+
+# ─────────────────────────────────────────────────────────────────
+# PRODUKTQUALITÄT / NORMEN
+# ─────────────────────────────────────────────────────────────────
+
+  - id: iec-82304-2
+    name: "IEC 82304-2 (Health and Wellness Apps – Quality Requirements)"
+    rechtsgrundlage: "IEC 82304-2:2021 – kostenpflichtiger Standard (IEC / Austrian Standards International)"
+    kategorie: produktqualitaet
+    phase: phase-2
+    applicability: true
+    law_ref: docs/laws/iec-82304-2/
+    begruendung: >
+      Anwendbar: AustroFit qualifiziert als "health app" gem. Definition 3.2.3
+      ("app intended to be used specifically for managing, maintaining or improving
+      health of individual persons") – Schritt-Tracking, Workout-Tracking und
+      Aktivitätsgruppen dienen der Gesundheitsförderung. Nicht gesetzlich
+      verpflichtend, aber de-facto-Voraussetzung für B2G-Kooperationen
+      (Krankenkassen) und DiGA-AT-Zertifizierung.
+      Kein Widerspruch zu MDR-Nicht-Anwendbarkeit: MDR betrifft diagnostische/
+      therapeutische Zwecke; 82304-2 betrifft Wellness/Health Management.
+    requirements:
+
+      - id: iec82304-2-konformitaet
+        name: "IEC 82304-2 Konformität (Wellness App Quality Label)"
+        status: deferred
+        evidence_type: none
+        notes: >
+          HINWEIS: Vollständige Anforderungsanalyse erfordert Kauf des Normtexts
+          (IEC / Austrian Standards International, ca. CHF 200–300). Die konkreten
+          Anforderungen sind erst nach Kauf einsehbar – nachfolgende Lücken basieren
+          nur auf den Begriffsdefinitionen (Abschnitt 3.2), nicht auf den
+          Anforderungskapiteln.
+          Bekannte Kategorien (unvollständig): App-Transparenz, Datenschutz/Sicherheit,
+          Inhaltsqualität, Technische Qualität.
+          Bereits identifizierte Lücken aus Abschnitt 3.2:
+          (1) Session Management (3.2.7): Standard nennt explizit automatischen Logout
+          nach Inaktivität als Beispiel – AustroFit hat kein Session-Timeout (JWT
+          unbegrenzt in localStorage).
+          (2) Validation/Verification (3.2.8/3.2.9): Standard fordert objektive Evidenz
+          für Anforderungserfüllung – AustroFit hat kein Test-Suite und keinen
+          dokumentierten QA-Prozess.
+          Nächste Schritte (Phase 2): Standard kaufen, vollständige Gap-Analyse,
+          Self-Assessment oder Third-Party-Review.
 
 # ─────────────────────────────────────────────────────────────────
 # ZUSAMMENFASSUNG: OFFENE PFLICHTEN (sofort / kurzfristig)
@@ -603,10 +939,15 @@ open_actions:
 
   - prioritaet: 4
     regulierung: dsgvo-art9-consent
-    aktion: "Art. 9-konformen Gesundheitsdaten-Consent im Onboarding sicherstellen"
+    aktion: "Consent-Text von Anwalt auf Art.-9-Tauglichkeit prüfen lassen (RECHTSCHECK-Kommentar in registrierung/+page.svelte)"
     frist: "vor Go-Live"
-    aufwand: mittel
-    verantwortlich: Entwicklung + Rechtsberatung
+    aufwand: gering
+    verantwortlich: Rechtsberatung
+    hinweis: >
+      Technische Implementierung abgeschlossen 2026-05-24: Checkbox in Registrierung
+      Step 2, Logging (gesundheitsdaten_consent_at/version) via init-onboarding,
+      Widerruf via /api/consent/revoke + UI in Profil → Datenschutz. Nur Rechts-
+      Freigabe des Textwortlauts offen. Bei Textänderung CONSENT_VERSION "v1" → "v2" bumpen.
 
   - prioritaet: 5
     regulierung: ecg-agb
@@ -614,4 +955,19 @@ open_actions:
     frist: "vor Go-Live"
     aufwand: hoch
     verantwortlich: Rechtsberatung
+    hinweis: >
+      In den AGB auch Mindestalter 14 Jahre (§ 4 Abs. 4 DSG) und
+      Altershinweis in Registrierung verankern (dsg-mindestalter).
+
+  - prioritaet: 6
+    regulierung: dsgvo-art30-vvt
+    aktion: "Verarbeitungsverzeichnis (VVT) nach Art. 30 DSGVO erstellen"
+    frist: "vor Go-Live"
+    aufwand: mittel
+    verantwortlich: Betreiber
+    hinweis: >
+      Pflicht wegen Gesundheitsdaten (Art. 9) – Kleinunternehmen-Ausnahme greift nicht.
+      Inhalt: Verantwortlicher, Zwecke, Datenkategorien, Empfänger, Drittländer,
+      Löschfristen, TOM. Kann in Eigenarbeit erstellt werden (kein Anwalt zwingend).
+      Template: docs/laws/dsgvo/art-30.md (zu erstellen).
 

@@ -151,6 +151,36 @@ requirements:
       - DSE nennt DSB Wien als zuständige Aufsichtsbehörde
       - Beschwerdeweg für Nutzer dokumentiert
 
+  - id: REQ-R-026
+    titel: Mindestalter 14 Jahre für Einwilligung (§ 4 Abs. 4 DSG)
+    compliance_ref: dsg-mindestalter
+    prioritaet: P1-MVP
+    status: open
+    kategorie: datenschutz
+    beschreibung: >
+      § 4 Abs. 4 DSG setzt Mindestalter für eigenständige Einwilligung bei
+      Diensten der Informationsgesellschaft auf 14 Jahre (strenger als DSGVO Art. 8).
+      AGB und Registrierung müssen Mindestalter 14 explizit verankern.
+    akzeptanzkriterien:
+      - AGB enthalten Mindestalter-Klausel (14 Jahre)
+      - Registrierungsprozess enthält Altersbestätigung / Hinweis
+      - Kein Account für Nutzer unter 14 ohne elterliche Einwilligung möglich
+    abhängigkeit: "Zusammen mit AGB-Erstellung (REQ-R-014) umsetzen"
+
+  - id: REQ-R-027
+    titel: Datengeheimnis-Verpflichtung für Mitarbeiter (§ 6 DSG)
+    compliance_ref: dsg-datengeheimnis
+    prioritaet: P2-Post-GoLive
+    status: open
+    kategorie: datenschutz
+    beschreibung: >
+      § 6 DSG verpflichtet AustroFit, Mitarbeiter und Freelancer mit Datenzugang
+      vertraglich zur Geheimhaltung zu verpflichten und schriftlich zu belehren.
+      Aktuell kein Handlungsbedarf (Einzelgründer). Trigger: Vor erstem Mitarbeiter/Freelancer.
+    akzeptanzkriterien:
+      - Datengeheimnis-Klausel in Standardvertrag für Mitarbeiter/Freelancer
+      - Belehrungsformular vorhanden und unterzeichnet archiviert
+
   # ═══════════════════════════════════════════════════════════════════
   # ePRIVACY / TKG 2021
   # ═══════════════════════════════════════════════════════════════════
@@ -262,6 +292,55 @@ requirements:
       - Kein Confirmshaming, kein verstecktes Ablehnen, keine Countdown-Täuschung
       - Prüfung bei jedem neuen UI-Feature mit Consent-Bezug
 
+  - id: REQ-R-030
+    titel: Vorvertragliche Informationspflichten digitale Leistungen § 5a KSchG
+    compliance_ref: kschg-5a-informationspflichten
+    prioritaet: P1-MVP
+    status: open
+    kategorie: konsumentenschutz
+    beschreibung: >
+      § 5a Abs. 1 KSchG: Vor der Registrierung (= Vertragsabschluss) muss AustroFit
+      klar und verständlich informieren über: (Z 3) App ist kostenlos, (Z 4) Punkte-System,
+      (Z 5) Hinweis auf gesetzliches Gewährleistungsrecht (VGG), (Z 6) Kündigungsbedingungen
+      (Account-Löschung), (Z 7) Funktionalität und technische Schutzmaßnahmen der digitalen
+      Leistung (Capacitor, Health-Permissions, Datenverschlüsselung), (Z 8) Kompatibilität
+      (unterstützte Android-Versionen). Strafe bei Verstoß: bis 1.450 EUR + Verbandsklagerisiko.
+    akzeptanzkriterien:
+      - Registrierungsseite (/registrierung) oder verlinktes FAQ-Dokument enthält alle Z 1–8-Angaben
+      - "Kostenlos" explizit kommuniziert (nicht nur implizit)
+      - Unterstützte Android-Versionen und Capacitor-Hinweis (Health-Permissions) vorhanden
+      - Hinweis "jederzeit Account löschen" (Kündigungsbedingung) sichtbar
+      - Hinweis auf gesetzliche Gewährleistungsrechte (VGG-Kurzhinweis)
+    abhängigkeit: "Kann ohne AGB umgesetzt werden (Registrierungsseite + FAQ)"
+    notes: >
+      Neu aus vollständigem KSchG-Screening 2026-05-24.
+      Besonders Z 7 (Funktionalität digitaler Leistungen) ist für App-Anbieter
+      neu seit BGBl. I Nr. 175/2021 (Umsetzung EU 2019/770 Omnibus-Richtlinie).
+
+  - id: REQ-R-031
+    titel: AGB-Haftungsklausel § 6 Abs. 1 Z 9 KSchG — kein Körperschaden-Ausschluss
+    compliance_ref: kschg-agb-§6-konformitaet
+    prioritaet: P1-MVP
+    status: open
+    kategorie: konsumentenschutz
+    beschreibung: >
+      § 6 Abs. 1 Z 9 KSchG: Unzulässig ist eine AGB-Klausel die eine Pflicht des
+      Unternehmers zum Ersatz eines Schadens an der Person ausschließt oder einschränkt.
+      Für eine Fitness-App (Schritt-Tracking, Cardio-Empfehlungen) ist dies besonders
+      kritisch: Der bestehende Gesundheits-Disclaimer (MDR-Abgrenzung) darf keine
+      Haftungsfreizeichnung für vorsätzliche oder grob fahrlässige Körperschäden enthalten.
+      Zusätzlich: § 14 Abs. 3 KSchG — kein exklusiver Unternehmer-Gerichtsstand in AGB.
+    akzeptanzkriterien:
+      - AGB enthalten keinen pauschalen Haftungsausschluss für Körperschäden
+      - Haftungsbeschränkung gilt nur für leichte Fahrlässigkeit bei Sachschäden (nicht Personenschäden)
+      - AGB enthalten keinen exklusiven AustroFit-Gerichtsstand (§ 14 KSchG)
+      - AGB enthalten keinen Pauschalausschluss der VGG-Gewährleistungsrechte (§ 9 KSchG)
+    abhängigkeit: "Zusammen mit AGB-Erstellung (REQ-R-013) umsetzen — Rechtsberatung zwingend"
+    notes: >
+      Neu aus vollständigem KSchG-Screening 2026-05-24.
+      § 6 Abs. 1 Z 9 gilt als zwingend unabdingbar (§ 2 KSchG) — kein Vertragstext
+      kann diese Haftung wirksam ausschließen. Besondere Sensibilität für Fitness-App.
+
   # ═══════════════════════════════════════════════════════════════════
   # ZAHLUNGSDIENSTE / E-GELD (ZaDiG)
   # ═══════════════════════════════════════════════════════════════════
@@ -313,7 +392,7 @@ requirements:
 
   - id: REQ-R-019
     titel: Zentrale Kontaktstelle für Behörden (Art. 11 DSA)
-    compliance_ref: dsa-kontaktstelle
+    compliance_ref: dsa-kontaktstelle-behoerden
     prioritaet: P1-MVP
     status: compliant
     kategorie: plattformrecht
@@ -322,6 +401,41 @@ requirements:
       - E-Mail-Kontaktstelle (kontakt@austrofit.at) im Impressum
       - Aufsichtsbehörde (KommAustria / RTR-GmbH) im Impressum
     foerdernachweis: "Implementiert Mai 2026. Pfad: src/routes/impressum/+page.svelte."
+
+  - id: REQ-R-028
+    titel: Melde- und Abhilfeverfahren für rechtswidrige Inhalte (Art. 16 DSA)
+    compliance_ref: dsa-meldeverfahren
+    prioritaet: P1-MVP
+    status: open
+    kategorie: plattformrecht
+    beschreibung: >
+      Art. 16 DSA: Hostingdiensteanbieter müssen ein Verfahren einrichten, über das
+      Personen rechtswidrige Inhalte melden können. Muss leicht zugänglich, elektronisch
+      und benutzerfreundlich sein. Nach Meldung: Empfangsbestätigung + Entscheidung +
+      Rechtsbehelfsmitteilung an den Meldenden.
+    akzeptanzkriterien:
+      - E-Mail-Adresse (abuse@austrofit.at oder kontakt@austrofit.at) im Impressum/DSE
+        mit Label "Rechtswidrige Inhalte melden" verlinkt
+      - Interner Prozess: Verantwortlicher, Entscheidungsfrist (24–72h), Logging
+      - E-Mail-Template für Empfangsbestätigung und Entscheidungsmitteilung vorhanden
+    abhängigkeit: "Unabhängig von AGB umsetzbar (gering Aufwand)"
+
+  - id: REQ-R-029
+    titel: AGB-Klausel zu Inhaltsmoderation und Nutzer-Einschränkungen (Art. 14 DSA)
+    compliance_ref: dsa-agb-inhaltsmoderation
+    prioritaet: P1-MVP
+    status: open
+    kategorie: plattformrecht
+    beschreibung: >
+      Art. 14 DSA: AGB müssen Beschränkungsregeln (was ist verboten, welche Konsequenzen),
+      Inhaltsmoderationsverfahren und Rechtsbehelfe gegen AustroFit-Entscheidungen beschreiben.
+      Klar, einfach, maschinenlesbar und öffentlich zugänglich.
+    akzeptanzkriterien:
+      - AGB beschreiben verbotene Inhalte / Verhaltensweisen
+      - AGB beschreiben Konsequenzen bei Verstoß (Warnung, Konto-Sperrung)
+      - AGB nennen Rechtsbehelfe gegen Entscheidungen (E-Mail an kontakt@austrofit.at)
+      - Link auf Meldeverfahren (REQ-R-028) in AGB vorhanden
+    abhängigkeit: "Zusammen mit AGB-Erstellung (REQ-R-014) umsetzen"
 
   # ═══════════════════════════════════════════════════════════════════
   # BARRIEREFREIHEIT (BFSG)
@@ -409,6 +523,31 @@ requirements:
       - Teilnahmebedingungen vor Feature-Launch rechtlich geprüft
       - 5% Glücksspielsteuer auf Gewinne >10.000€ beachtet
     req_ref: REQ-P-010
+
+  # ═══════════════════════════════════════════════════════════════════
+  # PRODUKTQUALITÄT / NORMEN (kostenpflichtig)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-R-025
+    titel: IEC 82304-2 – Wellness App Quality (B2G / DiGA-AT Vorbereitung)
+    compliance_ref: iec82304-2-konformitaet
+    prioritaet: P3
+    status: deferred
+    kategorie: produktqualitaet
+    beschreibung: >
+      IEC 82304-2 ist nicht gesetzlich verpflichtend, aber voraussichtliche
+      Voraussetzung für Krankenkassen-Kooperationen und DiGA-AT-Zertifizierung.
+      Vollständige Anforderungsanalyse erst nach Kauf des kostenpflichtigen Normtexts möglich.
+    akzeptanzkriterien:
+      - Normtext gekauft und vollständige Gap-Analyse durchgeführt
+      - Self-Assessment oder Third-Party-Review abgeschlossen
+      - Konformitätsbericht erstellt
+    notes: >
+      WICHTIG: Normtext ist kostenpflichtig – Anforderungen können erst nach
+      Einsicht vollständig dokumentiert werden. Grob bekannte Kategorien
+      (unvollständig): Transparenz, Datenschutz/Sicherheit, Inhaltsqualität,
+      Technische Qualität.
+    req_ref: ehealth-diga-oesterreich
 
   # ═══════════════════════════════════════════════════════════════════
   # ZUSAMMENFASSUNG OFFENE PFLICHTEN VOR GO-LIVE

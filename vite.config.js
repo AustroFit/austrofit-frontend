@@ -10,5 +10,12 @@ export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   server: {
     hmr: true
+  },
+  test: {
+    include: ['src/**/*.test.ts'],
+    environment: 'node',
+    alias: {
+      '$lib': resolve(__dirname, 'src/lib')
+    }
   }
 });

@@ -93,6 +93,24 @@ export function logout() {
   keysToRemove.forEach((k) => localStorage.removeItem(k));
 }
 
+function translateDirectusError(rawMessage: string, code?: string): string {
+  const lower = rawMessage.toLowerCase();
+  if (
+    code === 'INVALID_CREDENTIALS' ||
+    lower.includes('invalid user credentials') ||
+    lower.includes('invalid credentials')
+  ) return 'E-Mail-Adresse oder Passwort ist falsch.';
+  if (lower.includes('unverified') || lower.includes('not verified'))
+    return 'Bitte bestätige zuerst deine E-Mail-Adresse.';
+  if (code === 'USER_SUSPENDED' || lower.includes('suspended'))
+    return 'Dieses Konto wurde gesperrt. Bitte wende dich an den Support.';
+  if (code === 'RECORD_NOT_UNIQUE' || lower.includes('unique') || lower.includes('already exists'))
+    return 'Diese E-Mail-Adresse ist bereits registriert.';
+  if (lower.includes('password') && lower.includes('length'))
+    return 'Das Passwort ist zu kurz.';
+  return 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+}
+
 export async function login(email: string, password: string) {
   const res = await fetch(apiUrl('/api/auth/login'), {
     method: 'POST',
@@ -101,7 +119,17 @@ export async function login(email: string, password: string) {
   });
 
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.errors?.[0]?.message ?? `Login failed (${res.status})`);
+  if (!res.ok) {
+    const rawMessage: string = data?.errors?.[0]?.message ?? '';
+    const directusCode: string = data?.errors?.[0]?.extensions?.code ?? '';
+    const err = new Error(translateDirectusError(rawMessage, directusCode)) as any;
+    err.status = res.status;
+    // Normalize the unverified case to a stable code the login page can check
+    err.code = (rawMessage.toLowerCase().includes('unverified') || rawMessage.toLowerCase().includes('not verified'))
+      ? 'USER_UNVERIFIED'
+      : directusCode;
+    throw err;
+  }
 
   const token = data?.data?.access_token;
   if (!token) throw new Error('Login: access_token fehlt in Response');
@@ -127,9 +155,11 @@ export async function register(email: string, password: string, first_name: stri
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data?.errors?.[0]?.message ?? `Register failed (${res.status})`) as any;
+    const rawMessage: string = data?.errors?.[0]?.message ?? '';
+    const directusCode: string = data?.errors?.[0]?.extensions?.code ?? '';
+    const err = new Error(translateDirectusError(rawMessage, directusCode)) as any;
     err.status = res.status;
-    err.code = data?.errors?.[0]?.extensions?.code;
+    err.code = directusCode;
     throw err;
   }
 

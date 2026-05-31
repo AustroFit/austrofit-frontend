@@ -1,0 +1,250 @@
+# AustroFit Marketingstrategie
+# AARRR-Funnel, KPIs, Kanäle, Budget-Annahmen, CAC-Ziele.
+# Ablage: docs/strategy/marketing.yaml
+# Erstellt: 2026-05-28
+# Quelle: Business Plan v0.13, Kap. 5.1–5.2
+#
+# Designprinzip — Single Source of Truth:
+#   KPIs und Zahlen leben hier — werden aktiv getrackt und upgedated.
+#   Österreich-Messaging-Regeln (was funktioniert/nicht) → CLAUDE.md
+#   Wettbewerbsdaten → docs/market-research/competitive-analysis.yaml
+#   Zielgruppen/Personas → docs/requirements/user-requirements.yaml
+#   Channel-Entscheidungen referenzieren Meilensteine via milestone_ref.
+
+meta:
+  titel: AustroFit Marketingstrategie
+  version: "1.0"
+  erstellt: "2026-05-28"
+  aktualisiert: "2026-05-28"
+  quelle_original: "Business Plan v0.13, Kap. 5.1–5.2"
+  aenderungslog:
+    - version: "1.0"
+      datum: "2026-05-28"
+      aenderungen:
+        - "Initiale Extraktion aus Business Plan v0.13"
+        - "AWIN-Status aktualisiert: Publisher-Account vorhanden (ID 1896704), Phase 2 (nach Nutzerbasis)"
+        - "Analytics-Tool: Mixpanel → PostHog EU (Stand März 2026)"
+
+# ──────────────────────────────────────────────
+# KERNBOTSCHAFT & POSITIONIERUNG
+# ──────────────────────────────────────────────
+positionierung:
+  hauptbotschaft: "Gesund leben und dafür bei lokalen Partnern belohnt werden"
+  differenzierung:
+    - "Erste Plattform in Österreich: Bewegung + Bildung + Belohnung + Regionalität"
+    - "Made in Austria / Gründer aus Wien (Vertrauensanker)"
+    - "EU-Server, DSGVO-konform — aktiv kommunizieren, nicht nur implementieren"
+    - "Dauerhaft kostenlos — kein Freemium-Gate auf Kernfunktionen"
+  nie_verwenden:
+    - "Geld verdienen durch Gehen / earn money for walking"
+    - "Krypto/Token-Sprache"
+  wert_austausch_narrativ: "100 Punkte ≙ 1 € Einlösewert (in allen Creatives betonen)"
+  roas_ziel: 3    # Umsatz/Marketingkosten ≥ 3
+  attribution: "UTM-Tracking via PostHog EU (alle Kampagnen)"
+
+# ──────────────────────────────────────────────
+# AARRR-FUNNEL & LEIT-KPIS
+# ──────────────────────────────────────────────
+aarrr:
+  acquisition:
+    beschreibung: "Neue Nutzer:innen auf die Plattform bringen"
+    kanaele:
+      - SEO-Blog (organisch, primär)
+      - Google Ads (Keyword-Targeting Präventionsthemen)
+      - Instagram / TikTok (Challenges, Community-Erfolge)
+      - Influencer (Gesundheit, Fitness, nachhaltiger Lifestyle)
+      - Hinweise in Partnerbetrieben (Apotheke, BIO-Laden, Fitnessstudio)
+    kpi_ziel:
+      cost_per_signup_eur: 2.50    # ≤ 2,50 €
+      cac_erste_1000_nutzer_eur: "8–10"
+    tracking: "UTM + PostHog eu.posthog.com"
+
+  activation:
+    beschreibung: "Neu registrierte Nutzer:innen zur ersten echten Aktion bringen"
+    mechanik: "Onboarding-Quiz + Challenge Day 1"
+    kpi_ziel:
+      day1_activation_rate_pct: 30   # ≥ 30%
+    notes: "Activation = erster Quiz-Abschluss oder erster Schritt-Sync"
+
+  retention:
+    beschreibung: "Aktive Nutzer:innen langfristig halten"
+    mechanik:
+      - Streaks (täglich + wöchentlich)
+      - Push-Reminder
+      - Community-Events (ab Meilenstein community-launch)
+      - Saisonale Kampagnen zur Reaktivierung
+    kpi_ziel:
+      week4_retention_pct: 10    # ≥ 10%
+    notes: >
+      Streaks sind primärer Retention-Hebel (implementiert).
+      Community-Events erst ab ≥ 200 Nutzern (Cold-Start-Schwelle).
+
+  referral:
+    beschreibung: "Bestehende Nutzer:innen werben neue"
+    mechanik: "Invite-a-Friend: +50 Punkte für Einladende + Eingeladene"
+    feature_ref: referral-programm
+    kpi_ziel:
+      viral_k_factor: 0.20    # K-Factor ≥ 0,2
+    milestone_ref: nutzer-200
+
+  revenue:
+    beschreibung: "Monetarisierung via B2B-Partnerprovision und Pakete"
+    kpi_ziel:
+      arpu_eur_monat: 0.41    # ARPU ≥ 0,41 €/Monat
+      gutschein_einloesungen_pro_nutzer_monat: "1–2"
+    finanzref: financials.yaml   # Details in docs/strategy/financials.yaml
+
+# ──────────────────────────────────────────────
+# KANAL-STRATEGIE NACH PHASE
+# ──────────────────────────────────────────────
+phasen:
+  - id: vorbereitungsphase
+    name: "Vorbereitungsphase (vor App-Launch)"
+    milestone_ref: go-live
+    aktionen:
+      - "SEO-Blog aufbauen (Bewegung, Ernährung, Prävention, Mental Health)"
+      - "Organische Reichweite: Keywords wie 'wie viel Bewegung pro Woche', 'Prävention leicht gemacht'"
+      - "Vorregistrierung + Newsletter (Leadgenerierung)"
+      - "Affiliate-Angebote im Blog via AWIN kuratieren"
+    budget_eur_monat: 100
+    notes: >
+      Content-Marketing ist primäres Instrument für digitale Gesundheitslösungen.
+      AWIN Publisher-Account vorhanden (ID 1896704, Mai 2026); 52 Programme
+      identifiziert, noch keine beigetreten (Phase 2 Business-Priorität).
+
+  - id: aktivierungsphase
+    name: "Aktivierungsphase (Launch + danach)"
+    milestone_ref: nutzer-200
+    aktionen:
+      - "Social-Media-Kampagnen: Instagram, Facebook, TikTok (Challenges + Rewards)"
+      - "Influencer-Partnerschaften (Gesundheit, Fitness, nachhaltiger Lifestyle AT)"
+      - "Google Ads: Präventions-Keywords"
+      - "Referral-Programm: Einladungspunkte (+50P)"
+      - "Hinweise in Partnerbetrieben (QR-Code, Flyer)"
+    budget_eur_monat: 200
+    roas_check: true   # Kampagnen nur bei ROAS ≥ 3 weiterführen
+    tracking_events:
+      - user_registered
+      - quiz_completed
+      - steps_synced
+      - voucher_redeemed
+    notes: >
+      Alle Kampagnen via UTMs in PostHog attribuieren.
+      Österreich-Kontext: Outdoor-Aktivitäten (Wandern, Radfahren) betonen.
+
+  - id: skalierungsphase
+    name: "Skalierungsphase (ab 500 Nutzer)"
+    milestone_ref: direktpartner-aufbau
+    aktionen:
+      - "B2B-Direktakquise: Future Health Lab, WA Wien, Fachverbände"
+      - "Branchen-Events, Gesundheitstage (Sichtbarkeit + persönliche Ansprache)"
+      - "CRM-gestützter Outbound-Zyklus (Research → Warm-E-Mail → Demo)"
+      - "LinkedIn für B2B-Partnerkontakte"
+      - "Pilotpartner als Referenzen (Showcase-Strategie)"
+    budget_eur_monat: 400
+    b2b_vertrieb:
+      partner_scoring: "Engagement-Score 0–100 im CRM (steuert Follow-up-Frequenz)"
+      onboarding_prozess:
+        - "Lead-Generation via Landing-Page"
+        - "Self-Service-Registrierung (AGB, Verhaltenskodex)"
+        - "Angebots-Upload (CSV/JSON-Template)"
+        - "API-Key Ausgabe & Test-Voucher"
+        - "Go-Live"
+
+# ──────────────────────────────────────────────
+# B2B VERTRIEBSSTRATEGIE
+# ──────────────────────────────────────────────
+b2b_vertrieb:
+  phase_1_awin:
+    name: "Phase 1: AWIN Affiliate (Jahr 1–2)"
+    milestone_ref: go-live
+    beschreibung: >
+      Partneraufbau über AWIN-Affiliate-Netzwerk. Kein eigener Sales-Aufwand.
+      Kuratierung gesundheitsfördernder Angebote (nur Fitness, BIO, Apotheke etc.).
+    awin_account_id: "1896704"
+    awin_programme_identifiziert: 52
+    awin_programme_beigetreten: 0
+    status: "OFFEN — Business-Priorität nach Go-Live"
+    notes: >
+      Henne-Ei-Strategie: AWIN überbrückt Anlaufphase bis kritische Nutzerzahl
+      (≥200) erreicht ist. Dann Transition zu Direktpartnern.
+      Frontend-Integration (Deeplinks, Tracking) noch offen.
+
+  phase_2_direkt:
+    name: "Phase 2: Direkter B2B-Vertrieb (ab Jahr 2)"
+    milestone_ref: direktpartner-aufbau
+    beschreibung: >
+      Persönliche Ansprache regionaler Gesundheits-KMU.
+      Erst Referenzpartner aufbauen, dann skalieren.
+    zielkategorien:
+      - Fitnessstudios & Sportgeschäfte (~1.300 in AT)
+      - Apotheken (~1.400 in AT)
+      - BIO-Betriebe (~24.000 in AT)
+      - Private Sportanbieter (~10.000 in AT)
+      - Private Krankenversicherungen, Wellnessbetriebe
+    einstieg_kanaele:
+      - "Future Health Lab (Wiener Gesundheitsnetzwerk)"
+      - "Wirtschaftsagentur Wien"
+      - "ASVÖ, ASKÖ, SPORTUNION (Sport-Dachverbände)"
+      - "WKO Branchen-Events"
+
+# ──────────────────────────────────────────────
+# MARKETINGBUDGET NACH JAHR
+# ──────────────────────────────────────────────
+budget:
+  annahmen:
+    - "Budget steigt proportional mit Nutzerwachstum"
+    - "Ampelsystem aus financials.yaml steuert Reduktionen (Gelb → -30%, Orange → <50€)"
+    - "ROAS-Ziel ≥ 3 für alle bezahlten Kampagnen"
+  jahre:
+    - jahr: 1
+      budget_eur_monat: 200
+      budget_eur_jahr: 2400
+      schwerpunkt: "SEO-Blog-Aufbau + erste Social Ads"
+    - jahr: 2
+      budget_eur_monat: 400
+      budget_eur_jahr: 4800
+      schwerpunkt: "Social Ads + Influencer + erste B2B-Akquise"
+    - jahr: 3
+      budget_eur_monat: 700
+      budget_eur_jahr: 8400
+      schwerpunkt: "Skalierung Social + Community-Events + B2B CRM"
+    - jahr: 4
+      budget_eur_monat: 1200
+      budget_eur_jahr: 14400
+      schwerpunkt: "B2G-Vorbereitung + Branchenevents + Retention-Kampagnen"
+    - jahr: 5
+      budget_eur_monat: 2000
+      budget_eur_jahr: 24000
+      schwerpunkt: "Vollständige Kanalabdeckung, Impact-Marketing für B2G"
+
+# ──────────────────────────────────────────────
+# ZAHLUNGSKONDITIONEN & KUNDENSERVICE (B2B)
+# ──────────────────────────────────────────────
+zahlungskonditionen:
+  abrechnungsrhythmus: "monatlich oder quartalsweise"
+  zahlungsziel_tage: 14
+  abrechnungsmodell: "Automatisiert via Partner-Dashboard"
+  payment_provider: "Stripe oder lexoffice (geplant)"
+  individuelle_vereinbarungen: true  # möglich bei größeren Partnern
+
+kundenservice:
+  b2c:
+    kanaele:
+      - FAQ- und Hilfecenter in der App
+      - In-App-Feedbackformular
+      - Support-E-Mail-Adresse
+    feedback_loop: "Nutzerumfragen + App-Store-Bewertungen + Beschwerden"
+    feature_ref: feedback-badges   # Badges für Feedbackgeber:innen (geplant)
+
+  b2b:
+    kanaele:
+      - Partner-Dashboard mit Support-Zugang
+      - Onboarding-Manual (digital)
+      - Check-ins per E-Mail/Video (Monat 1)
+      - Self-Service-Bereich mit Video-Tutorials
+    qualitaetssicherung:
+      - "Verifizierte Partnerangebote (optional ESG-Label)"
+      - "Transparente Nutzer:innenbewertungen (Sternesystem)"
+      - "Monitoring Einlösehäufigkeit + Zufriedenheit"
+      - "Top-Partner-Status (Kriterien definieren Phase 2)"

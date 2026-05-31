@@ -67,11 +67,10 @@
       const next = page.url.searchParams.get('next') ?? '/dashboard';
       await goto(next);
     } catch (e: any) {
-      const msg: string = e?.message ?? String(e);
-      if (msg.toLowerCase().includes('unverified') || msg.toLowerCase().includes('not verified')) {
+      if (e?.code === 'USER_UNVERIFIED') {
         isUnverified = true;
       } else {
-        error = msg;
+        error = e?.message ?? 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.';
       }
     } finally {
       loading = false;

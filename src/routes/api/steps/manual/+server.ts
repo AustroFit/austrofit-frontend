@@ -7,6 +7,7 @@ import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { PUBLIC_CMSURL } from '$env/static/public';
 import { recordStepEntry } from '$lib/server/stepsService';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
+import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
 
 export async function POST({
   request,
@@ -15,6 +16,13 @@ export async function POST({
   request: Request;
   fetch: typeof globalThis.fetch;
 }) {
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('cf-connecting-ip') ??
+    'unknown';
+  // Max. 5 manuelle Schritteinträge pro 15 Minuten pro IP
+  if (isRateLimited(ip, 'steps_manual', 5, 15 * 60 * 1000)) return rateLimitResponse();
+
   // 1. Auth
   const userToken = extractBearerToken(request);
   if (!userToken) return json({ error: 'Nicht autorisiert' }, { status: 401 });

@@ -1,0 +1,586 @@
+# AustroFit Business Requirements
+# Unternehmens-seitige Anforderungen mit REQ-B-IDs.
+# Ablage: docs/requirements/business-requirements.yaml
+# Erstellt: 2026-05-25
+#
+# Abgrenzung zu anderen REQ-Typen:
+#   REQ-P = Was das Produkt können muss (Nutzer-Sicht)
+#   REQ-R = Was das Recht vorschreibt (Compliance-Sicht)
+#   REQ-S = Wie das System gebaut ist (Architektur-Sicht)
+#   REQ-B = Was das Unternehmen als Betriebsgrundlage braucht (Solopreneur-Sicht)
+#
+# Cross-References:
+#   req_ref       → docs/requirements/*.yaml (andere REQ-Typen)
+#   compliance_ref → docs/compliance.yaml
+#   feature_ref   → docs/features.yaml (slug)
+
+meta:
+  titel: AustroFit Business Requirements
+  version: "1.0"
+  erstellt: "2026-05-25"
+  beschreibung: >
+    Business Requirements umfassen alle unternehmerischen Voraussetzungen, die
+    unabhängig vom Produkt-Code erfüllt sein müssen: Rechtsstatus, IP-Schutz,
+    Finanzen, Versicherung, Partnerschaften und Förderungen.
+    Als Solopreneur sind diese Requirements kritisch, weil sie leicht
+    untergehen — obwohl manche davon (Haftpflicht, Gesellschaftsform) das
+    persönliche finanzielle Risiko direkt bestimmen.
+  verantwortlich: Johannes Gnong / johannes.gnong@austrofit.at
+  status_werte:
+    done:       "Erledigt und dokumentiert"
+    in-progress: "In Bearbeitung"
+    open:       "Noch nicht begonnen"
+    deferred:   "Bewusst zurückgestellt – Begründung in notes"
+    not_applies: "Nicht anwendbar"
+  prioritaet_werte:
+    P1-GoLive:  "Pflicht vor Go-Live – blockend oder existenzbedrohend"
+    P1-Launch:  "Pflicht innerhalb der ersten 4 Wochen nach Launch"
+    P2:         "Phase 2 – nach erstem Launch (Jahr 1)"
+    P3:         "Phase 3+ – ab Wachstumsphase"
+
+requirements:
+
+  # ═══════════════════════════════════════════════════════════════════
+  # UNTERNEHMENS-RECHTSSTATUS
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-001
+    titel: Gewerbeanmeldung
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: rechtsstatus
+    beschreibung: >
+      Gewerbeanmeldung beim Magistrat Wien (Dienstleistungen in der
+      automatischen Datenverarbeitung und Informationstechnik, freies Gewerbe).
+      Voraussetzung für legalen Geschäftsbetrieb, Rechnungslegung und
+      Vorsteuerabzug.
+    akzeptanzkriterien:
+      - Gewerbeschein vorhanden
+      - USt-ID beantragt (Finanzamt, sofern Umsatz über Kleinunternehmergrenze)
+      - GISA-Registrierung abgeschlossen
+    notes: >
+      Alternativ prüfen: GmbH-Gründung statt Einzelunternehmen (EU).
+      GmbH empfohlen sobald externe Investoren oder Förderstrukturen
+      (aws Jungunternehmer) relevant werden. Mindest-Stammkapital: €10.000,
+      davon €5.000 einzuzahlen. Kosten Gründung: ~€500–1.500 (Notar + Gericht).
+
+  - id: REQ-B-002
+    titel: Gesellschaftsform-Entscheidung (EU vs. GmbH)
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: rechtsstatus
+    beschreibung: >
+      Bewusste Entscheidung über Unternehmensform treffen und dokumentieren.
+      Betrifft: persönliche Haftung, Steuerstrategie, Investor-Readiness,
+      Förderzugang (aws Jungunternehmer setzt oft GmbH voraus).
+    akzeptanzkriterien:
+      - Entscheidung dokumentiert (EU oder GmbH) mit Begründung
+      - Steuerberater konsultiert (KöSt vs. ESt, SV-Beiträge)
+      - Bei GmbH: Gesellschaftsvertrag, Firmenbucheintragung
+    notes: >
+      EU = schneller und günstiger, aber volle persönliche Haftung.
+      GmbH = Haftungsbeschränkung auf Stammkapital, aber mehr Verwaltungsaufwand.
+      Relevanz: Bei einem Datenpanne-Szenario mit Gesundheitsdaten (Art. 9)
+      kann die DSGVO-Strafe existenzbedrohend sein ohne Haftungsbeschränkung.
+
+  - id: REQ-B-003
+    titel: Steuerliche Registrierung
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: rechtsstatus
+    beschreibung: >
+      Steuerliche Erfassung beim Finanzamt: Einkommensteuer/KöSt, Umsatzsteuer.
+      UID-Nummer für B2B-Rechnungen (Partner) und EU-Mehrwertsteuer.
+    akzeptanzkriterien:
+      - Steuernummer beim Finanzamt vorhanden
+      - UID-Nummer (ATU...) beantragt
+      - Kleinunternehmerregelung geprüft (Grenze: €35.000/Jahr netto)
+      - Buchhaltungslösung eingerichtet (z.B. Lexoffice AT, BMD, oder Steuerberater)
+    notes: >
+      Wichtig für Partner-Verträge und Reward-Provisionen (AWIN-Affiliate).
+      UID-Nummer ist Pflicht wenn Partner aus Deutschland/EU invoicen.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # INTELLECTUAL PROPERTY
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-004
+    titel: Markenanmeldung "AustroFit"
+    prioritaet: P2
+    status: open
+    kategorie: intellectual-property
+    beschreibung: >
+      Wortmarke "AustroFit" beim Österreichischen Patentamt (ÖPA) anmelden.
+      Optional: EU-Marke (EUIPO) für DACH/EU-Expansion. Klassen 41
+      (Fitness/Sport-Dienstleistungen) und 42 (Software/App).
+    akzeptanzkriterien:
+      - Markenrecherche durchgeführt (Kollisions-Check ÖPA/EUIPO)
+      - Anmeldung AT oder EU erfolgt
+      - Anmeldebestätigung dokumentiert
+    notes: >
+      Kosten: AT-Marke ~€250 (1 Klasse), EU-Marke ~€850 (1 Klasse).
+      Priorität P2 weil Markenanmeldung nach Gewerbeanmeldung sinnvoller ist.
+      Vorher: prüfen ob "AustroFit" frei ist (ÖPA-Datenbank, Register.at).
+      Timing: spätestens vor erstem PR/Presseauftritt — sonst Risiko der
+      Markensquatting durch Dritte.
+
+  - id: REQ-B-005
+    titel: Domain-Sicherung
+    prioritaet: P1-GoLive
+    status: done
+    kategorie: intellectual-property
+    beschreibung: >
+      Kerndomains gesichert: austrofit.at (primär), .com und .eu als Schutzmarken.
+    akzeptanzkriterien:
+      - austrofit.at aktiv und verlängert (auto-renew aktiviert)
+      - austrofit.com gesichert (auch wenn nicht primär genutzt)
+      - austrofit.eu gesichert
+    notes: >
+      austrofit.at ist produktiv (Vercel Production). Status der .com/.eu prüfen.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # FINANZEN & BANKING
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-006
+    titel: Geschäftskonto
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: finanzen
+    beschreibung: >
+      Separates Geschäftskonto für alle Unternehmenstransaktionen.
+      Trennung privat/geschäftlich ist steuerrechtlich und haftungsrechtlich
+      notwendig, besonders bei GmbH (Pflicht) und empfohlen bei EU.
+    akzeptanzkriterien:
+      - Geschäftskonto eröffnet (z.B. Bank Austria, Erste, Holvi, Qonto)
+      - IBAN für Partnerrechnungen und Förderauszahlungen verfügbar
+      - Buchhaltungslösung mit Konto verknüpft
+    notes: >
+      Für Solopreneure empfohlen: Holvi oder Qonto (günstig, SEPA, integrierte
+      Buchhaltungs-Features). Wichtig für AWIN-Auszahlungen und Partner-Provisionen.
+
+  - id: REQ-B-007
+    titel: Buchhaltung & Steuerberater
+    prioritaet: P1-Launch
+    status: open
+    kategorie: finanzen
+    beschreibung: >
+      Buchhaltungslösung eingerichtet, Steuerberater beauftragt oder
+      Self-Service-Lösung gewählt. Jahresabschluss und UVA (monatlich/quartalsweise)
+      müssen termin-gerecht eingereicht werden.
+    akzeptanzkriterien:
+      - Buchhaltungssoftware eingerichtet oder Steuerberater beauftragt
+      - Alle Belege ab Gründungsdatum erfasst
+      - UVA-Rhythmus festgelegt (monatlich unter €100k Umsatz: quartalsweise)
+    notes: >
+      Empfehlung: Steuerberater in früher Phase spart mehr als er kostet —
+      besonders für Solopreneur ohne Buchhaltungs-Hintergrund.
+      Förder-Auszahlungen (aws, FFG) erfordern oft Nachweise über
+      Eigenkapital und Bonität.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # VERSICHERUNG
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-008
+    titel: Berufshaftpflichtversicherung
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: versicherung
+    beschreibung: >
+      Berufshaftpflicht für IT-Dienstleistungen und App-Betrieb.
+      Besonders kritisch für AustroFit: Fitness-App mit Gesundheitsdaten —
+      Körperschäden durch fehlerhafte App-Daten sind haftungsrechtlich relevant
+      (KSchG § 6 Abs. 1 Z 9 verbietet Haftungsausschluss für Körperschäden).
+    akzeptanzkriterien:
+      - Berufshaftpflicht für IT/Software-Dienstleistungen abgeschlossen
+      - Deckungssumme geprüft (mind. €1M empfohlen für App mit Gesundheitsdaten)
+      - Versicherung kennt App-Kontext (Fitness, Gesundheitsdaten)
+    notes: >
+      Anbieter AT: UNIQA, Generali, Zürich, HDI. Makler empfohlen für
+      Vergleich. Kosten: ~€300–800/Jahr für Einzelunternehmen IT.
+      Ohne diese Versicherung: persönliches Vermögen haftet direkt.
+    req_ref: REQ-R-013
+
+  - id: REQ-B-009
+    titel: Cyber-Versicherung
+    prioritaet: P2
+    status: open
+    kategorie: versicherung
+    beschreibung: >
+      Cyber-Versicherung gegen Datenpannen, Ransomware, DSGVO-Bußgelder.
+      Besonders relevant bei Speicherung von Art. 9-Gesundheitsdaten —
+      DSGVO-Bußgelder können bis 4% des Jahresumsatzes oder €20M betragen.
+    akzeptanzkriterien:
+      - Cyber-Versicherung mit DSGVO-Deckung abgeschlossen
+      - Deckungssumme deckt mögliches DSGVO-Bußgeld ab
+    notes: >
+      P2 weil in früher Phase ohne Nutzerdaten das Risiko minimal ist.
+      Spätestens nach Go-Live mit ersten echten Gesundheitsdaten prüfen.
+      Kosten: ~€500–1.500/Jahr je nach Deckungssumme.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # VERTRÄGE & INFRASTRUKTUR
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-010
+    titel: AVV Hetzner
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: vertraege
+    beschreibung: >
+      Auftragsverarbeitungsvertrag mit Hetzner Online GmbH abschließen.
+      Hetzner hostet alle Nutzerdaten inkl. Gesundheitsdaten (Art. 9 DSGVO).
+      Ohne AVV ist die Datenverarbeitung nicht DSGVO-konform.
+    akzeptanzkriterien:
+      - AVV in Hetzner Kundencenter abgeschlossen (Datenschutz → AV-Vertrag)
+      - AVV-Dokument lokal gespeichert (docs/compliance/ oder sicher abgelegt)
+    compliance_ref: avv-hetzner
+    notes: >
+      Aufwand: ~5 Minuten. Kostenlos. Blocker seit Wochen dokumentiert.
+      Kundencenter → Konto → Datenschutz → AV-Vertrag.
+
+  - id: REQ-B-011
+    titel: AVV Vercel (Pro-Upgrade erforderlich)
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: vertraege
+    beschreibung: >
+      Vercel DPA (Data Processing Agreement) ist nur für Pro/Enterprise verfügbar.
+      Hobby-Plan: kein AVV möglich. Vercel ist Frontend-Hosting und verarbeitet
+      dabei personenbezogene Daten (Request-Logs, IP-Adressen).
+    akzeptanzkriterien:
+      - Vercel-Account auf Pro-Plan upgraded (~$20/Monat)
+      - DPA in Vercel-Dashboard unterzeichnet
+      - AVV-Dokument gespeichert
+    compliance_ref: avv-vercel
+    notes: >
+      Alternative evaluieren: Hetzner-only Deployment (kein Vercel). Würde
+      AVV-Problem lösen, erfordert aber eigenes Hosting-Setup (mehr Aufwand).
+      Empfehlung: Vercel Pro ist einfacher und $20/Monat vertretbar.
+
+  - id: REQ-B-012
+    titel: App Store Accounts
+    prioritaet: P1-GoLive
+    status: in-progress
+    kategorie: vertraege
+    beschreibung: >
+      Entwickler-Accounts bei Google Play und Apple App Store für
+      App-Distribution. Google Play: bereits aktiv. Apple Developer: offen.
+    akzeptanzkriterien:
+      - Google Play Developer Account aktiv (bestätigt)
+      - Apple Developer Account entschieden (P1 oder P2?)
+      - App Store Listings vorbereitet (Screenshots, Beschreibung, Datenschutz-URL)
+    notes: >
+      Apple Developer: $99/Jahr. iOS-Marktanteil AT ~50% — bewusste Entscheidung
+      ob iOS für MVP nötig ist oder Phase 2. Capacitor-Basis ist vorhanden,
+      iOS-Build wäre technisch machbar.
+
+  - id: REQ-B-013
+    titel: Partner-Vertragsvorlage
+    prioritaet: P1-Launch
+    status: open
+    kategorie: vertraege
+    beschreibung: >
+      Standardisierte Vertragsvorlage für Reward-Partner (Apotheken, Studios,
+      Händler). Regelt: Provisionen, Datenweitergabe, Haftung, Kündigung.
+      Erforderlich bevor erste Partner aktiv in der App gelistet werden.
+    akzeptanzkriterien:
+      - Rechtsanwalt hat Vorlage geprüft
+      - Vorlage deckt ab: Provision/Affiliate-Modell, Datenweitergabe (DSGVO),
+        Haftungsausschluss, Laufzeit/Kündigung, Exklusivität (nein)
+      - Vorlage in docs/legal/ abgelegt
+    notes: >
+      Wichtig: Partner bekommen nur pseudonymisierte Nutzerdaten (Einlösungs-Events),
+      keine Gesundheitsdaten. Das muss vertraglich geregelt sein.
+    req_ref: REQ-P-036
+
+  # ═══════════════════════════════════════════════════════════════════
+  # RECHTSBERATUNG
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-014
+    titel: AGB (Allgemeine Geschäftsbedingungen)
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: rechtsberatung
+    beschreibung: >
+      AGB für Endnutzer, die Punkte-Regeln, Nutzungsbedingungen und
+      Haftungsrahmen regeln.
+    akzeptanzkriterien:
+      - Anwalt hat AGB verfasst/geprüft
+      - KSchG § 6 Abs. 1 Z 9 beachtet (kein Haftungsausschluss für Körperschäden)
+      - KSchG § 14 beachtet (kein exklusiver Gerichtsstand)
+      - Punkte-Regeln (Verfall, Änderungen, Programmende) enthalten
+      - AGB in App verlinkbar (Registrierung + Footer)
+    compliance_ref: agb-kschg
+    req_ref: REQ-R-025
+    notes: >
+      Für Fitness-Apps besonders kritisch wegen Körperschaden-Haftung.
+      Budget einplanen: ~€800–1.500 für Anwalt.
+
+  - id: REQ-B-015
+    titel: Art. 9-Consent-Text Rechtscheck
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: rechtsberatung
+    beschreibung: >
+      Der technisch implementierte Consent-Text für Gesundheitsdaten muss von
+      einem Anwalt auf Art. 9-Tauglichkeit geprüft werden.
+    akzeptanzkriterien:
+      - Anwalt bestätigt Art. 9 Abs. 2 lit. a DSGVO-Konformität des Texts
+      - Bei Textänderung: CONSENT_VERSION von 'v1' auf 'v2' bumpen
+        (src/routes/registrierung/+page.svelte)
+    compliance_ref: dsgvo-art9-consent
+    req_ref: REQ-R-001
+    notes: >
+      Technische Implementierung ist abgeschlossen (2026-05-24).
+      Nur Rechtscheck des Wortlauts fehlt noch.
+
+  - id: REQ-B-016
+    titel: DPIA (Datenschutz-Folgenabschätzung, Art. 35 DSGVO)
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: rechtsberatung
+    beschreibung: >
+      Datenschutz-Folgenabschätzung für Verarbeitung von Gesundheitsdaten
+      (Art. 9 i.V.m. Art. 35 DSGVO). Pflicht bei systematischer Verarbeitung
+      besonderer Kategorien personenbezogener Daten.
+    akzeptanzkriterien:
+      - DPIA-Dokument erstellt und durch Rechtsberater/DSB geprüft
+      - Risiken identifiziert und Maßnahmen dokumentiert
+      - TOM (docs/tom.yaml) als Anlage referenziert
+    compliance_ref: dsgvo-art35-dpia
+    req_ref: REQ-R-004
+    notes: >
+      Erfordert Rechtsberatung. Kann auf Basis von docs/tom.yaml und
+      docs/compliance.yaml effizient vorbereitet werden.
+      Budget: ~€1.500–3.000 bei spezialisierten Datenschutz-Kanzleien.
+
+  - id: REQ-B-017
+    titel: VVT (Verzeichnis von Verarbeitungstätigkeiten, Art. 30 DSGVO)
+    prioritaet: P1-GoLive
+    status: in-progress
+    kategorie: rechtsberatung
+    beschreibung: >
+      Verzeichnis aller Datenverarbeitungstätigkeiten gemäß Art. 30 DSGVO.
+      Entwurf existiert in docs/laws/dsgvo/art-30.md — muss finalisiert
+      und unterzeichnet werden.
+    akzeptanzkriterien:
+      - VVT vollständig (alle Verarbeitungen inkl. Gesundheitsdaten, Analytics, Partners)
+      - VVT unterzeichnet und datiert
+      - Aufbewahrt und bei DSB-Anfrage vorlegbar
+    compliance_ref: dsgvo-art30-vvt
+    req_ref: REQ-R-006
+
+  # ═══════════════════════════════════════════════════════════════════
+  # FÖRDERUNGEN & INSTITUTIONELLE ANKER
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-018
+    titel: aws Gründerservice — Erstgespräch
+    prioritaet: P2
+    status: open
+    kategorie: foerderungen
+    beschreibung: >
+      Erstgespräch mit aws (Austria Wirtschaftsservice) zu Fördermöglichkeiten:
+      aws Gründer:innen Kredit, aws Garantien, aws Double Equity.
+    akzeptanzkriterien:
+      - Erstgespräch geführt
+      - Passende Förderinstrumente identifiziert
+      - Förderantrag vorbereitet (REQ-P-049–056 als Nachweis)
+    notes: >
+      Voraussetzung: Gewerbeanmeldung/GmbH (REQ-B-001/B-002) muss vorher
+      erledigt sein. aws Double Equity setzt oft GmbH voraus.
+      REQ-P-049–056 (Gesundheitsziele Österreich) sind der Fördernachweis.
+
+  - id: REQ-B-019
+    titel: FFG Basisprogramm — Einreichprüfung
+    prioritaet: P2
+    status: open
+    kategorie: foerderungen
+    beschreibung: >
+      Prüfen ob AustroFit für FFG-Förderung (Forschungsförderungsgesellschaft)
+      qualifiziert: Basisprogramm, BRIDGE, oder Innovationsscheck.
+    akzeptanzkriterien:
+      - FFG-Fördercheck durchgeführt (ffg.at/foerderungen)
+      - Bei Eignung: Antrag vorbereitet mit REQ-IDs als Nachweis
+    notes: >
+      Innovationsscheck: €10.000, für F&E-Kooperationen mit Universitäten.
+      Könnte für Gamification-Forschung (AIHTA-Studie) relevant sein.
+
+  - id: REQ-B-020
+    titel: WA Wien — Fördercheck
+    prioritaet: P2
+    status: open
+    kategorie: foerderungen
+    beschreibung: >
+      Wirtschaftsagentur Wien Fördercheck: Gründungsstipendium,
+      Innovationsstipendium, Wiener Wirtschaftsförderungsfonds (WWFF).
+    akzeptanzkriterien:
+      - wa.wien-Fördercheck durchgeführt
+      - Gründungsstipendium geprüft (bis €30.000 für Wiener Gründer)
+    notes: >
+      Gründungsstipendium Voraussetzung: Erstanmeldung des Gewerbes nicht
+      länger als 3 Jahre zurück. Zeitkritisch — je früher desto besser.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # GO-TO-MARKET & KOMMUNIKATION
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-021
+    titel: DSA Art. 16 Meldeverfahren (Missbrauchsmeldung)
+    prioritaet: P1-Launch
+    status: open
+    kategorie: kommunikation
+    beschreibung: >
+      DSA Art. 16 verpflichtet zu einem Verfahren für Missbrauchsmeldungen.
+      Technisch 15 Minuten. Blockiert durch fehlende E-Mail-Adresse.
+    akzeptanzkriterien:
+      - abuse@austrofit.at eingerichtet
+      - Link im Impressum/Datenschutzerklärung ergänzt
+    compliance_ref: dsa-art16
+    req_ref: REQ-R-028
+    notes: >
+      E-Mail-Einrichtung (abuse@) ist der einzige Blocker.
+      Code-Änderung danach: ~15 Minuten.
+
+  - id: REQ-B-022
+    titel: Impressum (ECG § 5)
+    prioritaet: P1-GoLive
+    status: open
+    kategorie: kommunikation
+    beschreibung: >
+      Vollständiges Impressum gemäß ECG § 5: Name, Adresse, Kontakt,
+      Gewerbebehörde, UID-Nummer (nach Zuteilung), Aufsichtsbehörde.
+    akzeptanzkriterien:
+      - Impressum unter /impressum erreichbar
+      - Alle ECG § 5-Pflichtangaben vorhanden
+      - Nach Gewerbeanmeldung: Behörde und Gewerbeschein-Nummer ergänzt
+    compliance_ref: ecg-impressum
+    req_ref: REQ-R-020
+    notes: >
+      Muss nach Gewerbeanmeldung (REQ-B-001) aktualisiert werden.
+      Persönliche Adresse im Impressum ist unangenehm aber gesetzlich
+      für Einzelunternehmer meist nötig — alternative: Betriebsadresse.
+
+  - id: REQ-B-023
+    titel: Pressemappe / One-Pager
+    prioritaet: P2
+    status: open
+    kategorie: kommunikation
+    beschreibung: >
+      Kurze Pressemappe und One-Pager für Partner-Akquise, Förderanträge
+      und Medienanfragen. Enthält: USP, Nutzerzahlen (nach Launch),
+      Gründerinfo, Kontakt.
+    akzeptanzkriterien:
+      - One-Pager (PDF, 1 Seite) vorhanden
+      - Kernbotschaften aus Österreich-Kontext (CLAUDE.md) verwendet
+      - Kein "Geld verdienen durch Gehen"-Framing
+    notes: >
+      Basis: Business Plan (Directus-JSON-AustroFit/austrofit-business-plan.yaml)
+      und REQ-P-049–056 (Gesundheitsziele Österreich) liefern
+      fertige Argumentationskette für Förderanträge.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # DISTRIBUTION & AKQUISE
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-B-024
+    titel: App Store Optimization — Google Play
+    prioritaet: P1-Launch
+    status: open
+    kategorie: distribution
+    beschreibung: >
+      Deutschen Google Play Store-Eintrag vor Go-Live optimieren.
+      ASO ist der günstigste dauerhafte Akquise-Kanal — Nutzer suchen
+      aktiv nach Fitness-Apps auf Google Play, ein nicht optimierter
+      Eintrag verschenkt organischen Traffic vollständig.
+    akzeptanzkriterien:
+      - Kurzbeschreibung (≤80 Zeichen) mit Haupt-Keyword ("Schritte sammeln, Punkte verdienen")
+      - Lange Beschreibung auf Deutsch, "Made in Austria" / DSGVO-Winkel prominent
+      - Mindestens 5 Screenshots mit deutschen Bildunterschriften
+        (Gamification, Rewards, Schritte, Quiz, Profil)
+      - Feature-Grafik (1024×500 px) mit App-Kernbotschaft
+      - Keywords recherchiert: Schritte zählen, Punkte sammeln,
+        Gesundheits-App Österreich, Fitness-Belohnungen, Schrittzähler App
+      - Kategorie: Gesundheit & Fitness
+      - Datenschutz-URL und Kontakt-E-Mail eingetragen
+    notes: >
+      Kein "Geld verdienen durch Gehen"-Framing — österreichischer
+      Skeptizismus macht das kontraproduktiv (WeWard/Sweatcoin performen
+      im DACH-Raum deutlich schlechter als in anglophonen Märkten).
+      Messaging: "Gesund leben und dafür bei lokalen Partnern belohnt werden."
+      Apple App Store: erst relevant wenn iOS-Entscheidung (REQ-B-012) getroffen.
+    req_ref: REQ-B-012
+
+  - id: REQ-B-025
+    titel: PR / Presseauftritt zum Launch
+    prioritaet: P1-Launch
+    status: open
+    kategorie: distribution
+    beschreibung: >
+      Gezielte Pressearbeit zum Launch bei österreichischen Tech- und
+      Gesundheitsmedien. Ein einziger Artikel in brutkasten oder futurezone
+      kann mehr Erstnutzer bringen als Monate organisches Social Media.
+      Kein Budget nötig — nur eine gute Geschichte.
+    akzeptanzkriterien:
+      - Pressemitteilung (1 Seite) auf Deutsch verfasst
+      - Outreach an mind. 3 Redaktionen: brutkasten.com, futurezone.at,
+        Kleine Zeitung Digital (oder vergleichbar)
+      - Kernwinkel definiert: "Österreichische DSGVO-konforme Alternative
+        zu WeWard — Punkte sammeln, bei lokalen Betrieben einlösen"
+      - "Made in Austria" / "Gründer aus Wien" als Vertrauensanker enthalten
+      - Kein Krypto/Token-Framing, kein "earn money"-Framing
+    notes: >
+      Timing: Outreach 2–3 Wochen vor Launch, damit Artikel zum Launch
+      erscheinen kann. Redaktionen brauchen Vorlaufzeit.
+      Pressemappe (REQ-B-023) ist Basis für diesen Schritt.
+      Zusätzlich: österreichische Fitness/Gesundheits-Blogger/Influencer
+      (micro, 5k–50k) authentischer als große Namen.
+
+  - id: REQ-B-026
+    titel: Partner-Aktivierungs-Kit (Akquise-Kanal)
+    prioritaet: P1-Launch
+    status: open
+    kategorie: distribution
+    beschreibung: >
+      Partner haben bereits bestehende Kunden — das ist der
+      kapitaleffizienteste Akquise-Kanal für einen Solopreneur.
+      Ein strukturiertes Aktivierungs-Kit ermöglicht Partnern,
+      ihre Kunden eigenständig auf AustroFit aufmerksam zu machen.
+    akzeptanzkriterien:
+      - QR-Code-Aufsteller (A5, druckfertig) mit Download-Link / App-Store-Link
+      - Kurzer Newsletter-Textbaustein (3–4 Sätze) den Partner kopieren können
+      - 1–2 Social-Media-Vorlagen (Instagram/Facebook) für Partner
+      - Alle Materialien in deutschem Österreich-Kontext (kein generisches Englisch)
+    notes: >
+      Materialien können einfach in Canva erstellt werden — kein
+      Grafikdesigner nötig für MVP-Version.
+      Partner wissen oft nicht wie sie die App promoten sollen ohne Anleitung —
+      das Kit nimmt ihnen die Arbeit ab.
+      Verknüpft mit Partner-Vertragsvorlage (REQ-B-013).
+    req_ref: REQ-B-013
+
+  - id: REQ-B-027
+    titel: Go-to-Market Hypothese (schriftlich)
+    prioritaet: P1-Launch
+    status: open
+    kategorie: distribution
+    beschreibung: >
+      Kurzes schriftliches GTM-Dokument (max. 1 Seite) das Kanal-Prioritäten,
+      Ziel und Erfolgsmessung für die ersten 90 Tage nach Launch festhält.
+      Kein Marketing-Plan im klassischen Sinne — sondern eine überprüfbare
+      Hypothese: "Wir gewinnen Nutzer primär durch X, Ziel Y in Z Wochen."
+    akzeptanzkriterien:
+      - Primärkanal definiert (Empfehlung: Partner-led Acquisition)
+      - Sekundärkanäle priorisiert (ASO, PR)
+      - Zielgröße: Wann gilt der Launch als Erfolg? (z.B. 200 WAU in 90 Tagen)
+      - Messmetrik: PostHog Weekly Active Users als Quelle
+      - Was wird NICHT gemacht: Paid Ads, Community-Features vor 200–500 Nutzern
+    notes: >
+      Dieses Dokument wird nach den ersten echten Daten (4–8 Wochen post-Launch)
+      revidiert. Der Wert liegt nicht in der Präzision der Vorhersage,
+      sondern darin, eine bewusste Entscheidung zu erzwingen statt
+      ad-hoc zu reagieren.
+      Ablage: docs/ oder Direktus-JSON-AustroFit/ — kein eigenes requirements-File nötig.

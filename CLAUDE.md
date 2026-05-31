@@ -20,42 +20,98 @@ npm run cap:build       # Static SPA build for release → build/ + cap sync (PU
 npm run cap:build:dev   # Static SPA build for dev testing → build/ + cap sync (PUBLIC_API_BASE=https://dev.austrofit.at)
 ```
 
-No test suite is configured in this project.
+npm run test          # Vitest Unit Tests (113 Tests, ~400ms)
+npm run test:watch    # Tests im Watch-Modus
+
+# Phase 1 (done): src/lib/utils/ — level.ts, streak.ts, progress.ts (51 Tests)
+# Phase 2 (done): src/lib/server/ — rateLimit.ts, auth.ts, stepInputValidation (62 Tests)
+#   REQ-S-017: isRateLimited (claim 20/h, redeem 10/h, steps_manual 5/15min), Account Lockout
+#   REQ-S-012: extractBearerToken (Bug via Test gefunden: "Bearer" ohne Token → null, gefixt 2026-05-25)
+#   REQ-S-041: Datum-Validierung, Fraud-Cap (30.000), Steps-Bereich (0–100.000)
+# Phase 3 (geplant): E2E mit Playwright nach Go-Live
+# Konfiguration: vite.config.js → test.include / test.alias ($lib)
 
 ## Project Documentation
 
-- `docs/features.yaml` — Maschinenlesbare Feature-Registry (54 Features, 12 Kategorien). Primäre Referenz für Roadmap, Feature-Status (implemented/in-progress/planned/to-discuss/rejected) und regulatorische Checks. Bei neuen Features oder Statusänderungen hier aktualisieren.
-- `docs/compliance.yaml` — Regulierungs-Registry (12 Regularien, Mai 2026). Enthält Anwendbarkeit, Anforderungen mit Status, Nachweis-Typ und priorisierte `open_actions`. Bei neuen Features auf regulatorische Auswirkungen prüfen und Status hier pflegen.
-- `docs/tom.yaml` — TOM-Dokument (Technische und Organisatorische Maßnahmen, Art. 32 DSGVO, Mai 2026). 9 Kategorien, 20 Maßnahmen. Erforderlich für DPIA und DSB-Anfragen. Offene Punkte: Rate-Limiting, Backup-Konzept, CSP-Header, AVV-Ablage.
-- `docs/requirements/` — Requirements-Driven Development (REQ-IDs). Vier YAML-Dateien für Entwicklungssteuerung und Fördernachweis:
-  - `product-requirements.yaml` — REQ-P-001–044: Produkt-Anforderungen (MVP P1/P2/P3), feature_ref → features.yaml
-  - `regulatory-requirements.yaml` — REQ-R-001–024: Regulatorische Pflichten, compliance_ref → compliance.yaml
+- `docs/features.yaml` — Maschinenlesbare Feature-Registry (80 Features, 12 Kategorien). Primäre Referenz für Roadmap, Feature-Status (implemented/in-progress/planned/to-discuss/rejected) und regulatorische Checks. Bei neuen Features oder Statusänderungen hier aktualisieren.
+- `docs/compliance.yaml` — Regulierungs-Registry (maschinenlesbare Zusammenfassung mit `law_ref`-Pointern). Enthält Anwendbarkeit, Anforderungen mit Status, Nachweis-Typ und priorisierte `open_actions`. Bei neuen Features auf regulatorische Auswirkungen prüfen und Status hier pflegen.
+- `docs/laws/` — **Rechtliche Source of Truth** (Artikel-genaues Screening + Volltext-Analyse). Hierarchie: `docs/laws/[gesetz]/_screening.md` (alle Artikel, Anwendbarkeit) → `docs/laws/[gesetz]/art-XX.md` (Detail, nur anwendbare Artikel). DSGVO vollständig dokumentiert (art-05 bis art-35). Index: `docs/laws/_index.md`.
+- `docs/tom.yaml` — TOM-Dokument (Technische und Organisatorische Maßnahmen, Art. 32 DSGVO, Mai 2026). 9 Kategorien, 29 Maßnahmen. Erforderlich für DPIA und DSB-Anfragen. Offene Punkte: Backup-Konzept, AVV-Ablage.
+- `docs/market-research/competitive-analysis.yaml` — Wettbewerbsanalyse v1.3 (24 Apps, 11 hoch-übereinstimmend, 13 MI-IDs, User Sentiment, Österreich-Kontext). Basis für REQ-P-Validierung und Förderanträge. Sektionen: `hoch_uebereinstimmend`, `user_sentiment`, `oesterreich_kontext`, `derived_insights`. Aktualisierungsrhythmus: vor jedem Meilenstein (Go-Live, Förderantrag, Pitch) + jährlich vollständig.
+- `docs/watchlist.yaml` — Strategische Beobachtungsliste (Technologie, Regulierung, Wettbewerb, Markt, Förderungen). 6 Kategorien, Horizont akut/strategisch/langfristig. Enthält timing-kritische Förderungs-Fenster (NeuFöG, SVS Gründerbegünstigung, aws, FFG, WA Wien). Bei /weekly-review relevante Einträge prüfen.
+- `docs/requirements/` — Requirements-Driven Development (REQ-IDs). Fünf YAML-Dateien für Entwicklungssteuerung und Fördernachweis:
+  - `product-requirements.yaml` — REQ-P-001–056: Produkt-Anforderungen (MVP P1/P2/P3), feature_ref → features.yaml. Enthält eigene Sektion **Österreichische Gesundheitsziele** (REQ-P-049–056, Ziele 1/2/3/5/6/7/8/9) für Fördernachweis (aws, FFG, WA Wien) und B2G-Positionierung.
+  - `regulatory-requirements.yaml` — REQ-R-001–031: Regulatorische Pflichten, compliance_ref → compliance.yaml
   - `system-requirements.yaml` — REQ-S-001–042: Architektur, Security-Guardrails, Performance, Integrationen
   - `user-requirements.yaml` — REQ-U-001–015: User Stories (4 Personas: Anna/Walter/Laura/Thomas)
-- `Directus-JSON-AustroFit/austrofit-business-plan.yaml` — Business Plan v1.3 (Markt, Finanzen, Gamification-Formeln)
+  - `business-requirements.yaml` — REQ-B-001–027: Unternehmerische Voraussetzungen (Solopreneur). Kategorien: Rechtsstatus (Gewerbe, Gesellschaftsform), IP (Marke, Domains), Finanzen, Versicherung, Verträge (AVV, App Stores, Partner), Rechtsberatung (AGB, DPIA, VVT), Förderungen (aws, FFG, WA Wien), Kommunikation (Impressum, DSA)
+- `docs/validation-plan.yaml` — V&V-Plan (Verification & Validation). Drei Ebenen: Phase 1 Unit Tests (51, done), Phase 2 API Security Tests (geplant: claim/redeem/steps/manual), Phase 3 E2E (deferred). Enthält Traceability-Matrix REQ→Test und Validation-Plan (Beta-Testing, PostHog Funnels, UAT-Szenarien). Nachweis für Art. 32 DSGVO TOM und Förderanträge.
+- `docs/strategy/milestones.yaml` — Strategische Meilensteine (go-live, nutzer-200, direktpartner-aufbau, break-even, b2g-pilot) mit `requires_features`/`requires_reqs`-Referenzen und Förderantrags-Deadlines. **Primäre Referenz für Phasenziele und Timing.** Status wird NICHT hier gepflegt — ergibt sich durch Lesen von features.yaml + requirements/*.yaml.
+- `docs/strategy/financials.yaml` — Finanzplan (Erlösmodell, ARPU-Szenarien, Umsatzprognosen Jahr 1–5, Kostenstruktur, GuV, Break-Even, Kapitalbedarf, Ampelsystem). Zahlen hier updaten wenn sich Annahmen ändern.
+- `docs/strategy/marketing.yaml` — Marketingstrategie (AARRR-Funnel + KPIs, Kanäle, Budget nach Phase, AWIN-Status, B2B-Vertrieb). KPIs aktiv tracken und hier pflegen.
+- `Directus-JSON-AustroFit/austrofit-business-plan.yaml` — Business Plan v1.3 (statische Narrative: Branche, Porter, ESG, Social Impact, Gründerprofil). Wird durch `/businessplan`-Skill mit aktuellen Daten aus docs/strategy/ angereichert.
 - `Directus-JSON-AustroFit/service-blueprint.html` — Service Blueprint B2C v1.1 (User Journey, Phasen)
+
+### Docs-Abhängigkeiten (Single Source of Truth)
+
+```
+docs/laws/                    ← Rechtstexte (Primärquelle)
+    ↑ law_ref
+docs/compliance.yaml          ← Regulierungs-Status
+    ↑ compliance_ref
+docs/requirements/            ← REQ-IDs (P/R/S/U/B)
+    ↑ feature_ref             ↑ req_ref
+docs/features.yaml            docs/strategy/milestones.yaml
+    ↑ milestone_ref               ↑ milestone_ref
+docs/strategy/financials.yaml     docs/strategy/marketing.yaml
+```
+
+`/businessplan [zielgruppe]` — generiert aktuellen BP aus allen Docs (aws/ffg/investor/wa-wien/allgemein)
 
 ### Requirements-Driven Development (REQ-IDs)
 
 REQ-IDs referenzieren in Commit-Messages, PR-Beschreibungen und Förderanträgen (aws, FFG, WA Wien).
-Format: `REQ-P-001` (Produkt), `REQ-R-001` (Regulatorisch), `REQ-S-001` (System), `REQ-U-001` (User).
+Format: `REQ-P-001` (Produkt), `REQ-R-001` (Regulatorisch), `REQ-S-001` (System), `REQ-U-001` (User), `REQ-B-001` (Business).
 Cross-References: `feature_ref` → `docs/features.yaml` (slug), `compliance_ref` → `docs/compliance.yaml`.
+
+**Gesundheitsziele Österreich (REQ-P-049–056):** AustroFit adressiert 8 der 10 Gesundheitsziele (Ziele 1/2/3/5/6/7/8/9). Die Sektion in `product-requirements.yaml` bildet den Fördernachweis (Business Plan Anhang A4, [gesundheitsziele-oesterreich.at](https://gesundheitsziele-oesterreich.at/)) als traceable REQ-IDs ab. Bei Förderanträgen diese IDs in der Wirkungsbeschreibung referenzieren.
 
 ## Compliance
 
-Regulatorische Übersicht in `docs/compliance.yaml`. Anwendbare Regularien: DSGVO/DSG, ePrivacy/TKG 2021, MDR (Disclaimer-Pflicht), ECG/KSchG, UWG, DSA, EU AI Act (ab 08/2026). Nicht anwendbar: BFSG (Kleinstunternehmen), GSpG (keine kaufbaren Punkte), ZaDiG (keine Bargeld-Einlösung), NIS2 (Schwellenwert nicht erreicht).
+**Source of Truth:** `docs/laws/[gesetz]/` (Artikel-Screening + Volltext) → `docs/compliance.yaml` (maschinenlesbare Zusammenfassung) → `docs/requirements/regulatory-requirements.yaml` (REQ-R-IDs).
 
-**Offene Pflichten vor Go-Live (priorisiert):**
-- **[P1] Hetzner AVV** — Kundencenter → Datenschutz → AV-Vertrag (kostenlos, ~5 min). Hetzner hostet Directus + PostgreSQL mit allen Nutzerdaten.
-- **[P2] Vercel Pro-Upgrade** — DPA (vercel.com/legal/dpa) gilt nur für Pro/Enterprise (bestätigt). Hobby-Plan: kein AVV verfügbar. DPA wird automatisch Teil des Agreements nach Upgrade.
-- **[P3] DPIA** (Datenschutz-Folgenabschätzung) für Gesundheitsdaten (Art. 35 DSGVO) — erfordert Rechtsberatung
-- **[P4] Art. 9-Consent** im Onboarding rechtlich absichern — erfordert Rechtsberatung
-- **[P5] AGB erstellen** (Punkte-Regeln, Nutzungsbedingungen, Haftung) — erfordert Rechtsberatung
+Anwendbare Regularien: DSGVO/DSG, ePrivacy/TKG 2021, MDR (Disclaimer-Pflicht), ECG/KSchG, UWG, DSA, EU AI Act (ab 08/2026). Nicht anwendbar: BFSG (Kleinstunternehmen), GSpG (§ 1 kein Zufallselement + § 2 kein Einsatz → vollständig gescreent in `docs/laws/gspg/_screening.md`; **Watchlist:** § 58 Abs. 3 bei zufallsbasierten Verlosungen → 5% Abgabe wenn Preiswert > €10.000), ZaDiG (keine Bargeld-Einlösung), NIS2 (Schwellenwert nicht erreicht), GTelG 2012 (kein Gesundheitsdiensteanbieter § 2 Z 2; ELGA/eImpfpass/Datensicherheits-§§ 3–8 nicht anwendbar — gescreent 2026-05-24; Trigger: ELGA-Anbindung oder DiGA-Zertifizierung Phase 3+).
+
+**Compliance-Workflow:**
+- Vor neuer Feature-Implementierung: `/compliance <Beschreibung>` — prüft relevante Gesetze und gibt Freigabe
+- Vor Go-Live / Sprint-Ende: `/go-live-check` — vollständiger Blocker-Report mit technischen Checks
+
+**Qualitäts- und Test-Workflow:**
+- Vor Beta-Launch: `/persona-test [anna|walter|laura|thomas]` — simulierte Nutzer-Validierung (Journey-first, REQ-U-001–015). Kein Ersatz für echte Nutzertests; dient als Pre-Beta UX-Desk-Review. Prüft: User Journeys je Persona, Accessibility für Walter (55+), Pregnant/Chronic-Gruppen-Logik, österreichisches Messaging.
+- Für ein spezifisches Feature: `/test-plan <Feature>` — Verifikation (Unit Tests, Security) + Validation + Compliance + DoD
+- Wöchentlich: `/weekly-review` — P1-Blocker, Git-Aktivität, Business-Duties
+
+**Offene Go-Live Blocker (P1 — alle blockend):**
+- **Hetzner AVV** — Kundencenter → Datenschutz → AV-Vertrag (~5 min, kostenlos). Hetzner hostet alle Nutzerdaten inkl. Gesundheitsdaten.
+- **Vercel Pro-Upgrade** — DPA gilt nur für Pro/Enterprise. Hobby-Plan: kein AVV verfügbar.
+- **Art. 9-Consent-Text Rechtscheck** — Technisch ✅ implementiert (2026-05-24): Checkbox in Registrierung Step 2, Logging (`gesundheitsdaten_consent_at` / `gesundheitsdaten_consent_version` = `"v1"`) via `/api/auth/init-onboarding`, Widerruf via `/api/consent/revoke` + UI in Profil → Datenschutz. Offen: Wortlaut von Anwalt auf Art.-9-Tauglichkeit prüfen lassen. Bei Textänderung `CONSENT_VERSION` in `registrierung/+page.svelte` von `"v1"` auf `"v2"` bumpen.
+- **DPIA** (Art. 35 DSGVO) für Gesundheitsdaten — erfordert Rechtsberatung
+- **AGB** — Entwurf in `docs/agb-entwurf.md` (12 §§, Mai 2026). Erfordert Rechtsberatung. Entschieden: kein Punkte-Verfall (§ 4.4), § 9 Änderungsklausel ohne Zustimmungsfiktion (Kündigungsrecht bei Widerspruch, analog MoveEffect). Offen für Anwalt: § 8 Haftung (KSchG § 6 Abs. 1 Z 9 — kein Haftungsausschluss für Körperschäden!), § 9 „fortgesetzte Nutzung = Zustimmung" OGH-konform?, Widerrufsrecht bei kostenloser App (FAGG), Google-OAuth-Consent-Lücke (§ 3). Technisch fehlt noch: AGB-Checkbox im Registrierungsflow + AGB als PDF downloadbar (§ 11 ECG).
+- ~~**§ 5a KSchG Informationspflichten**~~ — ✅ erledigt (2026-05-24): Info-Box in Registrierung Step 1 (REQ-R-030)
+- **VVT** (Art. 30 DSGVO) — Entwurf in `docs/laws/dsgvo/art-30.md`, muss unterzeichnet werden
+- **DSA Art. 16 Meldeverfahren** — ⏳ wartet auf abuse@austrofit.at (E-Mail-Einrichtung). Danach: Link im Impressum/DSE ergänzen (~15 min Code, REQ-R-028)
 
 **Consent-Banner** (`src/lib/components/dashboard/ConsentBanner.svelte`):
 - Analytics (PostHog) wird erst nach Einwilligung initialisiert (localStorage `austrofit_analytics_consent`)
 - Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) — NICHT berechtigtes Interesse
 - `identifyUser()` nach Login verknüpft PostHog-Session mit Nutzer-ID (pseudonymisiert)
+
+**Art. 9-Consent (Gesundheitsdaten)** — implementiert 2026-05-24:
+- Explizite Checkbox in Registrierung Step 2 (`src/routes/registrierung/+page.svelte`). Text trägt `RECHTSCHECK`-Kommentar — Anwalt-Freigabe ausstehend.
+- `CONSENT_VERSION = 'v1'` in `registrierung/+page.svelte` — bei Textänderung auf `'v2'` bumpen, damit alle v1-Einwilligungen identifizierbar bleiben.
+- Logging: `confirmGroup()` ruft `/api/auth/init-onboarding` mit `{ consent_given: true, consent_version: 'v1' }` → schreibt `gesundheitsdaten_consent_at` + `gesundheitsdaten_consent_version` in `user_profiles` (idempotent).
+- Widerruf: `POST /api/consent/revoke` → setzt `gesundheitsdaten_consent_revoked_at` + `health_connected = false`. UI in Profil → Datenschutz (zeigt Erteilungsdatum, Widerruf-Button + Bestätigungs-Dialog).
+- ~~Lücke: Google-OAuth-Nutzer haben keinen Step-2-Consent~~ ✅ behoben (2026-05-29): Callback (`/api/auth/google/callback`) prüft `user_profiles.gesundheitsdaten_consent_at` — fehlt der Consent → Redirect auf `/registrierung?oauth_onboarding=1`, wo Step 2 (Gruppenauswahl + Art. 9-Checkbox) erzwungen wird. Registrierungsseite erkennt den URL-Parameter im `onMount` und springt direkt zu Step 2.
 
 ## Architecture Overview
 
@@ -118,7 +174,7 @@ Points are recorded in Directus `points_ledger` (append-only). The current balan
 
 **Quiz** → anonymous attempt → `/api/quiz-attempts` → `/api/claim` links to user + awards points → `updateQuizStreak()` in `streak.ts` awards daily streak bonus (tiered +5/10/15/20P) and weekly milestone (+30/50/75/100P). Quiz cooldown: 30 days per quiz (configured in Directus `cooldown_days` field).
 
-**Milestones** → one-time bonuses awarded via `awardMilestoneIfNew()` in `$lib/server/milestoneService.ts`. Slugs + points defined in `$lib/utils/milestones.ts`. Dedup: `source_type='milestone'`, `source_ref='milestone-{slug}'`. 22 milestones across steps/cardio/quiz covering first achievements and first 4 weeks of streaks.
+**Milestones** → one-time bonuses awarded via `awardMilestoneIfNew()` in `$lib/server/milestoneService.ts`. Slugs + points defined in `$lib/utils/milestones.ts`. Dedup: `source_type='milestone'`, `source_ref='milestone-{slug}'`. 18 milestones across steps/cardio/quiz covering first achievements and first 4 weeks of streaks.
 
 ### Dev / Test Tools (Browser-only)
 
@@ -169,6 +225,8 @@ Verfügbare Tools: `list_collections`, `get_fields`, `get_relations`, `read_item
 
 **Directus field query with invalid field name breaks entire response** — If a `?fields=` list includes a field that doesn't exist in the Directus schema (e.g. `description` on `points_ledger`), Directus rejects the entire query and returns `{"data":[]}` with no error. Always verify field names via MCP `get_fields` before adding them to a query.
 
+**Directus error messages are always in English — never pass them through to the UI** — Directus returns English error messages (e.g. `"Invalid user credentials"`, `"Field value has to be unique."`). The `translateDirectusError(rawMessage, code)` helper in `$lib/utils/auth.ts` maps known Directus codes/messages to German. Always use this helper (or extend it) when throwing errors from `login()` / `register()`. Never forward `data?.errors?.[0]?.message` directly to the UI. For logic that depends on error type (e.g. "email not verified" → show resend button), check `e?.code` (a stable normalized value set by `login()`) — not `e?.message`, which is now German and would break string matching.
+
 **Gamification Security Guardrails** — Several patterns were hardened after a security review (Mai 2026). Do not revert them:
 
 - **`/api/quiz-attempts` — Allowlist-Payload + max_score-Validierung**: Der Client-Body wird NICHT direkt an Directus weitergeleitet. Stattdessen wird ein `safePayload` mit explizitem Allowlist gebaut. `passed` wird server-seitig aus `score >= max_score` abgeleitet (nie vom Client übernommen); `max_score > 0` ist Pflicht, sonst ist `passed = false`. `eligible_points` wird via `Math.min(200, Number(...))` gecappt (nicht `typeof`-Check, da Strings sonst durchkommen). `completed_at` kommt immer vom Server. **Neu (Mai 2026):** Wenn `quiz`-ID angegeben, wird das Quiz aus Directus geladen (`quiz_json`-Feld) und die autoritative Fragenzahl (`quiz_json.questions.length`) gegen den Client-submitted `max_score` geprüft — Abweichung → 400. Ist Directus nicht erreichbar, schlägt die gesamte Anfrage fehl (fail-closed). Dadurch kann ein Angreifer nicht mehr mit `score:1, max_score:1` beliebige Quizze bestehen.
@@ -179,11 +237,20 @@ Verfügbare Tools: `list_collections`, `get_fields`, `get_relations`, `read_item
 
 - **`/api/cardio/sync` — Input-Grenzen**: Max. 50 Workouts pro Request. Jeder Workout wird validiert: `date` muss `/^\d{4}-\d{2}-\d{2}$/` matchen und im Fenster ≤90 Tage Vergangenheit / ≤2 Tage Zukunft liegen; `startDate` muss ein parsbares ISO-8601-Datum sein. Ungültige Einträge werden herausgefiltert (kein 400-Fehler für den ganzen Batch).
 
+- **`stepsService.ts` — STEPS_FRAUD_CAP**: Max. 30.000 Schritte pro Tageseintrag (`STEPS_FRAUD_CAP = 30_000`). Deckt realistische Hochleistungstage ab (Wandern, Vielspazierer). Ursprünglich 20.000 — zu niedrig, da HealthConnect bei Withings+Pixel-Kombination bis zu ~22.000 echte Schritte melden kann. Delta-Korrektur: bei erneutem Sync eines bereits gespeicherten Datums wird ein Differenz-Eintrag geschrieben (kein Duplikat).
+
 - **`cardioService.ts` — durationSeconds Cap**: `getEquivalentMinutes()` cappt `durationSeconds` auf max. 4 Stunden (14.400 s) bevor die Äquivalenz-Minuten berechnet werden. Der Cap liegt in der Funktion selbst, nicht im Endpoint.
 
 - **`streak.ts` — Streak-Wochen-Bonus Dedup**: Der Wochen-Bonus (Abschnitt 6 in `updateStreak`) hat jetzt wie der Quiz-Wochen-Bonus einen Dedup-Check vor dem Schreiben. Fehlt dieser Check, kann ein paralleler API-Call den Bonus doppelt schreiben.
 
 - **`/api/redeem` — Dedup vor Einlösung**: Vor dem Schreiben des `reward_redemptions`-Eintrags wird geprüft ob bereits eine `active`/`used` Einlösung für `(user, reward)` existiert (409 bei Fund). Verhindert Double-Spend durch parallele Requests.
+
+- **Rate-Limiting (`src/lib/server/rateLimit.ts`) — Nicht entfernen**:
+  - **IP-basiertes Sliding-Window** (bereits seit Mai 2026): globales Limit auf alle API-Endpunkte.
+  - **Per-Account-Lockout** (`recordAuthFailure` / `isAccountLocked`): 5 Fehlversuche / 10 Min pro E-Mail-Adresse → 429. Wird in `/api/auth/login` aufgerufen — verhindert Brute-Force auf Passwörter.
+  - **`/api/claim`**: max. 20 Claims / Stunde / IP.
+  - **`/api/redeem`**: max. 10 Einlösungen / Stunde / IP.
+  - **`/api/steps/manual`**: max. 5 Einträge / 15 Min / IP.
 
 **`PRIVATE_CMS_STATIC_TOKEN` (and `DIRECTUS_WRITE_TOKEN`) cannot access `directus_users`** — Both tokens share the same value in `.env` and belong to a limited policy that only covers custom collections (`points_ledger`, `user_profiles`, `Badges`, etc.). Calling `/users/me` or `/users/{id}` with either token returns empty data or an error — no 403, just silent failure. To read user data (first_name, email, etc.), always use the user's own JWT. Use `/users/me` **without** a `?fields=` parameter — field selection can cause Directus to silently omit fields that the user's role technically has access to. For admin operations on `directus_users` (Google OAuth flow), use `DIRECTUS_ADMIN_TOKEN` — a static token generated on the Administrator user in Directus.
 
@@ -212,6 +279,61 @@ npx cap sync android
 
 **Policy-Gotcha**: `PRIVATE_CMS_STATIC_TOKEN` bekommt keinen automatischen Zugriff auf neue Collections. Bei jeder neuen Directus-Collection beide Policies aktualisieren: „Read Content API" (DIRECTUS_READ_TOKEN) und „Write Content API" (PRIVATE_CMS_STATIC_TOKEN).
 
+## Österreich-Kontext: Markt & Messaging
+
+Diese Regeln gelten für alle Produkt-, Content- und UX-Entscheidungen. Quelle: `docs/market-research/competitive-analysis.yaml` → Sektion `oesterreich_kontext` (v1.3, Mai 2026).
+
+### Messaging-Regeln (was funktioniert / was nicht)
+
+**Nie verwenden:**
+- „Geld verdienen durch Gehen" / „earn money for walking" — österreichischer Skeptizismus macht das kontraproduktiv (WeWard/Sweatcoin performen im DACH-Raum deutlich schlechter als in anglophonen Märkten)
+- Krypto/Token-Sprache — kein kultureller Fit, regulatorische Grauzone
+
+**Immer verwenden:**
+- „Gesund leben und dafür bei lokalen Partnern belohnt werden"
+- „Made in Austria" / „Gründer aus Wien" als Vertrauensanker
+- EU-Server und DSGVO aktiv kommunizieren (nicht nur implementieren) — 81% der Österreicher vertrauen Datenschutz, aber 5.300 DSB-Beschwerden 2025 zeigen aktives Datenbewusstsein
+
+### Produktentscheidungen mit österreichischem Kontext
+
+**Free-to-use ist nicht verhandelbar:** Nur 9,1% der Österreicher nutzen kostenpflichtige Gesundheits-Apps (Statista 2023). Keine Paywall, kein Freemium-Gate auf Kernfunktionen.
+
+**Cardio ≠ Nebensache:** Top-App im österreichischen Fitness-Segment (Google Play, Aug 2024) ist Komoot (Wandern/Radfahren). Outdoor-Aktivitäten sind kulturell verankert — Cardio-Tracking ist für das österreichische Publikum gleichwertig zu Steps, nicht optional.
+
+**Accessibility ist Pflicht, kein Nice-to-have:** Walter-Persona (55+) ist ein Kernsegment, keine Randgruppe. WCAG 2.1 AA-Konformität ist bereits im Business Plan verankert. Neue UI-Komponenten müssen für ältere Nutzer mit geringerer Digitalkompetenz funktionieren.
+
+**Datenkontrolle kommunizieren:** Österreichische Nutzer erwarten Autonomie über ihre Daten. Der bestehende Consent-Banner und Ledger-Transparenz sind richtig — aktiv in der UI sichtbar machen, nicht verstecken.
+
+### Institutionelle Anker (für Förderanträge und B2G)
+
+| Institution | Relevanz | REQ-Referenz |
+|---|---|---|
+| Gesundheitsziele Österreich (Ziele 3, 5, 8) | Fördernachweis FFG/aws/WA Wien | REQ-P-049–056 |
+| SVS Gesundheitshunderter (≤120€) | Aktivitätsnachweise exportierbar (Phase 3) | REQ-P-043 |
+| BGF-Förderung WKO/GKK | B2B-BGM-Kanal für Unternehmen | REQ-P-047 |
+| DiGA-Rahmen (ab 2027) | Digitale Gesundheitsapp verschreibbar | REQ-P-042 |
+| AIHTA-Studie | AT-spezifischer Wirkungsnachweis für Gamification | Förderanträge |
+
+## Post-Go-Live Roadmap
+
+### Community-Features: Cold-Start-Problem
+
+Community-Features (Leaderboard, Events, Write & Comment) dürfen **nicht vor Go-Live** implementiert werden — und sollten auch unmittelbar nach Go-Live noch nicht priorisiert werden.
+
+**Grund:** Ein leerer Leaderboard oder ein leerer Social Feed signalisiert eine tote App. Das ist aktiv schädlicher als gar kein Community-Feature.
+
+**Mindest-Schwelle:** Community-Features erst angehen wenn ≥200–500 aktive Nutzer vorhanden sind.
+
+**Korrekte Sequenz nach Go-Live:**
+1. Ersten 200–500 aktive Nutzer aufbauen (Punkte, Gamification, Bildung, Rewards stehen)
+2. Opt-in Leaderboard (REQ-P-025) — niedrigstes Risiko, sofort sichtbarer Mehrwert
+3. Community Events / Challenges (REQ-P-026)
+4. Write & Comment / Social Feed (REQ-P-046) — erst wenn Moderationskonzept steht
+
+**Marktvalidierung:** WeWard wächst durch Community + Rewards (+150% in 9 Monaten auf 25M Downloads, Stand Mai 2026). Aber WeWard hatte bereits Millionen Nutzer bevor Community-Features viral wurden — die Kausalität ist umgekehrt: Community beschleunigt Wachstum, erzeugt es nicht aus dem Nichts.
+
+**Aktueller Fokus:** P1-Blocker auflösen (Hetzner AVV, Vercel Pro, Art. 9-Consent, DPIA, AGB, VVT) → Go-Live → Nutzerbasis aufbauen → dann Community.
+
 ### Deployment
 
 - `dev` branch → Vercel preview → `dev.austrofit.at`
@@ -220,5 +342,5 @@ npx cap sync android
 - Env vars are set in Vercel (not in repo). Local `.env` has dev values.
 - **Vercel** uses `adapter-vercel` (default, no BUILD_TARGET env var set).
 - **Capacitor native APK**: `npm run cap:build` → uses `adapter-static` (BUILD_TARGET=capacitor) → `build/` bundle → Android Studio → Play Store.
-- `vercel.json` sets CORS headers for `/api/*` routes to allow `https://localhost` origin (Capacitor 8 Android WebView origin).
+- `vercel.json` sets global security headers (`X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy`) on all routes, plus CORS headers for `/api/*` routes to allow `https://localhost` origin (Capacitor 8 Android WebView origin).
 - `src/hooks.server.ts` handles OPTIONS preflight requests globally (returns 204) — required for POST/PATCH/DELETE from the native app.

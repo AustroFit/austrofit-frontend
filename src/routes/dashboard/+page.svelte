@@ -75,6 +75,7 @@
   // Streak
   let streakDays = $state(0);
   let quizStreakDays = $state(0);
+  let activityGroup = $state('');
 
   // Weekly step data (current ISO week)
   interface DayStepData { date: string; points: number; steps?: number; }
@@ -313,6 +314,7 @@
       quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
       longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
       showChecklist  = !profileData?.data?.onboarding_checklist_completed_at;
+      activityGroup  = profileData?.data?.activity_group ?? '';
     }
     if (cardioRes.ok) {
       const cd = await cardioRes.json();
@@ -449,6 +451,7 @@
       quizStreakDays = Number(profileData?.data?.quiz_streak_days ?? 0);
       longestStreak  = Number(profileData?.data?.longest_streak  ?? 0);
       showChecklist  = !profileData?.data?.onboarding_checklist_completed_at;
+      activityGroup  = profileData?.data?.activity_group ?? '';
 
       // Quiz-IDs für Status-Batch ermitteln
       const allQuizzes: any[] = quizzesRes.ok ? ((await quizzesRes.json())?.data ?? []) : [];
@@ -853,7 +856,7 @@
 
       <!-- 3. Streak -->
       <div class="rounded-[var(--radius-card)] bg-white border border-black/10 shadow-sm p-6">
-        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Streak</div>
+        <div class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">Tages-Serie</div>
         <div class="flex flex-col gap-4">
 
           <!-- Schritte-Streak (nur Native App) -->
@@ -861,14 +864,14 @@
             <div class="flex items-center gap-3">
               <div class="text-3xl {streakDays > 0 ? '' : 'opacity-25'}">🔥</div>
               <div class="flex-1">
-                <div class="text-xs font-medium text-gray-400 mb-0.5">Schritte-Streak</div>
+                <div class="text-xs font-medium text-gray-400 mb-0.5">Schritte-Serie</div>
                 {#if streakDays > 0}
                   <div class="text-xl font-bold">{streakDays} {streakDays === 1 ? 'Tag' : 'Tage'} in Folge</div>
                   <div class="mt-0.5 text-xs text-gray-500">
                     Noch {daysToNextStepBonus} {daysToNextStepBonus === 1 ? 'Tag' : 'Tage'} bis +60P Bonus
                   </div>
                 {:else}
-                  <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
+                  <div class="font-semibold text-gray-600">Noch keine aktive Serie</div>
                   <div class="text-xs text-gray-400">Erreich heute 4.000 Schritte!</div>
                 {/if}
               </div>
@@ -880,7 +883,7 @@
             <div class="flex items-center gap-3">
               <div class="text-3xl {cardioStreakWeeks > 0 ? '' : 'opacity-25'}">🏃</div>
               <div class="flex-1">
-                <div class="text-xs font-medium text-gray-400 mb-0.5">Bewegungs-Streak</div>
+                <div class="text-xs font-medium text-gray-400 mb-0.5">Bewegungs-Serie</div>
                 {#if cardioStreakWeeks >= 2}
                   <div class="text-xl font-bold">{cardioStreakWeeks} Wochen in Folge</div>
                   <div class="mt-0.5 text-xs text-gray-500">
@@ -890,7 +893,7 @@
                   <div class="text-xl font-bold">1 Woche</div>
                   <div class="mt-0.5 text-xs text-gray-500">Noch 1 weitere Woche bis +100P Bonus</div>
                 {:else}
-                  <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
+                  <div class="font-semibold text-gray-600">Noch keine aktive Serie</div>
                   <div class="text-xs text-gray-400">Erreiche ≥200P Cardio in einer Woche!</div>
                 {/if}
               </div>
@@ -903,14 +906,14 @@
           <div class="flex items-center gap-3">
             <div class="text-3xl {quizStreakDays > 0 ? '' : 'opacity-25'}">📚</div>
             <div class="flex-1">
-              <div class="text-xs font-medium text-gray-400 mb-0.5">Quiz-Streak</div>
+              <div class="text-xs font-medium text-gray-400 mb-0.5">Quiz-Serie</div>
               {#if quizStreakDays > 0}
                 <div class="text-xl font-bold">{quizStreakDays} {quizStreakDays === 1 ? 'Tag' : 'Tage'} in Folge</div>
                 <div class="mt-0.5 text-xs text-gray-500">
                   Noch {daysToNextQuizMilestone} {daysToNextQuizMilestone === 1 ? 'Tag' : 'Tage'} bis zum nächsten Meilenstein
                 </div>
               {:else}
-                <div class="font-semibold text-gray-600">Noch kein aktiver Streak</div>
+                <div class="font-semibold text-gray-600">Noch keine aktive Serie</div>
                 <div class="text-xs text-gray-400">Mache heute ein Quiz!</div>
               {/if}
             </div>
@@ -920,7 +923,7 @@
 
         {#if showNativeFeatures && longestStreak > 0}
           <div class="mt-4 pt-4 border-t border-black/5 text-sm text-gray-400">
-            Längster Schritte-Streak: <span class="font-semibold text-gray-600">{longestStreak} Tage</span>
+            Längste Schritte-Serie: <span class="font-semibold text-gray-600">{longestStreak} Tage</span>
           </div>
         {/if}
       </div>
@@ -998,6 +1001,9 @@
               <p class="mb-4 text-xs font-medium text-primary">🎉 {cardioView === 'woche' ? 'Wochenziel' : 'Tagesziel'} erreicht!</p>
             {:else}
               <p class="mb-4 text-xs text-body/60">Noch {cardioViewGoal - cardioViewEqMinutes} min bis zum {cardioView === 'woche' ? 'Wochen' : 'Tages'}ziel</p>
+            {/if}
+            {#if activityGroup === 'pregnant'}
+              <p class="mb-3 text-xs text-gray-400">Intensive Einheiten zählen für dich als moderate Bewegung (WHO-Empfehlung für Schwangere)</p>
             {/if}
           {/if}
 

@@ -1,0 +1,354 @@
+# AustroFit Finanzplan
+# Preismodell, Kostenstruktur, Umsatzprognosen, Kapitalbedarf.
+# Ablage: docs/strategy/financials.yaml
+# Erstellt: 2026-05-28
+# Quelle: Business Plan v0.13, Kap. 5.3, 6.1–6.5
+#
+# Designprinzip — Single Source of Truth:
+#   Zahlen und Annahmen leben hier. Prognosen referenzieren Meilensteine
+#   via milestone_ref → docs/strategy/milestones.yaml (id).
+#   Narrative (Begründungen, Herleitung) bleibt in business-plan.yaml.
+#   Wenn sich Annahmen ändern: hier updaten, version bumpen, changelog ergänzen.
+
+meta:
+  titel: AustroFit Finanzplan
+  version: "1.0"
+  erstellt: "2026-05-28"
+  aktualisiert: "2026-05-28"
+  quelle_original: "Business Plan v0.13, Kap. 5.3 + 6.1–6.5"
+  beschreibung: >
+    Maschinenlesbarer Finanzplan. Enthält ausschließlich Zahlen und Annahmen.
+    Zum Businessplan-Narrative: /businessplan generiert daraus den Fließtext.
+  aenderungslog:
+    - version: "1.0"
+      datum: "2026-05-28"
+      aenderungen:
+        - "Initiale Extraktion aus Business Plan v0.13 (Kap. 5.3, 6.1-6.5)"
+        - "Hosting-Kosten aktualisiert: Supabase → Vercel + Directus Cloud (Stand März 2026)"
+
+# ──────────────────────────────────────────────
+# ERLÖSMODELL (B2B)
+# ──────────────────────────────────────────────
+erloesmodell:
+  b2c_kostenlos: true   # unveränderlich — Kernprinzip Social Business
+
+  provision:
+    beschreibung: "Pay-per-Redemption: Provision auf Partner-Bruttoumsatz via AustroFit"
+    staffel:
+      - bis_eur: 5000
+        provision_pct: 6
+      - bis_eur: 25000
+        provision_pct: 5
+      - ab_eur: 25001
+        provision_pct: 4
+    gemischter_satz_annahme_pct: 5   # für ARPU-Berechnungen
+
+  partnerpakete:
+    - id: basic
+      preis_eur_monat: 0
+      leistungen: "Gutschein-Einlösung, Zugang zum Dashboard"
+    - id: plus
+      preis_eur_monat: 19
+      leistungen: "Priorisierte Darstellung, Highlight-Badge, 50 Gratis-Listings"
+    - id: premium
+      preis_eur_monat: 39
+      leistungen: "Event-Integration, Statistikauswertungen, Logo-Branding, 200 Gratis-Listings"
+    - id: nachhaltigkeit
+      preis_eur_monat: 29
+      leistungen: "ESG-Label, Filterplatzierung, 300 Gratis-Listings"
+      voraussetzung: "Zertifizierter Nachhaltigkeitsnachweis"
+
+  listing_gebuehren:
+    gebuehr_pro_angebot_eur: 0.20    # Durchschnitt (Großunternehmen 0,25€, KMU 0€)
+    erneuerung_tage: 90
+    annahme_listings_pro_partner: 25
+    annahme_zahlende_partner_pct: 60
+
+  paket_verteilung_annahmen:
+    basic_pct: 40    # testen, Kleinstbudget
+    plus_pct: 35     # mehr Sichtbarkeit
+    premium_pct: 15  # Ketten, größere Unternehmen
+    nachhaltigkeit_pct: 10
+
+  wert_austausch:
+    punkte_pro_eur: 100   # 100 Punkte ≙ 1 € Einlösewert (kommuniziert)
+
+# ──────────────────────────────────────────────
+# ARPU-MODELL
+# ──────────────────────────────────────────────
+arpu:
+  gesundheits_portemonnaie_eur_monat: 273   # Ø monatliche Gesundheitsausgaben B2C-Zielgruppe
+  provision_satz_pct: 5
+  formel: "gesundheits_portemonnaie × capture_rate × provision × 12"
+  szenarien:
+    - capture_rate_pct: 1
+      arpu_eur_jahr: 1.60
+      beschreibung: "Sehr konservativ – Proof of Concept, wenige Partner"
+    - capture_rate_pct: 3
+      arpu_eur_jahr: 4.90
+      beschreibung: "Realistisch – nach 24 Monaten mit gutem Partnermix"
+    - capture_rate_pct: 5
+      arpu_eur_jahr: 8.20
+      beschreibung: "Ambitioniert – starkes Loyalty-Programm"
+    - capture_rate_pct: 10
+      arpu_eur_jahr: 16.40
+      beschreibung: "Sehr ambitioniert – starke Partnerdeals, breites Akzeptanznetz"
+
+# ──────────────────────────────────────────────
+# UMSATZPROGNOSE (konservativ)
+# ──────────────────────────────────────────────
+umsatzprognose:
+  annahmen:
+    - "Konservativ steigende Nutzerzahl"
+    - "Gesundheits-Portemonnaie 273 € (keine Inflationsanpassung)"
+    - "Capture-Rate steigt mit Partnernetz und Gamification"
+    - "Gemischter Provisionssatz sinkt mit steigendem Partnerumsatz"
+
+  jahre:
+    - jahr: 1
+      milestone_ref: nutzer-200
+      nutzer: 200
+      partner: 10          # nur via AWIN, keine Direktpartner
+      capture_rate_pct: 1
+      provision_satz_pct: 6
+      partner_bruttoumsatz_eur: 6541
+      umsatz_provision_eur: 400
+      umsatz_pakete_eur: 0    # AWIN = keine Paketbuchungen
+      umsatz_gebuehren_eur: 0
+      umsatz_gesamt_eur: 400
+      notes: "Nur AWIN-Affiliates — kein Paket- oder Gebührenumsatz"
+
+    - jahr: 2
+      milestone_ref: direktpartner-aufbau
+      nutzer: 500
+      partner: 20          # erste Direktpartner
+      capture_rate_pct: 2
+      provision_satz_pct: 5.5
+      partner_bruttoumsatz_eur: 32705
+      umsatz_provision_eur: 1800
+      umsatz_pakete_eur: 3700
+      umsatz_gebuehren_eur: 200
+      umsatz_gesamt_eur: 5700
+
+    - jahr: 3
+      nutzer: 800
+      partner: 40
+      capture_rate_pct: 3
+      provision_satz_pct: 5
+      partner_bruttoumsatz_eur: 78492
+      umsatz_provision_eur: 3900
+      umsatz_pakete_eur: 7400
+      umsatz_gebuehren_eur: 500
+      umsatz_gesamt_eur: 11700
+
+    - jahr: 4
+      milestone_ref: break-even
+      nutzer: 1200
+      partner: 80
+      capture_rate_pct: 4
+      provision_satz_pct: 4.5
+      partner_bruttoumsatz_eur: 156984
+      umsatz_provision_eur: 7100
+      umsatz_pakete_eur: 14800
+      umsatz_gebuehren_eur: 1000
+      umsatz_gesamt_eur: 22900
+
+    - jahr: 5
+      milestone_ref: b2g-pilot
+      nutzer: 2000
+      partner: 150
+      capture_rate_pct: 5
+      provision_satz_pct: 4
+      partner_bruttoumsatz_eur: 327049
+      umsatz_provision_eur: 13100
+      umsatz_pakete_eur: 27700
+      umsatz_gebuehren_eur: 1800
+      umsatz_gesamt_eur: 42600
+
+    - jahr: 10
+      beschreibung: "5% Marktdurchdringung (Skalierungsszenario)"
+      nutzer: 270000
+      partner: 2950
+      capture_rate_pct: 10
+      provision_satz_pct: 4
+      umsatz_provision_eur: 3500000
+      umsatz_pakete_eur: 545000
+      umsatz_gebuehren_eur: 35400
+      umsatz_gesamt_eur: 4100000
+
+# ──────────────────────────────────────────────
+# KOSTENPLANUNG
+# ──────────────────────────────────────────────
+kosten:
+  einmalig_investitionen:
+    gesamt_eur: 5000
+    positionen:
+      - bezeichnung: "Web-App-Entwicklung (MVP)"
+        betrag_eur: 50
+        notes: "KI-Tools + Netzwerk; Großteil Eigenleistung"
+      - bezeichnung: "Hosting, Software-Tools (Jahr 1)"
+        betrag_eur: 500
+        notes: "Domain, Directus Cloud, Vercel Pro, App Store Accounts"
+      - bezeichnung: "Recht & Datenschutz (AGB, DSGVO-Beratung)"
+        betrag_eur: 1000
+        notes: "WKO Erstberatung + externer Anwalt für AGB + DPIA"
+      - bezeichnung: "Markenanmeldung AustroFit (ÖPA)"
+        betrag_eur: 1250
+        notes: "Einmalige Gebühr, REQ-B-003"
+      - bezeichnung: "Reserve & Unvorhergesehenes"
+        betrag_eur: 2000
+        notes: "ca. 20% Puffer auf Gesamtkosten"
+
+  laufend_monatlich:
+    gesamt_ohne_puffer_eur: 600
+    positionen:
+      - bezeichnung: "App-Hosting (Vercel Pro + Directus Cloud)"
+        betrag_eur: 45
+        notes: "Stand Mai 2026: Vercel Pro ~20€ + Directus Cloud ~25€; Vercel Hobby blockiert AVV"
+      - bezeichnung: "App Store (Apple Developer Account)"
+        betrag_eur: 8
+        notes: "Apple 99 USD/Jahr ≈ 8€/Monat; Google Play einmalig 25 USD"
+      - bezeichnung: "Schnittstellen & APIs"
+        betrag_eur: 0
+        notes: "Health Connect, HealthKit: kostenlos"
+      - bezeichnung: "Marketingkosten (CAC)"
+        betrag_eur: 200
+        notes: "Jahr 1; steigt proportional mit Nutzerwachstum. Ziel ROAS ≥ 3."
+      - bezeichnung: "Buchhaltung & Steuerberatung"
+        betrag_eur: 100
+        notes: "Je nach Abrechnungstaktung"
+      - bezeichnung: "Versicherungen & gewerbliche Abgaben"
+        betrag_eur: 200
+        notes: "Unfall, Haftpflicht, Cyber, Grundumlagen"
+      - bezeichnung: "App-Wartung & Support"
+        betrag_eur: 0
+        notes: "Aktuell intern; kein externer Aufwand"
+
+  deferred_salary:
+    betrag_eur_monat: 600
+    auszahlung_ab_mrr_eur: 15000
+    beschreibung: >
+      Gründerlohn als kalkulatorische Größe (Deferred Salary).
+      Keine Entnahmen bis ≥ 15.000 € Monthly Recurring Revenue.
+      Wird für Kostenrechnung mit 600 €/Monat berücksichtigt.
+
+# ──────────────────────────────────────────────
+# PLAN-GuV (Gewinn & Verlust)
+# ──────────────────────────────────────────────
+guv:
+  annahmen:
+    - "Jahr 1: Anfangsinvestitionen (5.000€) + laufende Kosten (7.200€) + Marketing"
+    - "Marketingkosten steigen mit Nutzerwachstum"
+    - "Gründerlohn (Deferred Salary 600€) in Kosten eingerechnet"
+    - "Worst-Case: +20% Kosten, -20% Umsatz"
+  jahre:
+    - jahr: 1
+      kosten_eur: 19000
+      umsatz_eur: 400
+      gewinn_eur: -18600
+      worst_case_gewinn_eur: -22500
+    - jahr: 2
+      kosten_eur: 14700
+      umsatz_eur: 5700
+      gewinn_eur: -9000
+      worst_case_gewinn_eur: -13000
+    - jahr: 3
+      kosten_eur: 16000
+      umsatz_eur: 11700
+      gewinn_eur: -4300
+      worst_case_gewinn_eur: -9800
+    - jahr: 4
+      kosten_eur: 19000
+      umsatz_eur: 22900
+      gewinn_eur: 3900
+      worst_case_gewinn_eur: -4500
+    - jahr: 5
+      kosten_eur: 26000
+      umsatz_eur: 42600
+      gewinn_eur: 16600
+      worst_case_gewinn_eur: 2900
+
+# ──────────────────────────────────────────────
+# BREAK-EVEN
+# ──────────────────────────────────────────────
+break_even:
+  monat: 42
+  jahr: 4
+  nutzer: 1010
+  partner: 51
+  milestone_ref: break-even
+  worst_case:
+    monat: 55
+    nutzer: 1686
+    partner: 122
+    beschreibung: "+30% Monate, +67% Nutzer, +200% Partner bei +20% Kosten/-20% Umsatz"
+
+# ──────────────────────────────────────────────
+# KAPITALBEDARF & FINANZIERUNGSSTRATEGIE
+# ──────────────────────────────────────────────
+kapitalbedarf:
+  gesamt_eur: 16000
+  beschreibung: >
+    Exklusive Deferred Salary. Inkludiert konservativen Puffer (~20%)
+    auf kumulierte Verluste der ersten zwei Jahre (~13.200€).
+  worst_case_eur: 28500
+  worst_case_beschreibung: >
+    +80% bei Worst-Case-Szenario (+20% Kosten/-20% Umsatz),
+    bezogen auf kumulierte Verluste der ersten drei Jahre (~23.700€).
+
+  finanzierungsquellen:
+    - quelle: "Eigenmittel Gründer"
+      betrag_eur: 5000
+      status: "vorhanden"
+      notes: "Für MVP-Start ausreichend"
+    - quelle: "NeuFöG + SVS Gründerbegünstigung"
+      betrag_eur: 1450
+      status: "geplant"
+      foerder_ref: [neufoeg, svs-gruenderbeguenstigung]
+    - quelle: "aws First Incubator + FFG Projekt.Start"
+      betrag_eur: 10000    # konservative Schätzung (60% von 10.000+)
+      status: "geplant"
+      foerder_ref: [aws-first-incubator, ffg-projekt-start]
+    - quelle: "Anschlussfinanzierung (B2G / Impact-Investor)"
+      betrag_eur: null
+      status: "optional Phase 3+"
+      notes: "Nur wenn organisches Wachstum nicht ausreicht"
+
+# ──────────────────────────────────────────────
+# LIQUIDITÄTS-AMPELSYSTEM
+# ──────────────────────────────────────────────
+liquiditaet:
+  monitor: "Rolling-12-Cash-Forecast, monatlich"
+  ampel:
+    - farbe: gruen
+      trigger_cash_puffer_monate: 6
+      trigger_eur_gt: 3600
+      massnahmen:
+        - "Kampagnen bei ROAS ≥ 3 weiterlaufen"
+        - "MVP-Backlog abarbeiten"
+        - "Weekly KPI-Check"
+    - farbe: gelb
+      trigger_cash_puffer_monate: "3–6"
+      trigger_eur_range: [1800, 3600]
+      massnahmen:
+        - "Paid-Ads -30%, Fokus SEO-Blog + Referral"
+        - "Zwei KMU-Pilotpartner kostenlos listen"
+        - "Förderanträge einreichen"
+        - "Gamification-Features auf Post-MVP verschieben"
+    - farbe: orange
+      trigger_cash_puffer_monate: "1,5–3"
+      trigger_eur_range: [900, 1800]
+      massnahmen:
+        - "Freelance-Freeze"
+        - "Nur Retargeting-Ads < 50€/Monat"
+        - "Hosting-Tiers downgraden"
+        - "Gründerlohn = 0€"
+        - "Bridge-Note 10.000–15.000€ vorbereiten"
+    - farbe: rot
+      trigger_cash_puffer_monate_lt: 1.5
+      trigger_eur_lt: 900
+      massnahmen:
+        - "B2B-Partnerpakete Jahr 2 mit 20% Rabatt prepaid verkaufen"
+        - "Crowdfunding (Health-Goodie-Box + In-App Badge)"
+        - "Punkte-Einlösungen nur bei Partners mit ≥50% Gutscheinwert"
+        - "Convertible SAFE ~50.000€ sichern"

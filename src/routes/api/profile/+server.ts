@@ -15,7 +15,7 @@ import { PRIVATE_CMS_STATIC_TOKEN } from '$env/static/private';
 import { extractBearerToken } from '$lib/server/auth';
 
 const USER_FIELDS = 'id,first_name,last_name,email,date_created,avatar';
-const PROFILE_FIELDS = 'id,streak_days,longest_streak,quiz_streak_days,health_connected,onboarding_completed,onboarding_checklist_completed_at,activity_group';
+const PROFILE_FIELDS = 'id,streak_days,longest_streak,quiz_streak_days,health_connected,onboarding_completed,onboarding_checklist_completed_at,activity_group,gesundheitsdaten_consent_at,gesundheitsdaten_consent_version,gesundheitsdaten_consent_revoked_at';
 
 const HEALTH_CONNECT_BONUS_POINTS = 20;
 
@@ -59,7 +59,10 @@ export async function GET({ request, fetch }: { request: Request; fetch: typeof 
       health_connected: profile.health_connected ?? false,
       onboarding_completed: profile.onboarding_completed ?? false,
       onboarding_checklist_completed_at: profile.onboarding_checklist_completed_at ?? null,
-      activity_group: profile.activity_group ?? 'adult'
+      activity_group: profile.activity_group ?? 'adult',
+      gesundheitsdaten_consent_at: profile.gesundheitsdaten_consent_at ?? null,
+      gesundheitsdaten_consent_version: profile.gesundheitsdaten_consent_version ?? null,
+      gesundheitsdaten_consent_revoked_at: profile.gesundheitsdaten_consent_revoked_at ?? null
     }
   });
 }

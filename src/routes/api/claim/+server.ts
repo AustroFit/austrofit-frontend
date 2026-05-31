@@ -5,8 +5,15 @@ import { qs } from '$lib/utils/qs';
 import { extractBearerToken, resolveUserId } from '$lib/server/auth';
 import { updateQuizStreak } from '$lib/server/streak';
 import { awardMilestoneIfNew } from '$lib/server/milestoneService';
+import { isRateLimited, rateLimitResponse } from '$lib/server/rateLimit';
 
 export const POST = async ({ request, fetch }) => {
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('cf-connecting-ip') ??
+    'unknown';
+  // Max. 20 Claims pro Stunde pro IP
+  if (isRateLimited(ip, 'claim', 20, 60 * 60 * 1000)) return rateLimitResponse();
   try {
     const access_token = extractBearerToken(request);
     if (!access_token) return json({ error: 'missing access_token' }, { status: 401 });

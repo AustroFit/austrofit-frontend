@@ -32,7 +32,7 @@
     },
     {
       id: 'streak',
-      label: '3-Tage-Streak erreichen',
+      label: '3 Tage aktiv in Folge',
       description: '+20 Punkte',
       done: streakDays >= 3
     }

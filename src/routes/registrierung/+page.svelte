@@ -3,9 +3,11 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { onMount } from 'svelte';
-  import { register, login } from '$lib/utils/auth';
+  import { register, login, getAccessToken } from '$lib/utils/auth';
   import { track } from '$lib/utils/mixpanel';
   import { apiUrl } from '$lib/utils/api';
+
+  const CONSENT_VERSION = 'v1';
   import { env as dynPublicEnv } from '$env/dynamic/public';
   const PUBLIC_EMAIL_VERIFICATION = dynPublicEnv.PUBLIC_EMAIL_VERIFICATION;
 
@@ -50,7 +52,7 @@
       value: 'chronic',
       label: 'Chronisch krank',
       sub: 'Reduziertes Wochenziel',
-      desc: 'Ca. 100 Min. moderates Training pro Woche',
+      desc: 'Ca. 100 Min. Wochenziel – erste Punkte schon ab 35 Min. Aktivität',
       icon: '💙'
     }
   ];
@@ -93,6 +95,9 @@
   onMount(() => {
     if (!browser) return;
     isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+    if (page.url.searchParams.get('oauth_onboarding') === '1' && getAccessToken()) {
+      step = 2;
+    }
   });
 
   async function onSubmit() {
@@ -122,8 +127,24 @@
     }
   }
 
-  function confirmGroup() {
-    if (browser) localStorage.setItem('austrofit_activity_group', selectedGroup);
+  async function confirmGroup() {
+    const token = browser ? getAccessToken() : null;
+    if (token) {
+      // Consent + activity_group direkt in DB schreiben (User ist bereits eingeloggt nach Step 1)
+      fetch(apiUrl('/api/auth/init-onboarding'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          activity_group: selectedGroup,
+          consent_given: gesundheitsdatenConsent,
+          consent_version: CONSENT_VERSION
+        })
+      }).catch(() => { /* non-critical, idempotent */ });
+    } else if (browser) {
+      // Fallback: activity_group für Login-Seite vorhalten (kein Token = E-Mail-Verifizierung aktiv)
+      localStorage.setItem('austrofit_activity_group', selectedGroup);
+    }
+
     if (PUBLIC_EMAIL_VERIFICATION === 'true') {
       step = 3;
     } else {
@@ -195,6 +216,33 @@
         <p class="mt-2 text-sm text-gray-500">
           Erstelle dein kostenloses Konto und starte deine AustroFit-Reise.
         </p>
+      </div>
+
+      <!-- § 5a KSchG: Pflichtangaben vor Registrierung (REQ-R-030) -->
+      <div class="mb-5 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 text-xs text-gray-500 space-y-1.5">
+        <p class="font-semibold text-gray-600 mb-2">Was du bekommst</p>
+        <ul class="space-y-1.5">
+          <li class="flex items-start gap-2">
+            <span class="text-primary mt-0.5 shrink-0">✓</span>
+            <span><strong class="text-gray-700">Dauerhaft kostenlos</strong> – kein Abo, keine versteckten Kosten</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-primary mt-0.5 shrink-0">✓</span>
+            <span><strong class="text-gray-700">Schritt- &amp; Aktivitätstracking</strong> über Android Health Connect; Punkte bei österreichischen Partnern einlösbar</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-primary mt-0.5 shrink-0">✓</span>
+            <span><strong class="text-gray-700">Erfordert</strong> Android 8.0 oder neuer sowie Health Connect-Berechtigung für Schritt-/Aktivitätsdaten</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-primary mt-0.5 shrink-0">✓</span>
+            <span><strong class="text-gray-700">Kündigung</strong> jederzeit möglich unter Profil → Konto löschen; alle Daten werden vollständig gelöscht</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-primary mt-0.5 shrink-0">✓</span>
+            <span><strong class="text-gray-700">EU-Datenschutz</strong> – Deine Daten liegen auf Servern in Europa, keine Weitergabe an Dritte</span>
+          </li>
+        </ul>
       </div>
 
       <form onsubmit={(e) => { e.preventDefault(); onSubmit(); }} class="flex flex-col gap-4">

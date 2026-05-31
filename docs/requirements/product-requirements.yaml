@@ -224,6 +224,25 @@ requirements:
       - 5% Glücksspielsteuer auf Gewinne >10.000€ beachtet
     compliance_ref: gspg-gewinnspiele-design
 
+  - id: REQ-P-045
+    titel: Individuelle Zielsetzung (Custom Step/Cardio Goals)
+    prioritaet: P2
+    status: deferred
+    kategorie: gamification
+    beschreibung: >
+      Nutzer können eigene Schritt- oder Cardio-Tagesziele über dem Systemminimum setzen.
+      Das Dashboard zeigt den Fortschritt zum persönlichen Ziel; Punkte werden weiterhin
+      ab dem Systemminimum vergütet.
+    akzeptanzkriterien:
+      - Nutzer kann eigenes Tagesziel für Schritte setzen (z.B. 10.000 statt 7.000)
+      - Persönliches Ziel in Profil-Einstellungen konfigurierbar
+      - Dashboard-Fortschrittsbalken zeigt Fortschritt zum persönlichen Ziel
+      - Punkte-Vergabe weiterhin nach Systemformel (ab 7.000 Schritten); persönliches Ziel ist Motivationsanker
+    market_ref: MI-003
+    notes: >
+      41% der analysierten Apps bieten Custom Goals (docs/market-research/competitive-analysis.yaml).
+      Steigert intrinsische Motivation für fortgeschrittene Nutzer (Persona Anna).
+
   # ═══════════════════════════════════════════════════════════════════
   # AKTIVITÄT / BEWEGUNGSTRACKING
   # ═══════════════════════════════════════════════════════════════════
@@ -302,6 +321,25 @@ requirements:
       - Workouts via HealthKit synchronisiert (Intensitätsmapping analog Android)
       - Health Permission Flow auf iOS korrekt implementiert
       - iOS-Build via Capacitor: TestFlight veröffentlicht
+
+  - id: REQ-P-048
+    titel: Erweiterte Aktivitäts-Analytics (Fortschritts-Detailseite)
+    prioritaet: P2
+    status: deferred
+    kategorie: aktivitaet
+    beschreibung: >
+      Nutzer sehen detaillierte Verlaufsanalysen ihrer Aktivitäten: Wochentrend,
+      persönliche Bestleistungen und Entwicklung über Zeit.
+    akzeptanzkriterien:
+      - Wochenverlauf: Schritte und Cardio-Minuten der letzten 4–8 Wochen als Chart
+      - Persönliche Bestleistungen: bester Schritttag, längster Streak, beste Cardio-Woche
+      - Entwicklungs-Trend: Fortschritt über Monat/Quartal sichtbar
+      - Integration in /mein-fortschritt oder neue Seite /aktivitaeten/verlauf
+    market_ref: MI-011
+    req_ref: REQ-U-006
+    notes: >
+      Runtopia (1M+ Downloads) zeigt: aktive Nutzer wollen Daten, nicht nur Punkte.
+      Retention-Feature für fortgeschrittene Nutzer (Persona Anna).
 
   # ═══════════════════════════════════════════════════════════════════
   # BILDUNG / QUIZ
@@ -495,6 +533,11 @@ requirements:
 
   # ═══════════════════════════════════════════════════════════════════
   # COMMUNITY
+  # Cold-Start-Regel: Kein Community-Feature vor Go-Live und nicht unmittelbar danach.
+  # Mindest-Schwelle: ≥200–500 aktive Nutzer. Reihenfolge: 025 → 026 → 027/046.
+  # Grund: Leerer Leaderboard / leerer Feed signalisiert tote App — schlimmer als kein Feature.
+  # Marktbeleg: WeWard wuchs auf 25M Downloads (Mai 2026) durch Community+Rewards,
+  # aber Community beschleunigt Wachstum — erzeugt es nicht aus dem Nichts.
   # ═══════════════════════════════════════════════════════════════════
 
   - id: REQ-P-025
@@ -508,6 +551,7 @@ requirements:
       - Leaderboard ist opt-in (Datenschutz)
       - Nur Pseudonym (kein Klarname) sichtbar
       - Filterbar nach Zeitraum (Woche/Monat) und Aktivitätstyp
+    implementation_note: "Erst umsetzen wenn ≥200 aktive Nutzer vorhanden. Erstes Community-Feature nach Go-Live."
 
   - id: REQ-P-026
     titel: Community Events
@@ -519,6 +563,7 @@ requirements:
     akzeptanzkriterien:
       - Events werden mit Datum, Ort und Challenge-Beschreibung angezeigt
       - Teilnahme vergibt Bonus-Punkte nach Abschluss-Verifikation
+    implementation_note: "Nach REQ-P-025 (Leaderboard). Benötigt stabile Nutzerbasis für sinnvolle Teilnehmerzahlen."
 
   - id: REQ-P-027
     titel: Invite-a-Friend / Referral
@@ -531,6 +576,26 @@ requirements:
       - Einladungs-Link ist eindeutig pro Nutzer (Referral-Code)
       - Bonus wird erst vergütet wenn eingeladener Nutzer sich registriert und ersten Quiz absolviert
       - Ziel: Viral-K-Factor ≥ 0,2
+
+  - id: REQ-P-046
+    titel: Social Feed / Schreiben & Kommentieren
+    prioritaet: P2
+    status: deferred
+    kategorie: community
+    beschreibung: >
+      Nutzer können Aktivitäten teilen und Beiträge anderer kommentieren.
+      Soziales Netzwerk-Feature als Ergänzung zu Leaderboard und Events.
+    akzeptanzkriterien:
+      - Nutzer kann Aktivitäts-Erlebnisse als Text-Post teilen (opt-in)
+      - Andere Nutzer können Beiträge kommentieren oder liken
+      - Datenschutz: nur eingeloggte Nutzer sehen Feed (kein öffentliches Profil)
+      - Moderationskonzept vorhanden (Community Guidelines, Melde-Funktion)
+    market_ref: MI-004
+    req_ref: [REQ-P-025, REQ-P-026]
+    notes: >
+      37% der Community-Apps haben Write & Comment (WeWard-Modell treibt 25M+ Downloads, verifiziert Mai 2026).
+      Nutzen-Risiko-Analyse zu Social-Media-Problemen erforderlich (Business Plan explizit erwähnt).
+      Nach Leaderboard (REQ-P-025) und Events (REQ-P-026) umsetzen. Benötigt Moderationskonzept.
 
   # ═══════════════════════════════════════════════════════════════════
   # AUTH & USER MANAGEMENT
@@ -783,6 +848,27 @@ requirements:
       - Abrechnung via Stripe, Rechnungsstellung via lexoffice API
       - KMU-Sonderkonditionen (kostenlose Listung)
 
+  - id: REQ-P-047
+    titel: B2B Corporate Wellness / BGM-Kanal
+    prioritaet: P3
+    status: deferred
+    kategorie: b2b
+    beschreibung: >
+      Unternehmen zahlen für AustroFit als Mitarbeiter-Gesundheitsplattform (Betriebliche
+      Gesundheitsförderung). Team-Challenges, Firmen-Leaderboard und BGF-Dashboard für HR.
+    akzeptanzkriterien:
+      - Firmen-Account mit eigenem Login (getrennt von Mitarbeiter-Accounts)
+      - Team-Challenges: Unternehmen erstellt Challenge für definierte Mitarbeiter-Gruppe
+      - Firmen-Leaderboard: anonymisierte Rangliste innerhalb des Unternehmens
+      - BGF-Dashboard: aggregierte Aktivitätsstatistiken für HR (keine Einzeldaten, Privacy by Design)
+      - Preismodell: monatliche Lizenzgebühr pro aktivem Mitarbeiter
+    market_ref: MI-007
+    req_ref: REQ-P-040
+    notes: >
+      Pandocs (AT, BGF, 5K+ Downloads) und moveeffect (AT, BGM, €145K Seed) zeigen lokale
+      Marktnachfrage. Separater Kanal von Direktpartner-B2B (REQ-P-040): dort zahlen Partner
+      für Marketplace-Sichtbarkeit; hier zahlen Unternehmen für Mitarbeiter-Zugang.
+
   # ═══════════════════════════════════════════════════════════════════
   # B2G
   # ═══════════════════════════════════════════════════════════════════
@@ -817,3 +903,219 @@ requirements:
       DSGVO-konforme Impact-Analytics-API mit differential privacy für Wirkungsmessung ohne
       Weitergabe personenbezogener Daten.
     compliance_ref: dsgvo-art25-privacy-by-design
+
+  # ═══════════════════════════════════════════════════════════════════
+  # ÖSTERREICHISCHE GESUNDHEITSZIELE
+  # Quelle: https://gesundheitsziele-oesterreich.at/ [2]
+  # Business Plan Ref: Anhang A4 (Gesundheitsziele Österreich)
+  # Zweck: Fördernachweis (aws, FFG, WA Wien) + B2G-Positionierung
+  #
+  # AustroFit adressiert 8 der 10 Gesundheitsziele:
+  #   Ziel 1 → REQ-P-049  (Lebens-/Arbeitsbedingungen)   implemented
+  #   Ziel 2 → REQ-P-050  (Chancengerechtigkeit)          implemented
+  #   Ziel 3 → REQ-P-051  (Gesundheitskompetenz)          implemented
+  #   Ziel 4 → n/a        (Umwelt/Lebensgrundlagen)       nicht anwendbar
+  #   Ziel 5 → REQ-P-052  (Sozialer Zusammenhalt)         deferred (≥200 Nutzer)
+  #   Ziel 6 → REQ-P-053  (Kinder & Jugendliche)          deferred (Phase 3)
+  #   Ziel 7 → REQ-P-054  (Ernährung & nachhaltige Partner) in-progress
+  #   Ziel 8 → REQ-P-055  (Bewegung im Alltag)            implemented  ← Kernzweck
+  #   Ziel 9 → REQ-P-056  (Psychosoziale Gesundheit)      implemented
+  #   Ziel 10 → n/a       (Gesundheitsversorgung)         nicht anwendbar
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: REQ-P-049
+    titel: "Gesundheitsziel 1 – Gesundheitsförderliche Lebens- und Arbeitsbedingungen"
+    ziel_nr: 1
+    feature_ref:
+      - schritte-android
+      - cardio-android
+      - direktpartner-marketplace
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      AustroFit fördert Bewegung im Alltag durch niedrigschwelliges Schritt- und
+      Cardio-Tracking mit Gamification-Anreizen. Der Partner-Marketplace bietet
+      Zugang zu gesundheitsfördernden lokalen Angeboten. Der B2B-BGM-Kanal
+      (REQ-P-047) ermöglicht zusätzlich betriebliche Gesundheitsförderung durch Arbeitgeber.
+    akzeptanzkriterien:
+      - Schritt-Tracking erfasst tägliche Alltagsbewegung (nicht nur Sport)
+      - Cardio-Tracking unterstützt strukturierte Aktivitäten (Gehen, Laufen, Radfahren, Schwimmen)
+      - Partner-Marketplace enthält gesundheitsfördernde Angebote (Fitnessstudios, Bewegungskurse)
+      - B2B-BGM-Kanal ist technisch vorbereitet für Arbeitgeber-Integration
+    req_ref: [REQ-P-011, REQ-P-012, REQ-P-021, REQ-P-047]
+
+  - id: REQ-P-050
+    titel: "Gesundheitsziel 2 – Gesundheitliche Chancengerechtigkeit"
+    ziel_nr: 2
+    feature_ref:
+      - quiz-anonym
+      - gesundheitswegweiser-artikel
+      - schritte-android
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      AustroFit ist dauerhaft kostenlos, ohne Kaufverpflichtung und ohne soziale Eintrittshürde
+      nutzbar. Bildungsangebote (Artikel, Quiz) stehen auch ohne Anmeldung zur Verfügung.
+      Aktivitätsgruppen passen Ziele an individuelle Ausgangslage an — kein Standard-Ziel
+      das gesundheitsferne Gruppen von vornherein ausschließt.
+    akzeptanzkriterien:
+      - Kernfunktionen sind dauerhaft ohne Entgelt nutzbar (keine Paywall)
+      - Quiz und Artikel sind ohne Registrierung zugänglich (REQ-P-016, REQ-P-015)
+      - Schrittzählung beginnt ab Schritt 1 — keine Mindestaktivität zum Einstieg
+      - Aktivitätsgruppen (adult/senior/pregnant/chronic) passen Ziele an (REQ-P-030)
+    req_ref: [REQ-P-016, REQ-P-015, REQ-P-030]
+
+  - id: REQ-P-051
+    titel: "Gesundheitsziel 3 – Gesundheitskompetenz der Bevölkerung stärken"
+    ziel_nr: 3
+    feature_ref:
+      - gesundheitswegweiser-artikel
+      - quiz-anonym
+      - quiz-authentifiziert
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      Gesundheitswegweiser (evidenzbasierte Artikel) und Quiz-Module stärken das
+      Gesundheitswissen der Nutzer nachweisbar. Inhalte basieren ausschließlich auf
+      WHO/FGOE-Bewegungsempfehlungen. Wirkungsmessung via HLS-EU-Q16-Follow-Up-Umfrage
+      (3-Monats-Messung) ist für Förderanträge geplant (vgl. Business Plan).
+    akzeptanzkriterien:
+      - Alle Artikel basieren auf WHO/FGOE-Empfehlungen (redaktionelle Prüfpflicht bei jedem neuen Artikel)
+      - Quiz-Module decken Themen Bewegung, Ernährung und mentale Gesundheit ab
+      - Quiz-Cooldown (30 Tage) sichert nachhaltiges Lernen statt Punkt-Farming
+      - Wirkungsevaluation (HLS-EU-Q16 oder äquivalent) für Förderanträge konzipiert
+    compliance_ref: uwg-health-claims
+    req_ref: [REQ-P-015, REQ-P-016, REQ-P-017]
+
+  - id: REQ-P-052
+    titel: "Gesundheitsziel 5 – Sozialer Zusammenhalt durch Gesundheit stärken"
+    ziel_nr: 5
+    feature_ref:
+      - leaderboard
+      - community-events
+      - invite-a-friend
+    prioritaet: P2
+    status: deferred
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      Community-Features (Leaderboard, Events, Referral) schaffen soziale Verbundenheit
+      rund um gemeinsame Bewegungsziele. Regionale Events fördern Gemeinschaft im Grätzl /
+      Bezirk. Cold-Start-Problem: erst sinnvoll ab ≥200 aktiven Nutzern (vgl. CLAUDE.md).
+    akzeptanzkriterien:
+      - Leaderboard ist opt-in und zeigt nur Pseudonyme (kein Klarname — Datenschutz)
+      - Community Events haben lokalen / regionalen Bezug (Grätzl, Bezirk, Wien)
+      - Invite-a-Friend fördert soziales Onboarding (Bonus erst nach erster Aktivität)
+    implementation_note: "Community-Features erst nach Go-Live bei ≥200 aktiven Nutzern (CLAUDE.md)."
+    req_ref: [REQ-P-025, REQ-P-026, REQ-P-027]
+
+  - id: REQ-P-053
+    titel: "Gesundheitsziel 6 – Gesundes Aufwachsen für Kinder und Jugendliche"
+    ziel_nr: 6
+    feature_ref: []
+    prioritaet: P3
+    status: deferred
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      AustroFit ist für Jugendliche ab 16 Jahren grundsätzlich adaptierbar.
+      Kein dediziertes Jugend-Feature implementiert. Potenzial: angepasste Aktivitätsziele
+      nach WHO-Empfehlungen für 5–17-Jährige (≥60 min/Tag), Schul-Challenges,
+      Kooperation mit Sportvereinen. Voraussetzung: datenschutzrechtliche Klärung (DSGVO Art. 8).
+    akzeptanzkriterien:
+      - Datenschutzrechtliche Zulässigkeit für Minderjährige geprüft (DSGVO Art. 8: Einwilligung Erziehungsberechtigte)
+      - Altersgerechte Aktivitätsziele (WHO: ≥60 min moderate Aktivität/Tag für 5–17-Jährige)
+      - Kein Behavioral-Targeting oder Profiling für Minderjährige
+    notes: "Kein Handlungsbedarf vor Phase 3. Relevant für Kooperationen mit Schulen oder Sportvereinen."
+    compliance_ref: dsgvo-art9-consent
+
+  - id: REQ-P-054
+    titel: "Gesundheitsziel 7 – Gesunde und nachhaltige Ernährung zugänglich machen"
+    ziel_nr: 7
+    feature_ref:
+      - direktpartner-marketplace
+      - partner-filter
+      - partner-pakete
+    prioritaet: P2
+    status: in-progress
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      Der Partner-Marketplace priorisiert regionale und nachhaltige Lebensmittelangebote
+      (Bio-Produkte, regionale Lieferanten, nachhaltige Gastronomie). ESG-Filter und
+      Nachhaltigkeits-Partnerpakt setzen diese Priorisierung technisch um.
+      Offenes Handlungsfeld: aktive Partner-Akquise in der Kategorie Lebensmittel/Ernährung.
+    akzeptanzkriterien:
+      - Partner-Filter enthält Kategorie "Ernährung / Lebensmittel" und ESG-Flag
+      - Nachhaltigkeits-Paket für Lebensmittelpartner verfügbar (partner-pakete)
+      - Mindestens 3 regionale Lebensmittel- oder Ernährungspartner bei Launch (Ziel Jahr 1)
+    implementation_note: >
+      Technisch ist der Marketplace implementiert (REQ-P-021); offen ist die Partner-Akquise
+      in der Kategorie Lebensmittel/Ernährung — Vertriebsanforderung, kein App-Feature.
+    req_ref: [REQ-P-021, REQ-P-023, REQ-P-041]
+
+  - id: REQ-P-055
+    titel: "Gesundheitsziel 8 – Gesunde und sichere Bewegung im Alltag fördern"
+    ziel_nr: 8
+    feature_ref:
+      - schritte-android
+      - cardio-android
+      - streak-schritte
+      - streak-cardio
+      - challenges
+      - milestones
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      Kernzweck von AustroFit: tägliche Alltagsbewegung messen, durch Gamification
+      nachhaltig motivieren und durch aktivitätsgruppenspezifische Ziele sicher gestalten.
+      Cardio-Ziele basieren auf WHO/FGOE-Bewegungsempfehlungen (150 min moderate Aktivität/Woche).
+      Direkte Umsetzung von Ziel 8 der österreichischen Gesundheitsziele.
+    akzeptanzkriterien:
+      - Schrittformel orientiert sich an WHO/FGOE-Bewegungsempfehlungen
+      - Cardio-Wochenziele sind gruppenspezifisch (adult/senior/pregnant/chronic)
+      - Streak-System (täglich/wöchentlich) belohnt Kontinuität statt Einzelleistung
+      - Aktivitätsgruppen verhindern Überforderung durch unrealistische Standardziele
+    compliance_ref: uwg-health-claims
+    req_ref: [REQ-P-011, REQ-P-012, REQ-P-003, REQ-P-005, REQ-P-009, REQ-P-007]
+
+  - id: REQ-P-056
+    titel: "Gesundheitsziel 9 – Psychosoziale Gesundheit fördern"
+    ziel_nr: 9
+    feature_ref:
+      - badges
+      - milestones
+      - level-system
+      - community-events
+    prioritaet: P1-MVP
+    status: implemented
+    kategorie: gesundheitsziele
+    quelle: "https://gesundheitsziele-oesterreich.at/"
+    business_plan_ref: "Business Plan Anhang A4"
+    beschreibung: >
+      Positive Verstärkung durch Badges, Milestones und Level stärkt Selbstwirksamkeit
+      und psychisches Wohlbefinden. Gamification-Design basiert auf Self-Determination Theory
+      (Autonomie, Kompetenz, soziale Eingebundenheit). Community-Events (Phase 2) stärken
+      Zugehörigkeitsgefühl und soziale Motivation.
+    akzeptanzkriterien:
+      - Badges und Milestones belohnen erreichbare Ziele (keine frustrierende Gamification)
+      - Level-System zeigt messbaren Fortschritt und Zugehörigkeit zur AustroFit-Community
+      - Keine Dark Patterns in Gamification-Design (REQ-R-015)
+      - Community-Events fördern soziale Verbundenheit über gemeinsame Bewegung (Phase 2)
+    compliance_ref: kschg-no-dark-patterns
+    req_ref: [REQ-P-008, REQ-P-007, REQ-P-002, REQ-P-026]

@@ -7,9 +7,9 @@
 
 meta:
   titel: AustroFit Feature Registry
-  version: "1.2"
+  version: "1.3"
   erstellt: "2026-05-16"
-  aktualisiert: "2026-05-18"
+  aktualisiert: "2026-05-24"
   beschreibung: >
     Feature-Liste für Entwicklung, Planung und regulatorische Checks.
     Kombiniert Ist-Stand (Codebasis) mit Roadmap (Business Plan v1.3, Service Blueprint v1.1).
@@ -187,6 +187,22 @@ features:
     related_features:
       - punkte-ledger
 
+  - id: cardio-badges
+    name: "Cardio-Achievements / Badges"
+    status: planned
+    category: gamification
+    phase: phase-2
+    description: >
+      Badges und einmalige Boni für Cardio-Achievements (erstes Workout, erste
+      volle Cardio-Woche, 4/8/12 aufeinanderfolgende Wochen usw.).
+      Ergänzt die bestehenden step_threshold-Badges, die nur auf total_steps basieren.
+      Daten liegen im Ledger vor (source_type='streak', source_ref='cardio-YYYY-Wnn') —
+      kein neues Datenbankfeld erforderlich.
+    related_features:
+      - badges
+      - cardio-android
+      - milestones
+
   - id: challenges
     name: "Challenges"
     status: in-progress
@@ -242,6 +258,40 @@ features:
       gesetzt oder gelesen. Kein source_type='onboarding' mehr.
     related_features:
       - punkte-ledger
+
+  - id: streak-freeze
+    name: "Streak-Freeze / Streak-Repair"
+    status: to-discuss
+    category: gamification
+    phase: phase-2
+    description: >
+      Verhindern des Streak-Verlusts bei einem verpassten Tag (Octalysis Core Drive 8:
+      Loss Avoidance). Mögliche Mechaniken: einmalige Freeze-Items als Marketplace-
+      Belohnung (z.B. 200P = 1 Streak Freeze) oder automatischer Schutz nach
+      Erreichen bestimmter Streak-Längen.
+    notes: >
+      Verhältnis zum Streak-System klären: Wie wird ein gefrorener Tag in der
+      Streak-Berechnung behandelt? Setzt der Streak-Counter weiter?
+      Auswirkung auf Wochen-Meilensteine?
+    related_features:
+      - streak-schritte
+      - streak-wochen-bonus
+      - direktpartner-redeem
+
+  - id: personal-records
+    name: "Personal Records (Bestleistungen)"
+    status: to-discuss
+    category: gamification
+    phase: phase-2
+    description: >
+      Anzeige persönlicher Bestleistungen: bisher stärkster Schritt-Tag,
+      längste Schritt-Streak, längste Cardio-Streak, höchste Wochen-Schrittanzahl.
+      Alle Daten liegen im points_ledger und user_profiles.totalSteps vor —
+      kein neues Datenbankfeld erforderlich.
+    related_features:
+      - punkte-ledger
+      - streak-schritte
+      - streak-cardio
 
   # ─────────────────────────────────────────────────────────────────
   # AKTIVITÄT
@@ -542,7 +592,10 @@ features:
     status: planned
     category: community
     phase: phase-2
-    description: "Rangliste aktiver Nutzer nach Punkten oder Aktivität. Service Blueprint Phase 2."
+    description: >
+      Rangliste aktiver Nutzer nach Punkten oder Aktivität. Service Blueprint Phase 2.
+      Cold-Start-Regel: Erst umsetzen wenn ≥200 aktive Nutzer vorhanden — leerer Leaderboard schadet mehr als er nützt.
+      Erstes Community-Feature nach Go-Live; vor community-events und social-feed.
     related_features:
       - community-events
       - social-sharing
@@ -555,6 +608,7 @@ features:
     description: >
       Regionale Events und Community-Challenges. Directus Collections für Events geplant.
       Beitrag zu Gesundheitsziel Österreich Nr. 5 (sozialer Zusammenhalt).
+    req_ref: REQ-P-052
     related_features:
       - leaderboard
       - gewinnspiele
@@ -708,17 +762,105 @@ features:
       - email-password-auth
       - magic-link
 
+  - id: art9-consent
+    name: "Art. 9-Einwilligung (Gesundheitsdaten)"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      Explizite Checkbox in Registrierung Step 2 für Verarbeitung von Gesundheitsdaten
+      (Art. 9 Abs. 2 lit. a DSGVO). CONSENT_VERSION = 'v1'.
+      Logging: gesundheitsdaten_consent_at + gesundheitsdaten_consent_version in user_profiles.
+      Idempotent via /api/auth/init-onboarding (consent_given: true, consent_version: 'v1').
+      Implementiert 2026-05-24.
+    notes: >
+      Wortlaut trägt RECHTSCHECK-Kommentar — Anwalt-Freigabe ausstehend (Go-Live-Blocker).
+      Bei Textänderung CONSENT_VERSION auf 'v2' bumpen.
+      Lücke: Google-OAuth-Nutzer haben keinen Step-2-Consent (Phase 2 beheben).
+    linked_files:
+      - src/routes/registrierung/+page.svelte
+      - src/routes/api/auth/init-onboarding/+server.ts
+    related_features:
+      - gruppenauswahl
+      - consent-widerruf
+      - google-oauth
+
+  - id: consent-widerruf
+    name: "Consent-Widerruf (Gesundheitsdaten)"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      POST /api/consent/revoke setzt gesundheitsdaten_consent_revoked_at +
+      health_connected = false. UI in Profil → Datenschutz: zeigt Erteilungsdatum,
+      Widerruf-Button + Bestätigungs-Dialog. Implementiert 2026-05-24.
+    linked_files:
+      - src/routes/api/consent/
+      - src/routes/profil/+page.svelte
+    related_features:
+      - art9-consent
+      - dsgvo-loeschung
+
+  - id: kschg-infobox
+    name: "§ 5a KSchG Informationspflichten (Registrierung)"
+    status: implemented
+    category: auth
+    phase: mvp
+    description: >
+      Info-Box in Registrierung Step 1 mit Pflichtangaben nach § 5a KSchG
+      (Identität des Unternehmers, Eigenschaften der Dienstleistung, Gesamtpreis,
+      Vertragslaufzeit, Widerrufsrecht). REQ-R-030. Implementiert 2026-05-24.
+    linked_files:
+      - src/routes/registrierung/+page.svelte
+    related_features:
+      - email-password-auth
+
+  - id: passwort-reset
+    name: "Passwort-Reset (E-Mail)"
+    status: to-discuss
+    category: auth
+    phase: mvp
+    description: >
+      Selbstständiges Zurücksetzen des Passworts via E-Mail-Link (Directus
+      /auth/password/request-Flow). Ohne diese Funktion erfordert jedes vergessene
+      Passwort manuellen Admin-Eingriff in Directus.
+    notes: >
+      Directus hat einen eingebauten Password-Reset-Flow.
+      Abhängig vom funktionierenden SMTP-Kanal (Resend). Priorisieren sobald
+      SMTP-Zugang verfügbar ist. Google-OAuth-Nutzer sind nicht betroffen.
+    related_features:
+      - email-password-auth
+      - magic-link
+
+  - id: datenexport-art20
+    name: "Datenexport (Art. 20 DSGVO – Datenübertragbarkeit)"
+    status: planned
+    category: auth
+    phase: phase-2
+    description: >
+      Maschinenlesbarer Export aller personenbezogenen Nutzerdaten (JSON/CSV):
+      Ledger-Einträge, Aktivitätsdaten, Quiz-Versuche, Profil.
+      Gesetzliche Pflicht nach Art. 20 DSGVO (Recht auf Datenübertragbarkeit).
+    notes: >
+      Rohdaten liegen vollständig in Directus vor. API-Route /api/profile/export
+      noch nicht implementiert. Im DPIA-Gutachten als Anforderung klären.
+    related_features:
+      - dsgvo-loeschung
+      - profil-einstellungen
+
   # ─────────────────────────────────────────────────────────────────
   # SICHERHEIT
   # ─────────────────────────────────────────────────────────────────
 
   - id: steps-fraud-cap
-    name: "Schritt-Cap (max. 20.000/Tag)"
+    name: "Schritt-Cap (max. 30.000/Tag)"
     status: implemented
     category: sicherheit
     phase: mvp
     description: >
-      Tagesschritte werden auf max. 20.000 gekappt bevor Punkte berechnet werden.
+      Tagesschritte werden auf max. 30.000 gekappt bevor Punkte berechnet werden
+      (STEPS_FRAUD_CAP = 30_000). Deckt realistische Hochleistungstage ab
+      (Wandern, Vielspazierer; Withings+Pixel kann ~22.000 echte Schritte melden).
       Liegt in stepsService.ts (server-seitig), nicht im Endpoint.
     linked_files:
       - src/lib/server/stepsService.ts
@@ -840,6 +982,80 @@ features:
       - src/routes/api/redeem/+server.ts
     related_features:
       - direktpartner-redeem
+
+  - id: rate-limiting
+    name: "Rate Limiting (IP-basiert, In-Memory)"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      IP-basierter Sliding-Window Rate Limiter (rateLimit.ts, In-Memory pro Serverless-Instanz).
+      Login: 10 / 15 min. Register: 5 / 15 min. Claim: 20 / 60 min.
+      Redeem: 10 / 60 min. Schritte manuell: 5 / 15 min.
+      Gibt 429 mit Retry-After: 900 zurück.
+    linked_files:
+      - src/lib/server/rateLimit.ts
+      - src/routes/api/auth/login/+server.ts
+      - src/routes/api/auth/register/+server.ts
+      - src/routes/api/claim/+server.ts
+      - src/routes/api/redeem/+server.ts
+      - src/routes/api/steps/manual/+server.ts
+    related_features:
+      - account-lockout
+
+  - id: account-lockout
+    name: "Per-Account-Lockout (Login)"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      Sperrt ein Konto temporär nach 5 fehlgeschlagenen Login-Versuchen innerhalb von
+      10 Minuten (pro E-Mail-Adresse, zusätzlich zum IP-Rate-Limit).
+      Verhindert gezieltes Credential-Stuffing gegen bekannte Accounts.
+      source: recordAuthFailure() / isAccountLocked() in rateLimit.ts.
+    linked_files:
+      - src/lib/server/rateLimit.ts
+      - src/routes/api/auth/login/+server.ts
+    related_features:
+      - rate-limiting
+
+  - id: security-headers
+    name: "Security Headers (CSP, X-Content-Type-Options, X-Frame-Options, …)"
+    status: implemented
+    category: sicherheit
+    phase: mvp
+    description: >
+      vercel.json setzt für alle Routen:
+      Content-Security-Policy (default-src 'self', script-src 'unsafe-inline' + PostHog,
+      object-src 'none', frame-ancestors 'none', base-uri 'self'),
+      X-Content-Type-Options: nosniff,
+      X-Frame-Options: DENY,
+      Referrer-Policy: strict-origin-when-cross-origin,
+      Permissions-Policy: camera=(), microphone=(), geolocation=().
+    notes: >
+      CSP nutzt 'unsafe-inline' für script-src (SvelteKit Hydration unvermeidbar).
+      Schränkt Fremd-Script-Injection und Clickjacking ein; reduziert XSS-Risiko
+      beim localStorage-JWT. Gilt nur für Vercel-Deployment; lokal nicht aktiv.
+    linked_files:
+      - vercel.json
+    related_features:
+      - cors-capacitor
+
+  - id: dsa-meldeverfahren
+    name: "DSA Art. 16 Meldeverfahren (Abuse-Reporting)"
+    status: in-progress
+    category: sicherheit
+    phase: mvp
+    description: >
+      Mechanismus für Nutzer, um rechtswidrige Inhalte zu melden (Art. 16 DSA).
+      Erfordert: abuse@austrofit.at (E-Mail-Einrichtung ausstehend),
+      Meldelink im Impressum/Datenschutzerklärung, Bestätigungs-Rückmeldung.
+      REQ-R-028.
+    notes: >
+      Go-Live-Blocker (P1). Wartet auf Einrichtung von abuse@austrofit.at.
+      Nach E-Mail-Setup: Link im Impressum/DSE ergänzen (~15 min Code).
+    related_features:
+      - security-headers
 
   - id: device-id-check
     name: "Device-ID-Check"
@@ -963,6 +1179,28 @@ features:
     related_features:
       - capacitor-android-build
 
+  - id: native-android-evaluation
+    name: "Native Android App (Kotlin/Compose) – Evaluation"
+    status: to-discuss
+    category: plattform
+    phase: phase-2
+    description: >
+      Evaluation ob AustroFit nach Go-Live von Capacitor (WebView-Wrapper) auf eine
+      vollständig native Kotlin/Jetpack-Compose-App migriert werden soll.
+      Auslöser: Google AI Studio ermöglicht seit Mai 2026 die Generierung nativer
+      Kotlin-Apps aus einem Prompt (inkl. Browser-Emulator, USB-Flash, Play-Store-Upload).
+      Der technische Aufwand für eine Native-App sinkt damit deutlich.
+    notes: >
+      Aktuell kein Handlungsbedarf — Capacitor erfüllt alle MVP-Anforderungen.
+      Trigger für Evaluation: (a) Nutzerfeedback zu Performance/UX auf Android,
+      (b) native Health-API-Funktionen die Capacitor nicht unterstützt,
+      (c) AI-gestützte Native-Generierung reif genug für produktive Nutzung.
+      Mindest-Voraussetzung: Go-Live + erste Nutzerbasis (≥200 aktive User).
+      Referenz: https://android-developers.googleblog.com/2026/05/build-android-apps-google-ai-studio.html
+    related_features:
+      - capacitor-android-build
+      - ios-app
+
   # ─────────────────────────────────────────────────────────────────
   # B2B
   # ─────────────────────────────────────────────────────────────────
@@ -1067,7 +1305,8 @@ features:
     description: >
       DSGVO-konforme Impact-Analytics-API für öffentliche Gesundheitsakteure (differential privacy).
       Ermöglicht Wirkungsmessung ohne personenbezogene Datenweitergabe.
-      Beitrag zu Gesundheitszielen Österreich (Ziel 1, 2, 3, 5, 6, 8, 9).
+      Beitrag zu Gesundheitszielen Österreich (Ziel 1, 2, 3, 5, 6, 8, 9) — vgl. REQ-P-049 bis REQ-P-056.
+    req_ref: [REQ-P-049, REQ-P-050, REQ-P-051, REQ-P-052, REQ-P-053, REQ-P-055, REQ-P-056]
     related_features:
       - krankenkassen-integration
 

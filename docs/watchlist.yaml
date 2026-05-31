@@ -1,0 +1,434 @@
+# AustroFit Watchlist
+# Externe Entwicklungen, die für AustroFit strategisch relevant sind, aber
+# aktuell keinen unmittelbaren Handlungsbedarf auslösen.
+# Ablage: docs/watchlist.yaml
+# Erstellt: 2026-05-25
+#
+# Ablauf: Bei jedem /weekly-review oder Meilenstein relevante Einträge prüfen.
+# Wenn ein Watch-Item zum Handlungsbedarf wird → in features.yaml (to-discuss/planned)
+# oder requirements/*.yaml überführen.
+#
+# horizont_werte:
+#   akut:        "< 6 Monate — konkreter Handlungsdruck"
+#   strategisch: "6–18 Monate — frühzeitig beobachten"
+#   langfristig: "18 Monate+ — Radarschirm"
+#
+# status_werte:
+#   watch:       "Beobachten, kein Handlungsbedarf"
+#   check:       "Nächster Review: aktiv prüfen ob Handlungsbedarf"
+#   escalated:   "In features.yaml oder requirements/*.yaml überführt"
+
+meta:
+  titel: AustroFit Watchlist
+  version: "1.0"
+  erstellt: "2026-05-25"
+  aktualisiert: "2026-05-25"
+  beschreibung: >
+    Strategische Beobachtungsliste für externe Entwicklungen in den Bereichen
+    Technologie, Regulierung, Wettbewerb, Markt und Förderungen.
+    Quelle Trends: Business Plan v0.13 Kap. 4.4 + eigene Analyse Mai 2026.
+
+items:
+
+  # ═══════════════════════════════════════════════════════════════════
+  # TECHNOLOGIE
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: WATCH-T-001
+    titel: "EU AI Act — General Provisions (August 2026)"
+    kategorie: technologie
+    horizont: akut
+    status: check
+    beschreibung: >
+      Ab August 2026 gelten die allgemeinen Verbots-Artikel des EU AI Acts.
+      AustroFit nutzt aktuell kein KI-System im Sinne des Acts (keine Scoring-Modelle,
+      kein High-Risk-Bereich). Relevant wird es, sobald personalisierte Empfehlungen
+      oder AI-gestützte Features gebaut werden (z.B. Gemini-Integration).
+    trigger_fuer_handlung: >
+      Sobald ein Feature geplant wird, das Nutzerverhalten durch KI bewertet
+      oder Empfehlungen auf Basis von Gesundheitsdaten generiert.
+    compliance_ref: ai-act
+    notes: >
+      Screening bereits dokumentiert in docs/compliance.yaml (id: ai-act).
+      Aktuell: kein Blocker. Nächster Check: August 2026 (Inkrafttreten).
+
+  - id: WATCH-T-002
+    titel: "Google Health Connect API — Policy- und API-Änderungen"
+    kategorie: technologie
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      AustroFit hängt direkt von Google Health Connect für Schritt- und Cardio-Daten ab.
+      Google hat Health Connect 2023–2025 wiederholt geändert (Permissions, Aggregation APIs,
+      Play-Store-Pflichtangaben für Health-Apps). Unangekündigte Änderungen können
+      App-Store-Compliance oder Datenzugriff betreffen.
+    trigger_fuer_handlung: >
+      Google kündigt Breaking Changes in Health Connect API an; neue Pflichtfelder
+      in Play Console für Health-Apps; Permission-Modell ändert sich.
+    feature_ref: [schritte-android, cardio-android]
+    rhythmus: Quartalsweise bei Google I/O Ankündigungen und Play-Policy-Updates.
+    notes: >
+      Aktuell stabile API. Wichtig: android.permission.health.READ_STEPS bleibt
+      Declared Sensitive Permission → Prüfprozess bei jedem APK-Upload.
+
+  - id: WATCH-T-003
+    titel: "Native Android via Google AI Studio (Kotlin/Compose)"
+    kategorie: technologie
+    horizont: strategisch
+    status: escalated
+    beschreibung: >
+      Google AI Studio ermöglicht seit Mai 2026 die Generierung nativer Kotlin/
+      Jetpack-Compose-Apps aus einem Prompt, inkl. Browser-Emulator und Play-Store-Upload.
+      Technischer Aufwand für Native-Apps sinkt damit deutlich.
+    trigger_fuer_handlung: >
+      (a) Nutzerfeedback zu Android-Performance/UX, (b) Capacitor unterstützt
+      eine benötigte Health-API-Funktion nicht, (c) ≥200 aktive Nutzer erreicht.
+    feature_ref: native-android-evaluation
+    notes: >
+      Kein Handlungsbedarf vor Go-Live. Feature als to-discuss in features.yaml dokumentiert.
+      Referenz: https://android-developers.googleblog.com/2026/05/build-android-apps-google-ai-studio.html
+
+  - id: WATCH-T-004
+    titel: "Apple HealthKit + iOS PWA-Situation"
+    kategorie: technologie
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      iOS ist aktuell nicht supported (Capacitor iOS: Phase 2). Apple hat PWA-Unterstützung
+      auf iOS nach EU-Druck leicht verbessert, aber HealthKit bleibt für WebViews gesperrt.
+      Das ist ein strukturelles Problem für die iOS-Strategie.
+    trigger_fuer_handlung: >
+      Apple öffnet HealthKit-Zugriff für WebView/PWA; oder iOS-Nachfrage von Nutzern
+      übersteigt 20% der Registrierungen.
+    feature_ref: ios-app
+    rhythmus: WWDC (Juni) jährlich beobachten.
+
+  - id: WATCH-T-005
+    titel: "AI-gestützte Entwicklung als neuer Standard"
+    kategorie: technologie
+    horizont: langfristig
+    status: watch
+    beschreibung: >
+      Claude Code, Google AI Studio, Cursor etc. senken die Einstiegshürde für
+      App-Entwicklung dramatisch. Konkurrenten können schneller Features kopieren.
+      Differenzierung verlagert sich von Technologie zu Nutzerbindung,
+      Partnerökosystem und regionalem Vertrauen.
+    trigger_fuer_handlung: >
+      Direkter Konkurrent bringt österreich-spezifisches Produkt mit AustroFit-Feature-Set
+      auf den Markt in < 6 Monaten.
+    notes: >
+      AustroFit ist durch frühe Claude-Code-Nutzung bereits ahead of the curve.
+      Langfristiger Burggraben: lokale Partner-Exklusivität + österreichisches Branding.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # REGULIERUNG
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: WATCH-R-001
+    titel: "DiGA-ähnlicher Rahmen in Österreich (ab ~2027)"
+    kategorie: regulierung
+    horizont: langfristig
+    status: watch
+    beschreibung: >
+      Deutschland hat DiGA (Digitale Gesundheitsanwendungen, verschreibbar) eingeführt.
+      Ein österreichisches Äquivalent wird politisch diskutiert, aber kein konkreter
+      Gesetzgebungsprozess sichtbar. Relevant für B2G-Strategie und Förderanträge.
+    trigger_fuer_handlung: >
+      BMG oder Parlament kündigen DiGA-AT-Konsultation oder Gesetzesentwurf an.
+    req_ref: REQ-P-042
+    notes: >
+      Bereits als Phase-3+ in features.yaml und product-requirements.yaml dokumentiert.
+      Aktuell keine Aktion notwendig.
+
+  - id: WATCH-R-002
+    titel: "Gamification-Regulation in der EU"
+    kategorie: regulierung
+    horizont: langfristig
+    status: watch
+    beschreibung: >
+      Kein konkreter Gesetzgebungsprozess, aber das Thema (Nudging, Dark Patterns,
+      Kinderschutz) taucht in EU-Konsultationen auf. Für AustroFit geringes Risiko:
+      kein Echtgeld-Einsatz, keine Kinder-Zielgruppe, kein Zufallselement (GSpG
+      bereits gescreent).
+    trigger_fuer_handlung: >
+      EU-Kommission veröffentlicht Konsultationspapier zu Gamification-Regulierung
+      oder Dark-Patterns im Gesundheitsbereich.
+    compliance_ref: gspg
+    notes: >
+      GSpG vollständig gescreent (docs/laws/gspg/_screening.md). Watchlist-Eintrag:
+      § 58 Abs. 3 bei zufallsbasierten Verlosungen → 5% Abgabe wenn Preiswert > €10.000.
+
+  - id: WATCH-R-003
+    titel: "DSGVO-Enforcement: DSB-Entscheidungen zu Gesundheits-Apps"
+    kategorie: regulierung
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      Österreichische DSB (Datenschutzbehörde) hatte 2025 über 5.300 Beschwerden.
+      Entscheidungen zu Gesundheitsdaten (Art. 9 DSGVO) und Consent-Anforderungen
+      können Best-Practice-Standard verschieben. AustroFit ist direkt betroffen
+      (Gesundheitsdaten, Art.-9-Consent technisch implementiert).
+    compliance_ref: dsgvo
+    trigger_fuer_handlung: >
+      DSB veröffentlicht Leitlinie oder Entscheidung zu Consent-Standards für
+      Fitness-/Gesundheits-Apps; EDPB-Leitlinie zu Art. 9 aktualisiert.
+    rhythmus: >
+      Halbjährlich: dsb.gv.at/Entscheidungen prüfen. Spätestens vor DPIA-Erstellung.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # WETTBEWERB & MARKT
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: WATCH-C-001
+    titel: "WeWard DACH-Expansion"
+    kategorie: wettbewerb
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      WeWard ist direkter Konkurrent (Reward-for-Steps), wächst aggressiv
+      (+150% in 9 Monaten auf 25M Downloads, Stand Mai 2026, Funding 20M USD 2025).
+      Wenn WeWard gezielt Österreich-Partner akquiriert oder deutschsprachige
+      Lokalisierung mit Wien-Bezug aufbaut, ändert sich der Wettbewerbsdruck.
+    trigger_fuer_handlung: >
+      WeWard kündigt österreich-spezifische Partner-Kampagne an; WeWard erscheint
+      in österreichischen App-Store-Charts Top 50 Gesundheit.
+    rhythmus: Quartalsweise App-Store-Ranking und WeWard-Pressemitteilungen prüfen.
+    notes: >
+      Konkurrenzanalyse: docs/market-research/competitive-analysis.yaml.
+      AustroFits Differenzierung: regionale Partner + Bildung + Prävention + österr. Datenschutz.
+
+  - id: WATCH-C-002
+    titel: "ÖGK / SVS eigene App-Initiativen"
+    kategorie: wettbewerb
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      Gesetzliche Krankenversicherungen bauen eigene digitale Angebote aus.
+      ÖGK (21 Mrd. € Budget, 7,6M Versicherte) und SVS (1,2M Versicherte,
+      Gesundheitshunderter) sind Risiko (Substitution) und Chance (B2G-Kooperation).
+    trigger_fuer_handlung: >
+      ÖGK oder SVS kündigen eigene Gamification-App oder Reward-Programm an;
+      oder öffnen API/Partnerschaft für Drittanbieter.
+    req_ref: REQ-P-043
+    feature_ref: krankenkassen-integration
+    notes: >
+      Aktuell: ÖGK hat keine Gamification, SVS hat Gesundheitshunderter ohne digitale
+      Integration. B2G-Kooperation als Strategie bereits in Roadmap (Phase 3+).
+
+  - id: WATCH-C-003
+    titel: "Digital Health Marktvolumen Österreich"
+    kategorie: markt
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      Laut Statista wächst das Segment Gesundheit & Fitness-Apps in Österreich
+      2024–2027 um über 34%. Nachgelagerter Markt: BGF (Betriebliche Gesundheitsförderung),
+      Krankenkassen-Kooperationen. Marktgröße beeinflusst Förder-Argumentation.
+    trigger_fuer_handlung: >
+      Statista oder BMG veröffentlicht aktualisierte Marktdaten; vor jedem
+      Förderantrag Marktdaten aktualisieren.
+    rhythmus: Jährlich (Statista Austria, Gesundheitsjahrbuch).
+    notes: >
+      Aktuelle Datenbasis: Business Plan v0.13, Kap. 4.2 (Stand August 2025).
+      Gesundheitsjahrbuch 2025: ELGA, eCard-Services als neue Standardinstrumente.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # MARKT-TRENDS (aus Business Plan Kap. 4.4)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: WATCH-M-001
+    titel: "Gesundheit als Lebensstrategie — Megatrend"
+    kategorie: markt
+    horizont: langfristig
+    status: watch
+    beschreibung: >
+      Gesundheit entwickelt sich zur bewussten Lebensgestaltung. Bewegung, Achtsamkeit,
+      Ernährung und Prävention werden integrale Bestandteile von Lebensqualität.
+      Treiber für AustroFits Nutzernachfrage.
+    trigger_fuer_handlung: >
+      Marktdaten zeigen Stagnation oder Rückgang in Fitness-App-Nutzung;
+      oder gegenteilig: Hyperwachstum das Marketingstrategie ändern sollte.
+    notes: >
+      Bestätigt durch: Statista, Gesundheitsjahrbuch 2025, BMG Bewegungsempfehlungen.
+
+  - id: WATCH-M-002
+    titel: "Prävention als gesellschaftliche Schlüsselstrategie"
+    kategorie: markt
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      Nur 15% der Österreicher*innen nehmen Vorsorgeangebote wahr. Weniger als 5%
+      der öffentlichen Gesundheitsausgaben fließen in Prävention (1,8 Mrd. €).
+      Politischer Druck steigt, das zu ändern — direkte Chance für B2G-Kooperationen.
+    req_ref: [REQ-P-049, REQ-P-056]
+    trigger_fuer_handlung: >
+      BMG oder Gesundheitsministerium kündigt neue Präventionsstrategie oder
+      Förderprogramm für digitale Präventions-Apps an.
+    notes: >
+      Gesundheitsziele Österreich (REQ-P-049–056) sind der Fördernachweis.
+      Gesundheitsjahrbuch 2025 bestätigt Paradigmenwechsel Richtung Prävention.
+
+  - id: WATCH-M-003
+    titel: "Betriebliche Gesundheitsförderung als neuer Standard"
+    kategorie: markt
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      Unternehmen werden verstärkt zur Gesundheitsförderung ihrer Mitarbeitenden
+      verpflichtet bzw. steuerlich incentiviert. BGF-Markt (Betriebliche
+      Gesundheitsförderung) wächst — direkter B2B-Kanal für AustroFit.
+    trigger_fuer_handlung: >
+      WKO oder AK kündigt steuerliche Änderungen für BGF an; oder Großunternehmen
+      in Wien schreibt BGF-App-Partnerschaft aus.
+    req_ref: REQ-P-047
+    notes: >
+      WKO/GKK BGF-Förderung bereits als Kanal in Roadmap. Aktuell kein konkreter Pitch.
+
+  # ═══════════════════════════════════════════════════════════════════
+  # FÖRDERUNGEN — TIMING-KRITISCH
+  # ═══════════════════════════════════════════════════════════════════
+  #
+  # WICHTIG: Dieser Abschnitt listet Programme mit zeitkritischen Fenstern.
+  # Detaillierte Förderstrategie: Business Plan v0.13 Kap. 6.5 + REQ-B-018/019/020.
+  # Status-Voraussetzung: Gewerbe noch NICHT angemeldet (Stand Mai 2026).
+  #
+  # DATENQUALITÄT: Beträge und Konditionen aus Business Plan v0.13 (August 2025).
+  # Vor jeder Einreichung aktuell auf den Programm-Websites verifizieren —
+  # Förderkonditionen ändern sich jährlich. Die zeitlichen Abhängigkeiten
+  # (wann beantragen) sind stabil; die konkreten Beträge können abweichen.
+  # ═══════════════════════════════════════════════════════════════════
+
+  - id: WATCH-F-001
+    titel: "NeuFöG — IRREVERSIBLES ZEITFENSTER bei Gründung"
+    kategorie: foerderung
+    horizont: akut
+    status: check
+    beschreibung: >
+      NeuFöG (Neugründungs-Förderungsgesetz) muss SIMULTAN zur Gewerbeanmeldung
+      beim WKO beantragt werden. Kann nicht nachträglich beantragt werden.
+      Hauptnutzen hängt von der Rechtsform ab:
+      EPU/Einzelunternehmen: Befreiung von Bundesstempelgebühren bei behördlichen
+      Eingaben (gering, ~€50–200) + Lohnnebenkosten-Bonus bei erster Einstellung
+      (~€2.000/MA, 12 Monate).
+      GmbH: Höhere direkte Ersparnis durch Befreiung von Eintragungsgebühren,
+      aber NeuFöG läuft dann über den Notar (nicht selbst beim WKO).
+    voraussetzungen:
+      - Erstmalige Betriebsgründung (keine Übertragung, keine Betriebsübernahme)
+      - Antrag NeuFöG-Formular GLEICHZEITIG mit Gewerbeanmeldung beim WKO (EPU)
+      - Bei GmbH: Notar informieren, läuft über den Gründungsprozess
+    handlung: >
+      EPU: NeuFöG-Formular vor Gewerbeanmeldung herunterladen, beim WKO-Termin mitbringen.
+      Nicht vergessen → nicht nachholbar. Geringer direkter Nutzen für EPU,
+      aber der Lohnnebenkosten-Bonus bei erster Einstellung macht es trotzdem wertvoll.
+    kosten: 0 €
+    max_foerderung: "EPU: ~€50–200 sofort + ~€2.000/MA bei erster Einstellung"
+    links:
+      - https://www.wko.at/steuern/neugruendungs-foerderungsgesetz-neugruender
+    req_ref: REQ-B-001
+
+  - id: WATCH-F-002
+    titel: "SVS Gründerbegünstigung — 6-Monats-Fenster nach Gründung"
+    kategorie: foerderung
+    horizont: akut
+    status: check
+    beschreibung: >
+      SVS Gründerbegünstigung spart ca. €1.000/Jahr in KV/PV-Beiträgen
+      (50% Reduktion, Jahre 1–3). Muss innerhalb von 6 Monaten nach Gründung
+      beantragt werden. Für EPU/Einzelunternehmer relevant.
+    voraussetzungen:
+      - Gewerbeanmeldung abgeschlossen
+      - Antrag innerhalb 6 Monate nach Gründung bei SVS
+    handlung: >
+      Direkt nach Gewerbeanmeldung SVS kontaktieren und Begünstigung beantragen.
+    kosten: 0 €
+    max_foerderung: "~€1.000/Jahr × 3 Jahre = ~€3.000 gesamt"
+    links:
+      - https://www.svs.at/cdscontent/load?contentid=10008.792636
+
+  - id: WATCH-F-003
+    titel: "aws First Incubator — rolling, aber frühzeitig bewerben"
+    kategorie: foerderung
+    horizont: akut
+    status: check
+    beschreibung: >
+      aws First Incubator: bis €49.000 + €2.000 Coworking, 90% Förderquote.
+      Rolling deadline. Solo-Founder möglich (< 4 Personen Regel bei aws).
+      Kann in Vorbereitungsphase angefragt werden; Antrag meist nach Gründung.
+      Finanziert Externe (Dev-Dienstleister, UX-Tests, Rechtsberatung).
+    voraussetzungen:
+      - Gewerbeanmeldung oder GmbH-Gründung
+      - Innovatives, technologiebasiertes Vorhaben (AustroFit qualifiziert)
+      - Erste Marktrecherche dokumentiert (Business Plan vorhanden ✓)
+    handlung: >
+      Nach Gewerbeanmeldung: aws-Erstgespräch vereinbaren.
+      REQ-P-049–056 (Gesundheitsziele) und docs/validation-plan.yaml als Nachweis mitbringen.
+    kosten: 0 €
+    max_foerderung: "€49.000 + €2.000 Coworking (90% Förderquote)"
+    links:
+      - https://www.aws.at/aws-first-incubator/
+    req_ref: REQ-B-018
+
+  - id: WATCH-F-004
+    titel: "Gründungsstipendium Wien (WA Wien) — frühzeitig prüfen"
+    kategorie: foerderung
+    horizont: akut
+    status: check
+    beschreibung: >
+      Gründungsstipendium Wien: bis €8.000 (Einzelperson) für persönliche
+      Lebenskosten während der Gründungsphase. 100% Förderquote.
+      Voraussetzung: Erstanmeldung Gewerbe nicht länger als 3 Jahre zurück.
+      Rolling deadline, aber Budget begrenzt — je früher desto besser.
+    voraussetzungen:
+      - Wiener Wohnsitz oder Betriebssitz in Wien
+      - Gewerbeanmeldung ≤ 3 Jahre zurück
+      - Vollzeitwidmung für das Gründungsvorhaben
+    handlung: >
+      Nach Gewerbeanmeldung: WA Wien Fördercheck durchführen und Antrag stellen.
+      Relevant falls Eigenfinanzierung der Lebenshaltungskosten knapp wird.
+    kosten: 0 €
+    max_foerderung: "bis €8.000 (Einzelperson)"
+    links:
+      - https://wirtschaftsagentur.at/aktuelle-foerderungen-der-wirtschaftsagentur-wien/foe-gruendungsstipendium/
+    req_ref: REQ-B-020
+
+  - id: WATCH-F-005
+    titel: "FFG Projekt.Start — Einreichfenster beobachten"
+    kategorie: foerderung
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      FFG Projekt.Start: bis €10.000, 60% Förderquote. Typisch quartalsweise
+      Einreichfenster. Finanziert Markt & Regulatory Research (WP 0) und MVP-Build (WP 1).
+      Kombinierbar mit aws First Incubator (verschiedene Kostenstellen/Work-Packages).
+    voraussetzungen:
+      - Rechtlich gegründetes Unternehmen (Gewerbe oder GmbH)
+      - F&E-Anteil im Projekt nachweisbar
+    handlung: >
+      Nach Gründung: ffg.at/ausschreibung/projektstart aktuell prüfen.
+      Nächstes Einreichfenster und Deadline vormerken.
+      ACHTUNG: Link unten zeigt auf 2025-Ausschreibung — vor Einreichung
+      aktuelle Ausschreibung auf ffg.at suchen (jährlich neu).
+    kosten: 0 €
+    max_foerderung: "€10.000 (60% Förderquote, Stand Aug 2025 — verifizieren)"
+    links:
+      - https://www.ffg.at/ausschreibung/projektstart-2025  # ⚠ 2025-Link — aktuell prüfen
+    req_ref: REQ-B-019
+
+  - id: WATCH-F-006
+    titel: "aws impulse XS / Creative Impact — Early Growth"
+    kategorie: foerderung
+    horizont: strategisch
+    status: watch
+    beschreibung: >
+      aws impulse XS: bis €50.000, 70% Förderquote. Geeignet für Gamification-Iteration
+      und UX-Weiterentwicklung. Aktuell verfrüht — erst relevant wenn ersten
+      Nutzer*innen onboarded und erstes Feedback vorliegt (Monat 6–18 nach Launch).
+    voraussetzungen:
+      - Unternehmen gegründet + operativ tätig
+      - Konkrete Wachstumsmaßnahmen definierbar
+    handlung: >
+      Vorerst beobachten. Nach Go-Live + ersten 200 Nutzern: aws-Gespräch aufgreifen.
+    max_foerderung: "bis €50.000 (70% Förderquote)"
+    links:
+      - https://www.aws.at/fileadmin/user_upload/Downloads/Fallbeispiel_und_Ablauf/aws_impulse_XS.pdf
+    req_ref: REQ-B-018
