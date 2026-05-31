@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+Allow: /gesundheitswegweiser
+Allow: /impressum
+Allow: /datenschutz
+Allow: /ueber-uns
+Allow: /partner-werden
+
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /profil
+Disallow: /schritte
+Disallow: /aktivitaeten
+Disallow: /auszeichnungen
+Disallow: /belohnung
+Disallow: /bewegung
+Disallow: /level-roadmap
+Disallow: /login
+Disallow: /registrierung
+Disallow: /register
+Disallow: /onboard
+Disallow: /auth/
+
+Sitemap: https://austrofit.at/sitemap.xml
