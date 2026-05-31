@@ -17,5 +17,11 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   const response = await resolve(event);
+
+  // dev.austrofit.at soll nicht von Google indexiert werden
+  if (event.url.hostname === 'dev.austrofit.at') {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+
   return response;
 };
