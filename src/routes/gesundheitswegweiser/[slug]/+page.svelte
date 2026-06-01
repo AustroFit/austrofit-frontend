@@ -254,7 +254,8 @@
         src={item.imageUrl}
         alt={item.title}
         class="w-full max-h-[420px] object-cover rounded-[var(--radius-card)]"
-        loading="lazy"
+        loading="eager"
+        fetchpriority="high"
       />
     </div>
   </div>

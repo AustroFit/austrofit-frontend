@@ -8,6 +8,7 @@
   src: url('/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -15,6 +16,7 @@
   src: url('/fonts/Inter-Italic-VariableFont_opsz,wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Jost - Headings */
@@ -23,6 +25,7 @@
   src: url('/fonts/Jost-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -30,6 +33,7 @@
   src: url('/fonts/Jost-Italic-VariableFont_wght.ttf') format('truetype');
   font-weight: 100 900;
   font-style: italic;
+  font-display: swap;
 }
 
 /* Farben: siehe src/styles/tokens.css */
