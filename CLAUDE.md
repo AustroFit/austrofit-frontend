@@ -145,6 +145,7 @@ Native health data (steps) is accessed via `$lib/services/health.ts` using `@cap
 src/
   routes/           # SvelteKit pages + API routes
     api/            # All backend proxy routes (server-side only)
+    sitemap.xml/    # Dynamic XML sitemap (5 static pages + 250 article URLs from Directus)
   lib/
     components/     # Svelte components (organized by feature)
     design-system/  # classes.js – Tailwind class composition utilities
@@ -158,8 +159,13 @@ src/
     utilities.css   # Custom Tailwind utilities
     component.css   # Component-level base styles
   app.css           # Entry CSS: imports + @theme block (spacing, fonts, radii)
+static/
+  robots.txt        # Crawler directives: allows public pages, disallows all app/auth routes
 scripts/
   generate-safelist.js  # Generates Tailwind safelist from dynamic class usage
+  fix_articles_seo.py   # Bulk Directus article fixer (release_date, ChatGPT artifact removal, disclaimer H2 normalization) — requires DIRECTUS_ADMIN_TOKEN
+crawler/              # Bildungsfeature pipeline: health knowledge crawler → clustering → article generation → QC
+  _archive/           # One-time scripts moved here (never delete, just archive)
 Directus-JSON-AustroFit/  # CMS export files, CSVs for import
 android/              # Capacitor Android project
 ```
@@ -189,6 +195,26 @@ Alle Flags sind localStorage-Keys und werden im Dashboard/Profil bei `onMount` g
 
 **Wichtig**: `devNativeMode` steuert nur UI-Sichtbarkeit (`showNativeFeatures = isNativePlatform || devNativeMode`).
 Die echten Health-Sync-Calls (Capacitor) laufen weiterhin nur wenn `isNativePlatform` true ist.
+
+### Gesundheitswegweiser (Bildungsfeature)
+
+250 published health articles in Directus `articles` collection (slug, content, release_date, quiz relation).
+
+**Frontend**: `/gesundheitswegweiser/[slug]` → universal `+page.js` (SSR on Vercel) → `/api/articles/[slug]` → `DIRECTUS_READ_TOKEN`. Universal load runs server-side on initial request — not purely CSR.
+
+**SEO-Infrastruktur** (implementiert 2026-05-31):
+- `static/robots.txt` — erlaubt öffentliche Seiten (`/gesundheitswegweiser`, `/impressum`, etc.), sperrt alle App-Routen (`/dashboard`, `/profil`, `/api/`, etc.)
+- `src/routes/sitemap.xml/+server.ts` — dynamische Sitemap: 5 statische Seiten + 250 Artikel-URLs aus Directus. Cache: `max-age=3600, s-maxage=86400`. Wichtig: Typ-Import `RequestEvent` aus `@sveltejs/kit` (nicht aus `./$types` — SvelteKit generiert keine Types für Routen mit `.` im Ordnernamen).
+- `src/hooks.server.ts` — setzt `X-Robots-Tag: noindex, nofollow` auf `dev.austrofit.at`
+
+**Artikel SEO-Fixes** (2026-05-31 via `scripts/fix_articles_seo.py`):
+- `release_date` auf `2026-05-31` gesetzt (war `null` bei allen 250 Artikeln)
+- ChatGPT-Artefakte `<!-- :contentReference[oaicite:N]{index=N} -->` aus 15 Artikeln entfernt
+- Inline `<p><strong>Hinweis:</strong>…</p>` → `<h2>Hinweis</h2>\n<p>…</p>` in 131 Artikeln
+
+**Bulk-Edit-Workflow**: `scripts/fix_articles_seo.py` lokal ausführen (braucht `DIRECTUS_ADMIN_TOKEN` aus `.env` — `PRIVATE_CMS_STATIC_TOKEN` hat keinen Zugriff auf `articles`). Sendet PATCH-Batches à 50 direkt an Directus CMS. Änderungen sind sofort live.
+
+**Crawler-Pipeline** (`crawler/`): 7.042 Dokumente von 13 AT/DE-Gesundheitsdomains → TF-IDF + KMeans Clustering → Briefings (A–E pro Modul) → ChatGPT-Generierung → QC → Directus-Import. One-time Scripts liegen in `_archive/`-Unterordnern — nie löschen, nur archivieren.
 
 ### MCP Server (Directus)
 
@@ -271,7 +297,7 @@ npx cap sync android
 | `DIRECTUS_READ_TOKEN` | `/api/badges`, `/api/partner`, `/api/quizzes` | Policy „Read Content API" — nur publizierten Content |
 | `PRIVATE_CMS_STATIC_TOKEN` | `/api/claim`, `/api/ledger-*`, `/api/profile`, `/api/redeem` | Policy „Write Content API" — Writes auf custom Collections; kein Zugriff auf `directus_users` |
 | `DIRECTUS_WRITE_TOKEN` | `/api/auth/*` | Achtung: hat in `.env` denselben Wert wie `PRIVATE_CMS_STATIC_TOKEN` → kein Zugriff auf `directus_users`. Nur noch als Legacy-Bezeichnung vorhanden. |
-| `DIRECTUS_ADMIN_TOKEN` | `/api/auth/google/callback` | Echter Admin-Static-Token (Administrator-User in Directus) — darf `directus_users` lesen und schreiben. Nur für Google OAuth Callback. |
+| `DIRECTUS_ADMIN_TOKEN` | `/api/auth/google/callback`, `scripts/fix_articles_seo.py` | Echter Admin-Static-Token (Administrator-User in Directus) — darf `directus_users` UND alle Collections (inkl. `articles`) lesen und schreiben. `PRIVATE_CMS_STATIC_TOKEN` hat keinen Zugriff auf `articles`. |
 | `PUBLIC_API_BASE` | Client `apiUrl()` | Leer für Web/Vercel; `https://austrofit.at` für Capacitor-Build |
 | `PUBLIC_POSTHOG_TOKEN` | `$lib/utils/mixpanel.ts` | PostHog EU Cloud (`phc_...`) |
 | `PUBLIC_EMAIL_VERIFICATION` | `/registrierung` | Steuert ob Schritt 3 (E-Mail-Bestätigung) angezeigt wird |
@@ -343,4 +369,4 @@ Community-Features (Leaderboard, Events, Write & Comment) dürfen **nicht vor Go
 - **Vercel** uses `adapter-vercel` (default, no BUILD_TARGET env var set).
 - **Capacitor native APK**: `npm run cap:build` → uses `adapter-static` (BUILD_TARGET=capacitor) → `build/` bundle → Android Studio → Play Store.
 - `vercel.json` sets global security headers (`X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy`) on all routes, plus CORS headers for `/api/*` routes to allow `https://localhost` origin (Capacitor 8 Android WebView origin).
-- `src/hooks.server.ts` handles OPTIONS preflight requests globally (returns 204) — required for POST/PATCH/DELETE from the native app.
+- `src/hooks.server.ts` handles two concerns: (1) OPTIONS preflight requests (returns 204 with CORS headers) — required for POST/PATCH/DELETE from the native app; (2) `X-Robots-Tag: noindex, nofollow` on `dev.austrofit.at` — prevents Google from indexing the staging environment.

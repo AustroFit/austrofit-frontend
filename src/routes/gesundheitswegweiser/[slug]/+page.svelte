@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import Quiz from '$lib/components/singlepage/Quiz.svelte';
 
   const { data } = $props();
@@ -102,6 +103,24 @@
   const blockStyle = $derived(item.block ? BLOCK_STYLES[item.block] : null);
   const backUrl = $derived(item.block ? `/gesundheitswegweiser?block=${item.block}` : '/gesundheitswegweiser');
   const backLabel = $derived(item.blockLabel ?? 'Gesundheitswegweiser');
+
+  const jsonLdScript = $derived.by(() => {
+    const canonicalUrl = $page.url.href;
+    const ogDescription = item.seoDescription ?? item.description ?? '';
+    const obj = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: item.title,
+      ...(ogDescription ? { description: ogDescription } : {}),
+      ...(item.imageUrl ? { image: item.imageUrl } : {}),
+      datePublished: item.release_date ?? item.date_created ?? undefined,
+      publisher: { '@type': 'Organization', name: 'AustroFit', url: 'https://austrofit.at' },
+      url: canonicalUrl,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
+      ...(item.blockLabel ? { articleSection: item.blockLabel } : {}),
+    };
+    return `<script type="application/ld+json">${JSON.stringify(obj).replace(/<\/script>/gi, '<\\/script>')}<\/script>`;
+  });
 </script>
 
 <svelte:head>
@@ -110,6 +129,37 @@
     name="description"
     content={item.seoDescription ?? item.description ?? `${item.title} – Gesundheitswissen von AustroFit`}
   />
+  <link rel="canonical" href={$page.url.href} />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="AustroFit" />
+  <meta property="og:locale" content="de_AT" />
+  <meta property="og:title" content={item.seoTitle ?? item.title} />
+  <meta property="og:description" content={item.seoDescription ?? item.description ?? ''} />
+  <meta property="og:url" content={$page.url.href} />
+  {#if item.imageUrl}
+    <meta property="og:image" content={item.imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:type" content="image/webp" />
+  {/if}
+  {#if item.release_date}
+    <meta property="article:published_time" content={item.release_date} />
+  {/if}
+  {#if item.blockLabel}
+    <meta property="article:section" content={item.blockLabel} />
+  {/if}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={item.seoTitle ?? item.title} />
+  <meta name="twitter:description" content={item.seoDescription ?? item.description ?? ''} />
+  {#if item.imageUrl}
+    <meta name="twitter:image" content={item.imageUrl} />
+  {/if}
+
+  <!-- JSON-LD -->
+  {@html jsonLdScript}
 </svelte:head>
 
 <!-- ─── Hero ──────────────────────────────────────────────────────────────── -->
