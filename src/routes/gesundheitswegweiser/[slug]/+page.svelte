@@ -106,8 +106,10 @@
 
   const jsonLdScript = $derived.by(() => {
     const canonicalUrl = $page.url.href;
+    const origin = $page.url.origin;
     const ogDescription = item.seoDescription ?? item.description ?? '';
-    const obj = {
+
+    const article = {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: item.title,
@@ -119,7 +121,17 @@
       mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
       ...(item.blockLabel ? { articleSection: item.blockLabel } : {}),
     };
-    return `<script type="application/ld+json">${JSON.stringify(obj).replace(/<\/script>/gi, '<\\/script>')}<\/script>`;
+
+    const breadcrumbItems = [
+      { '@type': 'ListItem', position: 1, name: 'AustroFit', item: origin },
+      { '@type': 'ListItem', position: 2, name: 'Gesundheitswegweiser', item: `${origin}/gesundheitswegweiser` },
+      ...(item.blockLabel ? [{ '@type': 'ListItem', position: 3, name: item.blockLabel, item: `${origin}/gesundheitswegweiser?block=${item.block}` }] : []),
+      { '@type': 'ListItem', position: item.blockLabel ? 4 : 3, name: item.title, item: canonicalUrl },
+    ];
+    const breadcrumb = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: breadcrumbItems };
+
+    const escape = (obj) => JSON.stringify(obj).replace(/<\/script>/gi, '<\\/script>');
+    return `<script type="application/ld+json">${escape(article)}<\/script><script type="application/ld+json">${escape(breadcrumb)}<\/script>`;
   });
 </script>
 

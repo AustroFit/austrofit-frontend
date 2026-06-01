@@ -131,8 +131,24 @@
     name="description"
     content="Dein Gesundheitswegweiser für Österreich – fundiertes Wissen zu Bewegung, Ernährung und Prävention, ausschließlich aus seriösen, ÖGPK-geprüften Quellen."
   />
+  <link rel="canonical" href="https://austrofit.at/gesundheitswegweiser" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AustroFit" />
+  <meta property="og:locale" content="de_AT" />
+  <meta property="og:title" content="Gesundheitswegweiser – Deine Gesundheitskompetenz. Dein Weg." />
+  <meta property="og:description" content="Dein Gesundheitswegweiser für Österreich – fundiertes Wissen zu Bewegung, Ernährung und Prävention, ausschließlich aus seriösen, ÖGPK-geprüften Quellen." />
+  <meta property="og:url" content="https://austrofit.at/gesundheitswegweiser" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Gesundheitswegweiser – Deine Gesundheitskompetenz. Dein Weg." />
+  <meta name="twitter:description" content="Dein Gesundheitswegweiser für Österreich – fundiertes Wissen zu Bewegung, Ernährung und Prävention, ausschließlich aus seriösen, ÖGPK-geprüften Quellen." />
+
+  <!-- JSON-LD -->
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-  {@html `<script type="application/ld+json">${jsonLd}<\/script>`}
+  {@html `<script type="application/ld+json">${jsonLd.replace(/<\/script>/gi, '<\\/script>')}<\/script>`}
 </svelte:head>
 
 <!-- ─── Hero ──────────────────────────────────────────────────────────────── -->
