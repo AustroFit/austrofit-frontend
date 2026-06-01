@@ -268,6 +268,15 @@
   </section>
 {/if}
 
+<!-- ─── Disclaimer ────────────────────────────────────────────────────────── -->
+<div class="bg-white border-t border-gray-100">
+  <div class="mx-auto max-w-3xl px-[var(--spacing-container-x)] lg:px-8 py-5">
+    <p class="text-xs text-gray-400 leading-relaxed">
+      Dieser Artikel basiert auf publizierten Gesundheitsquellen und wurde redaktionell geprüft. Er ersetzt keine ärztliche Beratung.
+    </p>
+  </div>
+</div>
+
 <!-- ─── Back link ─────────────────────────────────────────────────────────── -->
 <div class="border-t border-gray-200 bg-white py-8">
   <div class="mx-auto max-w-[var(--max-width-standard)] px-[var(--spacing-container-x)] lg:px-[var(--spacing-container-x-lg)]">

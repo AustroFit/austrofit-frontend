@@ -6,6 +6,7 @@ fix_articles_seo.py — AustroFit Directus Article SEO Fixes
 2. Removes ChatGPT artifacts <!-- :contentReference[oaicite:N]{index=N} --> (15 articles)
 3. Converts inline <p><strong>Hinweis:</strong>...</p> to <h2>Hinweis</h2> (131 articles)
    so the frontend JS disclaimer-box styling triggers correctly
+4. Removes " Mehr dazu auf AustroFit." fragment appended to seo.meta_description (56 articles)
 """
 
 import json
@@ -15,7 +16,7 @@ import sys
 import requests
 
 CMS_URL = "https://cms.austrofit.at"
-TOKEN = "QCLK1MCiJDBFiD34g8us_TFdPqrMb3El"  # Admin token — Zugriff auf alle Collections
+TOKEN = "QCLK1MCiJDBFiD34g8us_TFdPqrMb3El"  # Admin token
 RELEASE_DATE = "2026-05-31T00:00:00"
 BATCH_SIZE = 50
 
@@ -31,11 +32,12 @@ ARTIFACT_RE = re.compile(
 
 H2_HINWEIS_RE = re.compile(r"<h[23][^>]*>\s*(Hinweis|Disclaimer)", re.IGNORECASE)
 
-# Matches: <p...><strong...>Hinweis:</strong> text </p>  (inline form)
 INLINE_HINWEIS_RE = re.compile(
     r"<p[^>]*>\s*<strong[^>]*>Hinweis\s*[:/]\s*</strong>\s*(.*?)</p>",
     re.IGNORECASE | re.DOTALL,
 )
+
+MEHR_DAZU_RE = re.compile(r"\s*Mehr dazu auf AustroFit\.?$", re.IGNORECASE)
 
 
 def fetch_all_articles() -> list[dict]:
@@ -46,7 +48,7 @@ def fetch_all_articles() -> list[dict]:
             f"{CMS_URL}/items/articles",
             headers=HEADERS,
             params={
-                "fields": "id,slug,content,release_date",
+                "fields": "id,slug,content,release_date,seo",
                 "filter[status][_eq]": "published",
                 "limit": 200,
                 "offset": offset,
@@ -64,18 +66,16 @@ def fetch_all_articles() -> list[dict]:
 
 
 def fix_content(content: str) -> tuple[str, list[str]]:
-    """Apply all content fixes. Returns (new_content, applied_fix_names)."""
+    """Apply content fixes. Returns (new_content, applied_fix_names)."""
     if not content:
         return content, []
 
     fixes = []
 
-    # Fix 1: Remove ChatGPT artifacts
     if ARTIFACT_RE.search(content):
         content = ARTIFACT_RE.sub("", content).rstrip()
         fixes.append("artifact")
 
-    # Fix 2: Convert inline Hinweis → H2 (only if no H2 Hinweis already present)
     if not H2_HINWEIS_RE.search(content) and INLINE_HINWEIS_RE.search(content):
         content = INLINE_HINWEIS_RE.sub(
             lambda m: f"<h2>Hinweis</h2>\n<p>{m.group(1).strip()}</p>",
@@ -84,6 +84,19 @@ def fix_content(content: str) -> tuple[str, list[str]]:
         fixes.append("disclaimer")
 
     return content, fixes
+
+
+def fix_seo_description(seo: dict | None) -> tuple[dict | None, bool]:
+    """Remove 'Mehr dazu auf AustroFit.' from seo.meta_description."""
+    if not seo:
+        return seo, False
+    meta_desc = seo.get("meta_description") or ""
+    if "Mehr dazu auf AustroFit" not in meta_desc:
+        return seo, False
+    fixed = MEHR_DAZU_RE.sub("", meta_desc).rstrip()
+    if fixed and not fixed.endswith("."):
+        fixed += "."
+    return {**seo, "meta_description": fixed}, True
 
 
 def patch_batch(patches: list[dict]) -> bool:
@@ -106,8 +119,9 @@ def main():
     print(f"Total: {len(articles)} articles\n")
 
     patches = []
-    stats = {"date": 0, "artifact": 0, "disclaimer": 0, "unchanged": 0}
+    stats = {"date": 0, "artifact": 0, "disclaimer": 0, "mehr_dazu": 0, "unchanged": 0}
     artifact_slugs = []
+    mehr_dazu_slugs = []
 
     for a in articles:
         patch: dict = {"id": a["id"]}
@@ -128,6 +142,13 @@ def main():
             if "disclaimer" in fixes:
                 stats["disclaimer"] += 1
 
+        new_seo, seo_fixed = fix_seo_description(a.get("seo"))
+        if seo_fixed:
+            patch["seo"] = new_seo
+            stats["mehr_dazu"] += 1
+            mehr_dazu_slugs.append(f"  ID {a['id']}: {a['slug']}")
+            changed = True
+
         if changed:
             patches.append(patch)
         else:
@@ -139,7 +160,13 @@ def main():
     if artifact_slugs:
         for s in artifact_slugs:
             print(s)
-    print(f"  Inline disclaimers -> H2:               {stats['disclaimer']}")
+    print(f"  Inline disclaimers -> H2:              {stats['disclaimer']}")
+    print(f"  'Mehr dazu auf AustroFit.' removed:    {stats['mehr_dazu']}")
+    if mehr_dazu_slugs:
+        for s in mehr_dazu_slugs[:10]:
+            print(s)
+        if len(mehr_dazu_slugs) > 10:
+            print(f"  ... and {len(mehr_dazu_slugs) - 10} more")
     print(f"  No change needed:                      {stats['unchanged']}")
     print(f"  Total patches:                         {len(patches)}\n")
 
@@ -147,17 +174,22 @@ def main():
         print("Nothing to patch. Done.")
         return
 
+    confirm = input(f"Patch {len(patches)} articles? [y/N] ").strip().lower()
+    if confirm != "y":
+        print("Aborted.")
+        return
+
     print(f"Sending PATCH requests ({BATCH_SIZE}/batch)...")
     total_ok = 0
     for i in range(0, len(patches), BATCH_SIZE):
         batch = patches[i : i + BATCH_SIZE]
         end = min(i + BATCH_SIZE, len(patches))
-        print(f"  Batch {i // BATCH_SIZE + 1}: items {i + 1}–{end}...", end=" ", flush=True)
+        print(f"  Batch {i // BATCH_SIZE + 1}: items {i + 1}-{end}...", end=" ", flush=True)
         if patch_batch(batch):
             print("OK")
             total_ok += len(batch)
         else:
-            print("FAILED — stopping.")
+            print("FAILED - stopping.")
             sys.exit(1)
         if i + BATCH_SIZE < len(patches):
             time.sleep(0.3)
