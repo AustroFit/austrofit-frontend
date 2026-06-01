@@ -112,7 +112,7 @@
       '@type': 'Article',
       headline: item.title,
       ...(ogDescription ? { description: ogDescription } : {}),
-      ...(item.imageUrl ? { image: item.imageUrl } : {}),
+      ...(item.ogImageUrl ? { image: item.ogImageUrl } : {}),
       datePublished: item.release_date ?? item.date_created ?? undefined,
       publisher: { '@type': 'Organization', name: 'AustroFit', url: 'https://austrofit.at' },
       url: canonicalUrl,
@@ -138,9 +138,10 @@
   <meta property="og:title" content={item.seoTitle ?? item.title} />
   <meta property="og:description" content={item.seoDescription ?? item.description ?? ''} />
   <meta property="og:url" content={$page.url.href} />
-  {#if item.imageUrl}
-    <meta property="og:image" content={item.imageUrl} />
+  {#if item.ogImageUrl}
+    <meta property="og:image" content={item.ogImageUrl} />
     <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:type" content="image/webp" />
   {/if}
   {#if item.release_date}
@@ -154,8 +155,8 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={item.seoTitle ?? item.title} />
   <meta name="twitter:description" content={item.seoDescription ?? item.description ?? ''} />
-  {#if item.imageUrl}
-    <meta name="twitter:image" content={item.imageUrl} />
+  {#if item.ogImageUrl}
+    <meta name="twitter:image" content={item.ogImageUrl} />
   {/if}
 
   <!-- JSON-LD -->

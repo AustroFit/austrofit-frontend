@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
     articles = await directus.request(
       readItems('articles', {
         filter: { slug: { _eq: slug }, status: { _in: ['published', 'in_review'] } },
-        fields: ['id', 'slug', 'title', 'description', 'content', 'image', 'learning_module_id', 'date_created', 'release_date', 'seo.title', 'seo.meta_description'],
+        fields: ['id', 'slug', 'title', 'description', 'content', 'image', 'learning_module_id', 'date_created', 'release_date', 'seo'],
         limit: 1,
       })
     );
@@ -39,6 +39,7 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
     description: raw.description ?? null,
     content: raw.content ?? null,
     imageUrl: raw.image ? `${PUBLIC_CMSURL}/assets/${raw.image}?width=1200&quality=80&format=webp` : null,
+    ogImageUrl: raw.image ? `${PUBLIC_CMSURL}/assets/${raw.image}?width=1200&height=630&fit=cover&quality=80&format=webp` : null,
     date_created: raw.date_created,
     release_date: raw.release_date ?? null,
     block,
@@ -46,8 +47,8 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
     blockLabel: blockConfig?.label ?? null,
     catLabel: block && cat && blockConfig?.categories?.[cat] ? blockConfig.categories[cat] : null,
     readingMinutes: Math.max(1, Math.ceil(wordCount / 200)),
-    seoTitle: raw.seo?.title ?? null,
-    seoDescription: raw.seo?.meta_description ?? null,
+    seoTitle: (raw.seo as Record<string, string> | null)?.title ?? null,
+    seoDescription: (raw.seo as Record<string, string> | null)?.meta_description ?? null,
   };
 
   // Fetch quiz
